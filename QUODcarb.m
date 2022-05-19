@@ -89,7 +89,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
       end
     %}
     z0 = init(yobs,pk,sys);
-    tol = 1e-8;
+    tol = 1e-9;
     [z,J,iflag] = newtn(z0,gun,tol);
     
     if (iflag ~=0)
@@ -211,8 +211,8 @@ function z0 = init(yobs,pk,sys);
     p = sys.p;
     k = q(pk);
     
-    pK0 = pk(1);  pK1  = pk(2);  pK2  = pk(3);  pKb  = pk(4);   pKw  = pk(5);   pKs  = k(6);   
-    pKF = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKSi = pk(11);  pp2f = k(12);
+    pK0 = pk(1);  pK1  = pk(2);  pK2  = pk(3);  pKb  = pk(4);   pKw  = pk(5);   pKs  = pk(6);   
+    pKF = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKSi = pk(11);  pp2f = pk(12);
 
     K0 = k(1);  K1  = k(2);  K2  = k(3);  Kb  = k(4);   Kw  = k(5);   Ks  = k(6);   
     KF = k(7);  K1p = k(8);  K2p = k(9);  K3p = k(10);  KSi = k(11);  p2f = k(12);

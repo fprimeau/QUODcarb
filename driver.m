@@ -27,7 +27,7 @@ pres = zeros(102,1);  epres  = zeros(102,1);
 % convert all data to -log10(data) and compute the precision of the resulting data
 %
 for i = 1:102
-
+    
     palk(i) = p(in(i,6)*1e-6); % mol/kg
     wpalk(i) = w(in(i,6),in(i,14));
 
@@ -94,13 +94,13 @@ end
 %
 % initialize the QUODcarb CO2-system solver
 %
-sys.abr = {'air-sea','carbonate'};
+%sys.abr = {'air-sea','carbonate'};
 %sys.abr = {'air-sea','carbonate','water'};
 %sys.abr = {'air-sea','carbonate','water','borate'};
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate'};
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride'};
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate'};
-%sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
+sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
 sys = mksys(sys);
 PrintTable(sys);
 n = length(sys.variables);
