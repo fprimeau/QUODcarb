@@ -206,9 +206,9 @@ function out = PrintCSV(varargin)
                 % observed
                 conv = 1e6;
                 yo   = q( yobs(i) );                
-                sigu = q( yobs(i) - 1 / sqrt( wobs(i) ) );
-                sigl = q( yobs(i) + 1 / sqrt( wobs(i) ) );
-                sigo  = 0.5 * ( sigu + sigl );
+                yu = q( yobs(i) - 1 / sqrt( wobs(i) ) );
+                yl = q( yobs(i) + 1 / sqrt( wobs(i) ) );
+                sigo  = 0.5 * ( yu + yl );
                 % posterior
                 yp = q( y(i) );
                 yu = q( y(i) - 1 / sqrt( w(i) ) );
