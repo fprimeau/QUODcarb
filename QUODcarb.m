@@ -39,6 +39,10 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
         wobs(sys.iK2) = (0.02).^(-2);  %wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
         yobs(sys.iK2) = p(K2);
     end
+    if (ismember('p2f',sys.variables))
+        wobs(sys.ip2f) = (0.00015).^(-2); % check against co2sys and Weiss paper etc.
+        yobs(sys.ip2f) = p(p2f);
+    end
     if (ismember('Kb',sys.variables))
         wobs(sys.iKb) = (0.01).^(-2);  %wKb = 1/(1 + (0.01/pKsys(4)))^2 ;
         yobs(sys.iKb) = p(Kb);
@@ -89,7 +93,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
       end
     %}
     z0 = init(yobs,pk,sys);
-    tol = 1e-9;
+    tol = 1e-8;
     [z,J,iflag] = newtn(z0,gun,tol);
     
     if (iflag ~=0)
@@ -235,13 +239,16 @@ function z0 = init(yobs,pk,sys);
     hco3 =  h * alk / (h + 2 * K2 );
     co2st = h * hco3 / K1 ;
     co3 = 0.5 * ( alk - hco3 ) ;
+    fco2 = co2st/K0;
+    pco2 = fco2/p2f;
     
     y0(sys.ih)     = p(h);
     y0(sys.ihco3)  = p(hco3);
     y0(sys.ico2st) = p(co2st);
     y0(sys.ico3)   = p(co3);
-    y0(sys.ifco2)  = p(co2st/K0);
-    
+    y0(sys.ifco2)  = p(fco2);
+    y0(sys.ipco2)  = p(pco2);
+
     if (ismember('Kw',sys.variables))
         oh = Kw / h;
         y0(sys.iKw) = pKw;

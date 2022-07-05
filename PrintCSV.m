@@ -8,10 +8,17 @@ function out = PrintCSV(varargin)
         fid = varargin{2};
         
         if (ismember('fco2',sys.variables))
-            ipfco2 = sys.ifco2;
+            ifco2 = sys.ifco2;
         else
-            ipfco2 = 0;
+            ifco2 = 0;
         end
+
+        if (ismember('pco2',sys.variables))
+            ipco2 = sys.ipco2;
+        else
+            ipco2 = 0;
+        end
+
         if (ismember('h',sys.variables))
             iph = sys.ih;
         else
@@ -86,9 +93,6 @@ function out = PrintCSV(varargin)
                 fprintf(fid, 'obs_p%s, sig_obs_p%s, ',sys.variables{i},sys.variables{i});
                 fprintf(fid, 'post_p%s, sig_post_p%s, ',sys.variables{i},sys.variables{i});
             else
-                if (i==3) 
-                    keyboard
-                end
                 fprintf(fid,'obs_%s, sig_obs_%s, ',sys.variables{i},sys.variables{i});
                 fprintf(fid,'post_%s, sig_post_%s, ',sys.variables{i},sys.variables{i});
             end
@@ -120,8 +124,13 @@ function out = PrintCSV(varargin)
         if (ismember('fco2',sys.variables))
             ifco2 = sys.ifco2;
         else
-            ifoc2 = 0;
+            ifco2 = 0;
         end
+        if (ismember('pco2',sys.variables))
+            ipco2 = sys.ipco2;
+        else
+            ipco2 = 0;
+        end        
         if (ismember('h',sys.variables))
             ih = sys.ih;
         else
@@ -195,14 +204,12 @@ function out = PrintCSV(varargin)
         nv = length(sys.variables);
         fprintf(fid,'%i, ',iflag);
         for i = 1:nv
-
-               
             if ( ( i == ih ) | ( i == ihf ) | ( i == iK0 )  | ( i == iK1 )  | ( i == iK2  ) | ( i == iKw )  | ( i == iKb ) | ...
                  ( i == iKS) | ( i == iKF ) | ( i == iK1p ) | ( i == iK2p ) | ( i == iK3p ) | ( i == iKSi ) )
                 conv = 1;
                 fprintf(fid, '%f, %f, ', conv * yobs(i), conv / sqrt( wobs(i) ) );
                 fprintf(fid, '%f, %f, ', conv * y(i), conv / sqrt( w(i) ) );
-            elseif ( i == ifco2 ) 
+            elseif ( (i == ifco2) | (i == ipco2) ) 
                 % observed
                 conv = 1e6;
                 yo   = q( yobs(i) );                

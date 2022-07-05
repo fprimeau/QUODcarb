@@ -23,9 +23,9 @@ function sys = mksys(sys)
         % K0 = [co2st]/fco2   
         % K1 = [h][hco3]/[co2st]
         % K2 = [h][co3]/[hco3]
-        carbonate =  { 'K0','K1','K2','TC','TA','fco2', 'co2st', 'hco3', 'co3', 'h'};
+        carbonate =  { 'K0','K1','K2','TC','TA','fco2', 'co2st', 'hco3', 'co3', 'h', 'p2f', 'pco2'};
         sys.variables = carbonate;
-        nrk = 3; % number of rows
+        nrk = 4; % number of rows
         if ismember('water',sys.abr)
             % Kw = [h][oh]
             water = {'Kw','oh' };
@@ -120,6 +120,13 @@ function sys = mksys(sys)
         sys.system{row} = 'K2';
         row = row+1;
     end
+
+    if (ismember('p2f', sys.variables))
+        %fco2 = pco2*p2f;
+        K(row,[ifco2,ipco2,ip2f]) = [1 -1 -1];
+        sys.system{row} = 'p2f';
+        row = row+1;
+    end
     
     if (ismember('Kw',sys.variables))
         % Kw = [OH][H]
@@ -190,7 +197,7 @@ function sys = mksys(sys)
         sys.system{row} = 'Kh2s';
     end
 
-    % "mass conservation" equations
+    % "mass" conservation" equations
     nr = 2; %TC and TA
     if (ismember('TB',sys.variables));
         nr = nr + 1;
@@ -285,7 +292,7 @@ function sys = mksys(sys)
         row = row+1;
     end
 
-    % Total amonium
+    % Total ammonium
     if (ismember('TNH3',sys.variables))
         sys.mass{row} = 'amonia';
         M(row,[iTNH3,inh4,inh3]) = [1, -1, -1];
