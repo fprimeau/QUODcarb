@@ -93,7 +93,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
       end
     %}
     z0 = init(yobs,pk,sys);
-    tol = 1e-8;
+    tol = 1e-9;
     [z,J,iflag] = newtn(z0,gun,tol);
     
     if (iflag ~=0)
@@ -412,7 +412,7 @@ function [Kh,K1,K2,Kb,Kw,Ks,Kf,K1p,K2p,K3p,Ksi,p2f] = local_K(T,S,P)
     pK1 = 3670.7 ./TK - 62.008 + 9.7944 .* log(TK) - 0.0118.*S + ...
         0.000116.*S.^2;
     K1 = 10.^(-pK1); % SWS pH scale in mol/kg-SW
-
+   
     pK2 = 1394.7./TK + 4.777 - 0.0184.*S + 0.000118.*S.^2;
     K2 = 10.^(-pK2); % SWS pH scale in mol/kg-SW
 
@@ -476,5 +476,16 @@ function [Kh,K1,K2,Kb,Kw,Ks,Kf,K1p,K2p,K3p,Ksi,p2f] = local_K(T,S,P)
     % fH has been assumed to be independent of pressure.
     SWS2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
     FREE2tot =  1 + TS./Ks;
-
+    
+    % Convert K's from SWS to TOT scale
+    K1 = K1.*SWS2tot;
+    K2 = K2.*SWS2tot;
+    Kw = Kw.*SWS2tot;
+    Kb = Kb.*SWS2tot;
+    K1p = K1p.*SWS2tot;
+    K2p = K2p.*SWS2tot;
+    K3p = K3p.*SWS2tot;
+    Ksi = Ksi.*SWS2tot;
+    
+    
 end
