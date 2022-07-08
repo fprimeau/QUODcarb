@@ -40,7 +40,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
         yobs(sys.iK2) = p(K2);
     end
     if (ismember('p2f',sys.variables))
-        wobs(sys.ip2f) = (0.00015).^(-2); % check against co2sys and Weiss paper etc.
+        wobs(sys.ip2f) = (0.001).^(-2); % check against co2sys and Weiss paper etc.
         yobs(sys.ip2f) = p(p2f);
     end
     if (ismember('Kb',sys.variables))
