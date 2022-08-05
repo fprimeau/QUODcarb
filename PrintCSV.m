@@ -19,6 +19,12 @@ function out = PrintCSV(varargin)
             ipco2 = 0;
         end
 
+        if (ismember('p2f',sys.variables))
+            ip2f = sys.ip2f;
+        else
+            ip2f = 0;
+        end   
+
         if (ismember('h',sys.variables))
             iph = sys.ih;
         else
@@ -101,12 +107,15 @@ function out = PrintCSV(varargin)
         fprintf(fid,'%s, ','0=good');
         for i = 1:nv
             if ( ( i == iph )  | ( i == iphf ) | ( i == ipK0 )  | ( i == ipK1 )  | ( i == ipK2 )  | ( i == ipKw ) | ( i == ipKb) | ...
-                 ( i == ipKS ) | ( i == ipKF ) | ( i == ipK1p ) | ( i == ipK2p ) | ( i == ipK3p ) | ( i == ipKSi ) )
+                 ( i == ipKS ) | ( i == ipKF ) | ( i == ipK1p ) | ( i == ipK2p ) | ( i == ipK3p ) | ( i == ipKSi ) | ( i == ip2f) )
                 fprintf(fid, '%s, %s, ', ' ', ' ');
                 fprintf(fid, '%s, %s, ', ' ', ' ');
+            elseif ( ( i == ipco2 ) | ( i == ifco2) )
+                fprintf(fid,'%s, %s, ','(uatm)','(uatm)');
+                fprintf(fid,'%s, %s, ','(uatm)','(uatm)');            
             else
-                fprintf(fid,'%s, %s, ','(micro-molar)','(micro-molar)');
-                fprintf(fid,'%s, %s, ','(micro-molar)','(micro-molar)');
+                fprintf(fid,'%s, %s, ','(umol/kgSW)','(umol/kgSW)');
+                fprintf(fid,'%s, %s, ','(umol/kgSW)','(umol/kgSW)');
             end
         end
         fprintf(fid,'\n');
