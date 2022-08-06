@@ -19,9 +19,10 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
     q = sys.q;
     nv = length(sys.variables);
     
-    [K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f] = local_K(temp,sal,pres);    
-    pk = p([K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f]);
+    %[K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f] = local_K(temp,sal,pres);    
+    %pk = p([K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f]);
 
+    [pK,gpK,ggpK] = local_pK(temp,sal,pres);
 
     %
     % add "observations" for the equilibrium constants 
@@ -32,50 +33,50 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
         yobs(sys.iK0) = p(K0);        
     end
     if (ismember('K1',sys.variables))
-        wobs(sys.iK1) = (0.01).^(-2);  %wK1 = 1/(1 + (0.01/pKsys(2)))^2 ;
+        wobs(sys.iK1) = (0.01).^(-2);  % wK1 = 1/(1 + (0.01/pKsys(2)))^2 ;
         yobs(sys.iK1) = p(K1);
     end
     if (ismember('K2',sys.variables))
-        wobs(sys.iK2) = (0.02).^(-2);  %wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
+        wobs(sys.iK2) = (0.02).^(-2);  % wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
         yobs(sys.iK2) = p(K2);
     end
     if (ismember('p2f',sys.variables))
-        wobs(sys.ip2f) = (0.001).^(-2); % check against co2sys and Weiss paper etc.
+        wobs(sys.ip2f) = (0.001).^(-2);
         yobs(sys.ip2f) = p(p2f);
     end
     if (ismember('Kb',sys.variables))
-        wobs(sys.iKb) = (0.01).^(-2);  %wKb = 1/(1 + (0.01/pKsys(4)))^2 ;
+        wobs(sys.iKb) = (0.01).^(-2);  % wKb = 1/(1 + (0.01/pKsys(4)))^2 ;
         yobs(sys.iKb) = p(Kb);
     end
     if (ismember('Kw',sys.variables))
-        wobs(sys.iKw) = (0.01).^(-2);  %wKw = 1/(1 + (0.01/pKsys(5)))^2 ;
+        wobs(sys.iKw) = (0.01).^(-2);  % wKw = 1/(1 + (0.01/pKsys(5)))^2 ;
         yobs(sys.iKw) = p(Kw);
     end
     if (ismember('Ks',sys.variables))
-        wobs(sys.iKs) = (0.0021).^(-2); %wKs = 1/(1 + (0.0021/pKsys(6)))^2 ;
+        wobs(sys.iKs) = (0.0021).^(-2); % wKs = 1/(1 + (0.0021/pKsys(6)))^2 ;
         yobs(sys.iKs) = p(Ks);
     end
     if (ismember('KF',sys.variables))
-        wobs(sys.iKF) = (0.02).^(-2);   %wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
+        wobs(sys.iKF) = (0.02).^(-2);   % wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
         yobs(sys.iKF) = p(KF);
     end
     if (ismember('K1p',sys.variables))
-        wobs(sys.iK1p) = (0.09).^(-2);  %wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
+        wobs(sys.iK1p) = (0.09).^(-2);  % wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
         yobs(sys.iK1p) = p(K1p);
     end
     if (ismember('K2p',sys.variables))
-        wobs(sys.iK2p) = (0.03).^(-2);  %wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
+        wobs(sys.iK2p) = (0.03).^(-2);  % wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
         yobs(sys.iK2p) = p(K2p);
     end
     if (ismember('K3p',sys.variables))
-        wobs(sys.iK3p) = (0.02).^(-2);  %wK3p = 1/(1 + (0.02/pKsys(10)))^2 ;
+        wobs(sys.iK3p) = (0.02).^(-2);  % wK3p = 1/(1 + (0.02/pKsys(10)))^2 ;
         yobs(sys.iK3p) = p(K3p);
     end
     if (ismember('KSi',sys.variables))
-        wobs(sys.iKSi) = (0.02).^(-2);  %wKSi = 1/(1 + (0.02/pKsys(11)))^2 ;
+        wobs(sys.iKSi) = (0.02).^(-2);  % wKSi = 1/(1 + (0.02/pKsys(11)))^2 ;
         yobs(sys.iKSi) = p(KSi);
     end
-    
+    % add NH3 and H2S
     
     gun = @(z) grad_limpco2(z,yobs,wobs,sys);
     % test limpco2 gradient and hessian using complex step method
@@ -217,7 +218,8 @@ function z0 = init(yobs,pk,sys);
     
     pK0 = pk(1);  pK1  = pk(2);  pK2  = pk(3);  pKb  = pk(4);   pKw  = pk(5);   pKs  = pk(6);   
     pKF = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKSi = pk(11);  pp2f = pk(12);
-
+    % add pKnh3, pKh2s
+    
     K0 = k(1);  K1  = k(2);  K2  = k(3);  Kb  = k(4);   Kw  = k(5);   Ks  = k(6);   
     KF = k(7);  K1p = k(8);  K2p = k(9);  K3p = k(10);  KSi = k(11);  p2f = k(12);
 
@@ -453,11 +455,11 @@ function [Kh,K1,K2,Kb,Kw,Ks,Kf,K1p,K2p,K3p,Ksi,p2f] = local_K(T,S,P)
     lnK2pfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on K2p
 
     dV = -26.57 + 0.202 .*T - 0.003042.*T.^2;
-    K  = (-4.08 + 0.0714.*T)./1000;
+    Ka  = (-4.08 + 0.0714.*T)./1000;
     lnK3pfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on K3p
 
     dV = -29.48 + 0.1622.*T - 0.002608.*T.^2;
-    K  = -2.84./1000;
+    Ka  = -2.84./1000;
     lnKsifac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on Ksi
 
     % correct all Ks for pressure effects

@@ -16,6 +16,8 @@ ppo4  = zeros(102,1); wppo4  = zeros(102,1);
 ptb   = zeros(102,1); wptb   = zeros(102,1);
 ptf   = zeros(102,1); wptf   = zeros(102,1);
 pts   = zeros(102,1); wpts   = zeros(102,1);
+ptnh3 = zeros(102,1); wptnh4 = zeros(102,1); % ammonia
+pth2s = zeros(102,1); wpth2s = zeros(102,1); % hydrogen sulfide
 
 sal  = zeros(102,1);  esal   = zeros(102,1);
 temp = zeros(102,1);  etemp  = zeros(102,1); 
@@ -39,11 +41,15 @@ for i = 1:102
 
     sal(i) = in(i,1); % salinity
     esal(i) = in(i,10);
+    wsal(i) = (esal(i)).^(-2);
 
     temp(i) = in(i,2); % deg C
     etemp(i) = in(i,11); 
+    wtemp(i) = (etemp(i)).^(-2);
 
     pres(i) = in(i,3); % dbar
+    %epres
+    %wpres
 
     
     psil(i)  = p( in(i,5) * 1e-6 ); % total Si mol/kg
@@ -88,6 +94,8 @@ for i = 1:102
     ets = (tsu - tsl)/2;
     pts(i) = p(ts);
     wpts(i) = w(ts,ets);
+
+    % need to add NH4 and H2S
     
 end
 
@@ -101,6 +109,10 @@ end
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride'};
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate'};
 sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
+%sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
+% 'phosphate','silicate','ammonia'};
+%sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
+% 'phosphate','silicate','ammonia','sulfide'};
 sys = mksys(sys);
 PrintTable(sys);
 n = length(sys.variables);
@@ -117,9 +129,13 @@ for i = 1:102
     
     
     yobs = nan(n,1); wobs = nan(n,1);
+    yobs(sys.iT)  = temp(i); wobs(sys.iT)  = wtemp(i); 
+    yobs(sys.iS)  = sal(i);  wobs(sys.iS)  = wsal(i);
+    yobs(sys.iP)  = pres(i); wobs(sys.iP)  = wpres(i);
     yobs(sys.iTC) = pdic(i); wobs(sys.iTC) = wpdic(i);
     yobs(sys.iTA) = palk(i); wobs(sys.iTA) = wpalk(i);
     yobs(sys.ih)  = pH(i);   wobs(sys.ih)  = wpH(i);
+    
     if (ismember('Kb',sys.variables))
         yobs(sys.iTB) = ptb(i);
         wobs(sys.iTB) = wptb(i);
@@ -140,7 +156,16 @@ for i = 1:102
         yobs(sys.iTSi) = psil(i);
         wobs(sys.iTSi) = wpsil(i);
     end
-        
+    % add NH3 and H2S
+    if (ismember('Knh3',sys.variables))
+        yobs(sys.iTNH3) = pnh3(i);
+        wobs(sys.iTNH3) = wpnh3(i);
+    end
+    if (ismember('Kh2s',sys.variables))
+        yobs(sys.iTH2S) = ph2s(i);
+        wobs(sys.iTH2S) = wph2s(i);
+    end
+
     yobs_backup = yobs;
     wobs_backup = wobs;
 
