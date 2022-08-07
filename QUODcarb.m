@@ -19,10 +19,15 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
     q = sys.q;
     nv = length(sys.variables);
     
-    %[K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f] = local_K(temp,sal,pres);    
+    %[K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,Ksi,p2f] = local_K(temp,sal,pres);    
     %pk = p([K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f]);
 
     [pK,gpK,ggpK] = local_pK(temp,sal,pres);
+    pK0   = pK(1);  pK1  = pK(2);  pK2   = pK(3);  pKb   = pK(4);  
+    pKw   = pK(5);  pKs  = pK(6);  pKf   = pK(7);  pK1p  = pK(8);  
+    pK2p  = pK(9);  pK3p = pK(10);  pKsi  = pK(11); pKnh4 = pK(12); 
+    pKh2s = pK(13); pp2f = pK(14);
+    
 
     %
     % add "observations" for the equilibrium constants 
@@ -30,55 +35,63 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
     if (ismember('K0',sys.variables))
         %wK0 = 1/(1 + (0.002/pKsys(1)))^2 ; % 0.002 error on pK0, taken from literature
         wobs(sys.iK0) = (0.002).^(-2);
-        yobs(sys.iK0) = p(K0);        
+        yobs(sys.iK0) = pK0;        
     end
     if (ismember('K1',sys.variables))
         wobs(sys.iK1) = (0.01).^(-2);  % wK1 = 1/(1 + (0.01/pKsys(2)))^2 ;
-        yobs(sys.iK1) = p(K1);
+        yobs(sys.iK1) = pK1;
     end
     if (ismember('K2',sys.variables))
         wobs(sys.iK2) = (0.02).^(-2);  % wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
-        yobs(sys.iK2) = p(K2);
+        yobs(sys.iK2) = pK2;
     end
     if (ismember('p2f',sys.variables))
         wobs(sys.ip2f) = (0.001).^(-2);
-        yobs(sys.ip2f) = p(p2f);
+        yobs(sys.ip2f) = pp2f;
     end
     if (ismember('Kb',sys.variables))
         wobs(sys.iKb) = (0.01).^(-2);  % wKb = 1/(1 + (0.01/pKsys(4)))^2 ;
-        yobs(sys.iKb) = p(Kb);
+        yobs(sys.iKb) = pKb;
     end
     if (ismember('Kw',sys.variables))
         wobs(sys.iKw) = (0.01).^(-2);  % wKw = 1/(1 + (0.01/pKsys(5)))^2 ;
-        yobs(sys.iKw) = p(Kw);
+        yobs(sys.iKw) = pKw;
     end
     if (ismember('Ks',sys.variables))
         wobs(sys.iKs) = (0.0021).^(-2); % wKs = 1/(1 + (0.0021/pKsys(6)))^2 ;
-        yobs(sys.iKs) = p(Ks);
+        yobs(sys.iKs) = pKs;
     end
     if (ismember('KF',sys.variables))
         wobs(sys.iKF) = (0.02).^(-2);   % wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
-        yobs(sys.iKF) = p(KF);
+        yobs(sys.iKF) = pKf;
     end
     if (ismember('K1p',sys.variables))
         wobs(sys.iK1p) = (0.09).^(-2);  % wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
-        yobs(sys.iK1p) = p(K1p);
+        yobs(sys.iK1p) = pK1p;
     end
     if (ismember('K2p',sys.variables))
         wobs(sys.iK2p) = (0.03).^(-2);  % wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
-        yobs(sys.iK2p) = p(K2p);
+        yobs(sys.iK2p) = pK2p;
     end
     if (ismember('K3p',sys.variables))
         wobs(sys.iK3p) = (0.02).^(-2);  % wK3p = 1/(1 + (0.02/pKsys(10)))^2 ;
-        yobs(sys.iK3p) = p(K3p);
+        yobs(sys.iK3p) = pK3p;
     end
-    if (ismember('KSi',sys.variables))
-        wobs(sys.iKSi) = (0.02).^(-2);  % wKSi = 1/(1 + (0.02/pKsys(11)))^2 ;
-        yobs(sys.iKSi) = p(KSi);
+    if (ismember('Ksi',sys.variables))
+        wobs(sys.iKsi) = (0.02).^(-2);  % wKSi = 1/(1 + (0.02/pKsys(11)))^2 ;
+        yobs(sys.iKsi) = pKsi;
     end
     % add NH3 and H2S
+    if (ismember('Knh3',sys.variables))
+        wobs(sys.iKnh3) = (0.00017).^(-2);  % wKnh3 = 1/(1 + (0.00017/pKsys(11)))^2 ;
+        yobs(sys.iKnh3) = pKnh3;
+    end
+    if (ismember('Kh2s',sys.variables))
+        wobs(sys.iKh2s) = (0.033).^(-2);  % wKh2s = 1/(1 + (0.033/pKsys(11)))^2 ;
+        yobs(sys.iKh2s) = pKh2s;
+    end
     
-    gun = @(z) grad_limpco2(z,yobs,wobs,sys);
+    gun = @(z) grad_limpco2(z,yobs,wobs,gpK,ggpK,sys);
     % test limpco2 gradient and hessian using complex step method
     %{
       
@@ -93,7 +106,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
       keyboard
       end
     %}
-    z0 = init(yobs,pk,sys);
+    z0 = init(yobs,pK,sys);
     tol = 1e-9;
     [z,J,iflag] = newtn(z0,gun,tol);
     
@@ -111,12 +124,12 @@ end
 
 %-----------------------------------------------------------------
 
-function [g,H] = grad_limpco2(z,y,w,sys)
-    [~,g,H] = limpco2(z,y,w,sys);
+function [g,H] = grad_limpco2(z,y,w,gpK,ggpK,sys)
+    [~,g,H] = limpco2(z,y,w,gpK,ggpK,sys);
     g = g(:);
 end
 
-function [f,g,H] = limpco2(z,y,w,sys)
+function [f,g,H] = limpco2(z,y,w,gpK,ggpK,sys)
 % [f,g,H] = limpco2(z,y,w,tc,s,P)
 %
 % Negative log probability for the co2 system  a.k.a. log improbability i.e., limp!
@@ -126,19 +139,21 @@ function [f,g,H] = limpco2(z,y,w,sys)
 %   z  := system state including equilibrium constants and lagrange multipliers
 %   y  := measured components, non-measured components set to NaN
 %   w  := measurement precisions, same size and order as y, non-measured components set to anything, they are ignored
-%
+% gpK  := first order derivatives of pK wrt T,S,P
+% ggpK := second order derivatives of pK wrt T,S,P
+
 % OUTPUT:
 %
 %   f := limp
 %   g := grad f w.r.t. x
 %   h := hessian of f w.r.t. x
-    
+  
     p = sys.p;
     q = sys.q;
     M = sys.M;
     K = sys.K;
     nv = size(M,2);
-    nlam = size(M,1)+size(K,1);
+    nlam = size(M,1)+size(K,1); % + T,S,P ??? -----------------------------------!!!
     if (ismember('sulfate',sys.abr))
         nlam = nlam+1;
     end
@@ -162,8 +177,11 @@ function [f,g,H] = limpco2(z,y,w,sys)
     
     % constraint equations
     
+    %TSP = zeros(3,42);
+    %TSP(1:3) = 1; % and then add this to front of c ??
+    
     if (ismember('hf',sys.variables));
-        c = [  M * q( x ); ...
+        c = [  M * q( x ); ... % + T,S,P?? --------------------------------------!!!
                -K * x;...
                sys.f2t(x) ] ; 
     else
@@ -217,11 +235,11 @@ function z0 = init(yobs,pk,sys);
     k = q(pk);
     
     pK0 = pk(1);  pK1  = pk(2);  pK2  = pk(3);  pKb  = pk(4);   pKw  = pk(5);   pKs  = pk(6);   
-    pKF = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKSi = pk(11);  pp2f = pk(12);
+    pKF = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKsi = pk(11);  pp2f = pk(12);
     % add pKnh3, pKh2s
     
     K0 = k(1);  K1  = k(2);  K2  = k(3);  Kb  = k(4);   Kw  = k(5);   Ks  = k(6);   
-    KF = k(7);  K1p = k(8);  K2p = k(9);  K3p = k(10);  KSi = k(11);  p2f = k(12);
+    KF = k(7);  K1p = k(8);  K2p = k(9);  K3p = k(10);  Ksi = k(11);  p2f = k(12);
 
     y0  = yobs;
     dic = q(yobs(sys.iTC));
@@ -306,11 +324,11 @@ function z0 = init(yobs,pk,sys);
         y0(sys.ipo4)   = p(po4);
     end
     
-    if (ismember('KSi',sys.variables));
+    if (ismember('Ksi',sys.variables));
         TSi = q(yobs(sys.iTSi));
-        siooh3 = TSi / ( 1 + h / KSi );
+        siooh3 = TSi / ( 1 + h / Ksi );
         sioh4  = TSi - siooh3;
-        y0(sys.iKSi)    = pKSi;
+        y0(sys.iKsi)    = pKsi;
         y0(sys.isiooh3) = p(siooh3);
         y0(sys.isioh4)  = p(sioh4);
         y0(sys.iTSi)    = p(TSi);

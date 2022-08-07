@@ -67,7 +67,7 @@ function sys = mksys(sys)
     
     if ismember('silicate',sys.abr)
         % KSi = [h][siooh3]/[sioh4]
-        silicate = {'KSi','TSi', 'siooh3', 'sioh4'};
+        silicate = {'Ksi','TSi', 'siooh3', 'sioh4'};
         nrk = nrk+1; % number of rows
         sys.variables = {sys.variables{:},silicate{:}};
     end
@@ -150,10 +150,10 @@ function sys = mksys(sys)
         row = row+1;
     end
     
-    if (ismember('KF',sys.variables))
+    if (ismember('Kf',sys.variables))
         % KF = [H][F]/[HF]
-        K(row,[iKF, ih, iF, iHF]) = [-1, 1, 1, -1];
-        sys.system{row} = 'KF';
+        K(row,[iKf, ih, iF, iHF]) = [-1, 1, 1, -1];
+        sys.system{row} = 'Kf';
         row = row+1;
     end
     
@@ -178,10 +178,10 @@ function sys = mksys(sys)
         row = row+1;
     end
 
-    if (ismember('KSi',sys.variables))
+    if (ismember('Ksi',sys.variables))
         % KSi = [H][SiO(OH)3]/[Si(OH)4]
-        K(row,[iKSi,ih,isiooh3,isioh4]) = [-1, 1, 1, -1];
-        sys.system{row} = 'KSi';
+        K(row,[iKsi,ih,isiooh3,isioh4]) = [-1, 1, 1, -1];
+        sys.system{row} = 'Ksi';
         row = row+1;
     end
 

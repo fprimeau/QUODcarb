@@ -19,9 +19,9 @@ pts   = zeros(102,1); wpts   = zeros(102,1);
 ptnh3 = zeros(102,1); wptnh4 = zeros(102,1); % ammonia
 pth2s = zeros(102,1); wpth2s = zeros(102,1); % hydrogen sulfide
 
-sal  = zeros(102,1);  esal   = zeros(102,1);
-temp = zeros(102,1);  etemp  = zeros(102,1); 
-pres = zeros(102,1);  epres  = zeros(102,1);
+sal  = zeros(102,1);  esal   = zeros(102,1); wsal  = zeros(102,1);
+temp = zeros(102,1);  etemp  = zeros(102,1); wtemp = zeros(102,1);
+pres = zeros(102,1);  epres  = zeros(102,1); wpres = zeros(102,1);
 
 
 
@@ -127,7 +127,6 @@ fid5 = fopen('hoppe_TA_TC_ph_v2.csv','w'); PrintCSV(sys,fid5);
 
 for i = 1:102
     
-    
     yobs = nan(n,1); wobs = nan(n,1);
     yobs(sys.iT)  = temp(i); wobs(sys.iT)  = wtemp(i); 
     yobs(sys.iS)  = sal(i);  wobs(sys.iS)  = wsal(i);
@@ -152,7 +151,7 @@ for i = 1:102
         yobs(sys.iTP) = ppo4(i);
         wobs(sys.iTP) = wppo4(i);
     end
-    if (ismember('KSi',sys.variables))
+    if (ismember('Ksi',sys.variables))
         yobs(sys.iTSi) = psil(i);
         wobs(sys.iTSi) = wpsil(i);
     end

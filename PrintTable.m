@@ -42,7 +42,8 @@ function fid = PrintTable(sys)
     fprintf('\n');
     % print the acid-base coefficients
     K = sys.K;
-    nr = size(K,1);
+    %nr = size(K,1);
+    nr = size(sys.system);
     for j = 1:nr
         fprintf('%11s',sys.system{j});
         for i = 1:nc

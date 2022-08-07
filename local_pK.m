@@ -99,7 +99,7 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
         [pK0,gpK0] = calc_pK0(TK,S);
 
         % calculate Ks (Dickson 1990a)----------------------------------------
-        function [pKs,gpKs] = calc_pKs(TC,TK,S,IonS,IonS_S,Pbar,RT,RT_T)
+        function [pKs,gpKs] = calc_pKs(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T)
             a = -4276.1; b = 141.328; c = -23.093; d = -13856;
             g = 324.57; h = -47.986; l = 35474; m = -771.54;
             n = 114.723; o = -2698; r = 1776;
@@ -130,13 +130,13 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             %dV = -18.03 + 0.0466.*T + 0.000316.*T.^2;
             %Ka = (-4.53 + 0.09.*T)./1000;
             %lnKsfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on Ks
-            pKsfac = -( (-(aa + bb.*TC + cc.*TC.^2) + 0.5.*...
-                ((dd+gg.*TC)./hh).*Pbar ).* Pbar./RT ) ./ log(10);
-            pKsfac_P = -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
-                (Pbar.*((dd+gg.*TC)/hh)./RT) ) ./ log(10);
-            pKsfac_T = -( (-(bb + 2.*cc.*TC) + 0.5.*Pbar.*(gg./hh) ) .* ...
-                Pbar./RT + ( -(aa + bb.*TC + cc.*TC.^2) + 0.5.* ...
-                Pbar.*((dd+gg.*TC)./hh)).*(-Pbar.*RT_T./RT.^2) ) ...
+            pKsfac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.*...
+                ((dd+gg.*T)./hh).*Pbar ).* Pbar./RT ) ./ log(10);
+            pKsfac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
+                (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
+            pKsfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* ...
+                Pbar./RT + ( -(aa + bb.*T + cc.*T.^2) + 0.5.* ...
+                Pbar.*((dd+gg.*T)./hh)).*(-Pbar.*RT_T./RT.^2) ) ...
                 ./ log(10);
 
             pKs = pKs + pKsfac;
@@ -145,10 +145,10 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpKs = [pKs_T, pKs_S, pKs_P];
         end
-        [pKs,gpKs] = calc_pKs(TC,TK,S,IonS,IonS_S,Pbar,RT,RT_T);
+        [pKs,gpKs] = calc_pKs(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T);
 
         % calculate Kf (Dickson 1979)----------------------------------
-        function [pKf,gpKf] = calc_pKf(TC,TK,S,IonS,IonS_S,Pbar,RT,RT_T)
+        function [pKf,gpKf] = calc_pKf(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T)
             sqrtIonS_S = 0.5*IonS_S/sqrt(IonS);
             a = 1590.2; b = -12.641; c = 1.525;
             %lnKf = 1590.2/TK - 12.641 + 1.525 .* IonS.^0.5;
@@ -162,13 +162,13 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             aa = -9.78; bb = -0.009; cc = -0.000942;
             dd = -3.91; gg = 0.054; hh = 1000;
             %dV = -9.78 - 0.009.*T - 0.000942.*T.^2; %Ka = (-3.91 + 0.054.*T)./1000;
-            pKffac = -( (-(aa + bb.*TC + cc.*TC.^2) + 0.5.* ...
-                ((dd + gg*TC)./hh).*Pbar ) .* Pbar./RT) ./ log(10);
-            pKffac_P =  -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
-                (Pbar.*((dd+gg.*TC)/hh)./RT) ) ./ log(10);
-            pKffac_T = -( (-(bb + 2.*cc.*TC) + 0.5.*Pbar.*(gg./hh) ).* ...
-                Pbar./RT + (-(aa + bb.*TC + cc.*TC.^2) + 0.5.*Pbar.* ...
-                ((dd+gg.*TC)./hh)).*(-Pbar .* RT_T ./ RT.^2)) ./log(10);
+            pKffac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
+                ((dd + gg*T)./hh).*Pbar ) .* Pbar./RT) ./ log(10);
+            pKffac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
+                (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
+            pKffac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ).* ...
+                Pbar./RT + (-(aa + bb.*T + cc.*T.^2) + 0.5.*Pbar.* ...
+                ((dd+gg.*T)./hh)).*(-Pbar .* RT_T ./ RT.^2)) ./log(10);
 
             pKf = pKf + pKffac;
             pKf_T = pKf_T + pKffac_T;
@@ -176,7 +176,7 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpKf = [pKf_T, pKf_S, pKf_P];
         end
-        [pKf,gpKf] = calc_pKf(TC,TK,S,IonS,IonS_S,Pbar,RT,RT_T);
+        [pKf,gpKf] = calc_pKf(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T);
 
         % calculate TF (Riley 1965)--------------------------------------
         TF = (0.000067./18.998).*(S./1.80655); % mol/kg-SW
@@ -195,7 +195,7 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
         %   0.000001475 .* TK) .* S.^2 ;
 
         % calculate Kb (Dickson 1990)----------------------------------
-        function [pKb,gpKb] = calc_pKb(TC, TK,S,Pbar,RT, RT_T)
+        function [pKb,gpKb] = calc_pKb(T,TK,S,Pbar,RT,RT_T)
             a = -8966.9; b = -2890.53; c = -77.942; d = 1.728; g = -0.0996;
             h = 148.0248; l = 137.1942; m = 1.62142; n = -24.4344;
             o = -25.085; r = -0.2474; x = 0.053105;
@@ -217,12 +217,12 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             % pressure correction
             aa = -29.48; bb = 0.1622; cc = -0.002608; dd = -2.84; hh = 1000;
             %dV = -29.48 + 0.1622.*T - 0.002608.*T.^2; % Ka = -2.84./1000;
-            pKbfac = -( (-(aa + bb.*TC + cc.*TC.^2) + 0.5.*(dd./hh).*Pbar)...
+            pKbfac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.*(dd./hh).*Pbar)...
                 .*Pbar./RT)./log(10);
-            pKbfac_P = -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
+            pKbfac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
                 (Pbar.*(dd./hh)./RT) ) ./ log(10);
-            pKbfac_T = -( (-(bb + 2.*cc.*TC) ) .* Pbar  ./ RT + ...
-                (-(aa + bb.*TC + cc.*TC.^2) + 0.5.*Pbar.*(dd./hh)).* ...
+            pKbfac_T = -( (-(bb + 2.*cc.*T) ) .* Pbar  ./ RT + ...
+                (-(aa + bb.*T + cc.*T.^2) + 0.5.*Pbar.*(dd./hh)).* ...
                 (-Pbar .* RT_T ./ RT.^2)) ./log(10);
 
             pKb = pKb + pKbfac;
@@ -231,10 +231,10 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpKb = [pKb_T, pKb_S, pKb_P];
         end
-        [pKb,gpKb] = calc_pKb(TC,TK,S,Pbar,RT,RT_T);
+        [pKb,gpKb] = calc_pKb(T,TK,S,Pbar,RT,RT_T);
 
         % calculate Kw (Millero 1995)--------------------------------
-        function [pKw,gpKw] = calc_pKw(TC,TK,S,Pbar,RT,RT_T)
+        function [pKw,gpKw] = calc_pKw(T,TK,S,Pbar,RT,RT_T)
             a = 148.9802; b = -13847.26; c = -23.6521; d = -5.977;
             g = 118.67; h = 1.0495; l = -0.01615;
             %lnKw = 148.9802 - 13847.26 ./ TK - 23.6521 .* log(TK) + ...
@@ -251,13 +251,13 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             aa = -20.02; bb = 0.1119; cc = -0.001409;
             dd = -5.13; gg = 0.0794; hh = 1000;
             % dV = -20.02 + 0.1119.*TC - 0.001409 .*TC.^2; % Ka = (-5.13 + 0.0794.*TC)./1000;
-            pKwfac = - ( (-(aa + bb.*TC + cc.*TC.^2) + 0.5.*((dd+gg.*TC)./hh)...
+            pKwfac = - ( (-(aa + bb.*T + cc.*T.^2) + 0.5.*((dd+gg.*T)./hh)...
                 .*Pbar).*Pbar./RT ) ./ log(10) ;
-            pKwfac_P =  -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
-                (Pbar.*((dd+gg.*TC)/hh)./RT) ) ./ log(10);
-            pKwfac_T = -( (-(bb + 2.*cc.*TC) + 0.5.*Pbar.*(gg./hh) ) ...
-                .* Pbar ./ RT + (-(aa + bb.*TC + cc.*TC.^2) + ...
-                0.5.*Pbar.*((dd+gg.*TC)./hh)).* ...
+            pKwfac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
+                (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
+            pKwfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) ...
+                .* Pbar ./ RT + (-(aa + bb.*T + cc.*T.^2) + ...
+                0.5.*Pbar.*((dd+gg.*T)./hh)).* ...
                 (-Pbar .* RT_T ./ RT.^2)) ./log(10);
             pKw = pKw + pKwfac;
             pKw_T = pKw_T + pKwfac_T;
@@ -265,10 +265,10 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpKw = [pKw_T,pKw_S,pKw_P];
         end
-        [pKw,gpKw] = calc_pKw(TC,TK,S,Pbar,RT,RT_T);
+        [pKw,gpKw] = calc_pKw(T,TK,S,Pbar,RT,RT_T);
 
         % calculate K1p (Yao and Millero 1995)--------------------------------
-        function [pK1p,gpK1p] = calc_pK1p(TC,TK,S,Pbar,RT,RT_T)
+        function [pK1p,gpK1p] = calc_pK1p(T,TK,S,Pbar,RT,RT_T)
             a = -4576.752; b = 115.54; c = -18.453; d = -106.736;
             g = 0.69171; h = -0.65643; l = -0.01844;
             %lnK1p = -4576.752 ./TK + 115.54 - 18.453 .* log(TK) + ...
@@ -285,13 +285,13 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             aa = -14.51; bb = 0.1211; cc = -0.000321;
             dd = -2.67; gg = 0.0427; hh = 1000;
             % dV = -14.51 + 0.1211.*TC - 0.000321.*TC.^2; % Ka  = (-2.67 + 0.0427.*TC)./1000;
-            pK1pfac = - ( ( -(aa + bb.*TC + cc.*TC.^2) + 0.5.* ...
-                ((dd + gg.*TC)./hh).*Pbar ) .*Pbar./RT ) ./ log(10);
-            pK1pfac_P =  -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
-                (Pbar.*((dd+gg.*TC)/hh)./RT) ) ./ log(10);
-            pK1pfac_T = -( (-(bb + 2.*cc.*TC) + 0.5.*Pbar.*(gg./hh) ) .* ...
-                Pbar./RT + (-(aa + bb.*TC + cc.*TC.^2) + 0.5.* ...
-                Pbar.*((dd+gg.*TC)./hh)).* ...
+            pK1pfac = - ( ( -(aa + bb.*T + cc.*T.^2) + 0.5.* ...
+                ((dd + gg.*T)./hh).*Pbar ) .*Pbar./RT ) ./ log(10);
+            pK1pfac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
+                (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
+            pK1pfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* ...
+                Pbar./RT + (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
+                Pbar.*((dd+gg.*T)./hh)).* ...
                 (-Pbar .* RT_T ./ RT.^2)) ./log(10);
             pK1p = pK1p + pK1pfac;
             pK1p_T = pK1p_T + pK1pfac_T;
@@ -299,10 +299,10 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpK1p = [pK1p_T,pK1p_S,pK1p_P];
         end
-        [pK1p,gpK1p] = calc_pK1p(TC,TK,S,Pbar,RT,RT_T);
+        [pK1p,gpK1p] = calc_pK1p(T,TK,S,Pbar,RT,RT_T);
 
         % calculate K2p (Yao and Millero 1995)--------------------------------
-        function [pK2p,gpK2p] = calc_pK2p(TC,TK,S,Pbar,RT,RT_T)
+        function [pK2p,gpK2p] = calc_pK2p(T,TK,S,Pbar,RT,RT_T)
             a = -8814.715; b = 172.1033; c = -27.927; d = -160.34;
             g = 1.3566; h = 0.37335; l = -0.05778;
             %lnK2p = -8814.715./TK + 172.1033 - 27.927.*log(TK) + ...
@@ -318,12 +318,12 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             aa = -23.12; bb = 0.1758; cc = -0.002647;
             dd = -5.15; gg = 0.09; hh = 1000;
             % dV = -23.12 + 0.1758.*TC - 0.002647.*TC.^2; % Ka  = (-5.15 + 0.09  .*TC)./1000;
-            pK2pfac = -( (-(aa + bb.*TC + cc.*TC.^2) + 0.5.*((dd + gg.*TC)/hh) ...
+            pK2pfac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.*((dd + gg.*T)/hh) ...
                 .*Pbar) .*Pbar./RT ) ./ log(10);
-            pK2pfac_P =  -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
-                (Pbar.*((dd+gg.*TC)/hh)./RT) ) ./ log(10);
-            pK2pfac_T = -( (-(bb + 2.*cc.*TC) + 0.5.*Pbar.*(gg./hh) ) .* Pbar  ./ RT + ...
-                (-(aa + bb.*TC + cc.*TC.^2) + 0.5.*Pbar.*((dd+gg.*TC)./hh)).* ...
+            pK2pfac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
+                (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
+            pK2pfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* Pbar  ./ RT + ...
+                (-(aa + bb.*T + cc.*T.^2) + 0.5.*Pbar.*((dd+gg.*T)./hh)).* ...
                 (-Pbar .* RT_T ./ RT.^2)) ./log(10);
             pK2p = pK2p + pK2pfac;
             pK2p_T = pK2p_T + pK2pfac_T;
@@ -331,10 +331,10 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpK2p = [pK2p_T, pK2p_S, pK2p_P];
         end
-        [pK2p,gpK2p] = calc_pK2p(TC,TK,S,Pbar,RT,RT_T);
+        [pK2p,gpK2p] = calc_pK2p(T,TK,S,Pbar,RT,RT_T);
 
         % calculate K3p (Yao and Millero 1995)--------------------------------
-        function [pK3p,gpK3p] = calc_pK3p(TC,TK,S,Pbar,RT,RT_T)
+        function [pK3p,gpK3p] = calc_pK3p(T,TK,S,Pbar,RT,RT_T)
             a = -3070.75; b = -18.126; c = 17.27039; d = 2.81197;
             g = -44.99486; h = -0.09984;
             %lnK3p = -3070.75./TK - 18.126 + (17.27039./TK + 2.81197).*sqrt(S) + ...
@@ -350,13 +350,13 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             aa = -26.57; bb = 0.202; cc = -0.003042;
             dd = -4.08; gg = 0.0714; hh = 1000;
             % dV = -26.57 + 0.202 .*TC - 0.003042.*TC.^2; %Ka  = (-4.08 + 0.0714.*TC)./1000;
-            pK3pfac = -( (-(aa + bb.*TC + cc.*TC.^2) + 0.5.* ...
-                ((dd + gg.*TC)./hh) .*Pbar) .* Pbar./RT ) ./log(10);
-            pK3pfac_P =  -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
-                (Pbar.*((dd+gg.*TC)/hh)./RT) ) ./ log(10);
-            pK3pfac_T = -( (-(bb + 2.*cc.*TC) + 0.5.*Pbar.*(gg./hh) ) .* ...
-                Pbar  ./ RT + (-(aa + bb.*TC + cc.*TC.^2) + 0.5.* ...
-                Pbar.*((dd+gg.*TC)./hh)).* ...
+            pK3pfac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
+                ((dd + gg.*T)./hh) .*Pbar) .* Pbar./RT ) ./log(10);
+            pK3pfac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
+                (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
+            pK3pfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* ...
+                Pbar  ./ RT + (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
+                Pbar.*((dd+gg.*T)./hh)).* ...
                 (-Pbar .* RT_T ./ RT.^2)) ./log(10);
             pK3p = pK3p + pK3pfac;
             pK3p_T = pK3p_T + pK3pfac_T;
@@ -364,11 +364,11 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpK3p = [pK3p_T, pK3p_S, pK3p_P]; % gradient pK3p
         end
-        [pK3p,gpK3p] = calc_pK3p(TC,TK,S,Pbar,RT,RT_T);
+        [pK3p,gpK3p] = calc_pK3p(T,TK,S,Pbar,RT,RT_T);
         % S and P are fine but T is NOT
 
         % calculate Ksi (Yao and Millero 1995)--------------------------------
-        function [pKsi,gpKsi] = calc_pKsi(TC,TK,S,IonS,IonS_S,Pbar,RT,RT_T)
+        function [pKsi,gpKsi] = calc_pKsi(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T)
             sqrtIonS_S = 0.5*IonS_S/sqrt(IonS);
             a = -8904.2; b = 117.4; c = -19.334; d = -458.79;
             g = 3.5913; h = 188.74; l = -1.5998; m = -12.1652; n = 0.07871;
@@ -388,12 +388,12 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             aa = -29.48; bb = 0.1622; cc = -0.002608;
             dd = -2.84; hh = 1000;
             % dV = -29.48 + 0.1622.*TC - 0.002608.*TC.^2; % Ka  = -2.84./1000;
-            pKsifac = -( (-(aa + bb.*TC + cc.*TC.^2) + 0.5.* ...
+            pKsifac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
                 (dd/hh).*Pbar).*Pbar./RT ) ./ log(10);
-            pKsifac_P = -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
+            pKsifac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
                 (Pbar.*(dd./hh)./RT) ) ./ log(10);
-            pKsifac_T = -( (-(bb + 2.*cc.*TC) ) .* Pbar  ./ RT + ...
-                (-(aa + bb.*TC + cc.*TC.^2) + 0.5.*Pbar.*(dd./hh)).* ...
+            pKsifac_T = -( (-(bb + 2.*cc.*T) ) .* Pbar  ./ RT + ...
+                (-(aa + bb.*T + cc.*T.^2) + 0.5.*Pbar.*(dd./hh)).* ...
                 (-Pbar .* RT_T ./ RT.^2)) ./log(10);
 
             pKsi = pKsi + pKsifac;
@@ -402,10 +402,10 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpKsi = [pKsi_T, pKsi_S, pKsi_P]; % gradient pKsi
         end
-        [pKsi,gpKsi] = calc_pKsi(TC,TK,S,IonS,IonS_S,Pbar,RT,RT_T);
+        [pKsi,gpKsi] = calc_pKsi(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T);
 
         % calculate pK1 (Mehrbach refit by Dickson and Millero 1987)---
-        function [pK1,gpK1] = calc_pK1(TC,TK,S,Pbar,RT,RT_T)
+        function [pK1,gpK1] = calc_pK1(T,TK,S,Pbar,RT,RT_T)
             a = 3670.7; b = -62.008; c = 9.7944; d = -0.0118; g = 0.000116;
             %pK1 = 3670.7 ./TK - 62.008 + 9.7944 .* log(TK) - 0.0118.*S + ...
             %    0.000116.*S.^2;
@@ -416,13 +416,13 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             % pressure correction
             aa = -25.5; bb = 0.1271; dd = -3.08; gg = 0.0877; hh = 1000;
             % dV = -25.5 + 0.1271.*TC; % Ka = (-3.08 + 0.0877 .* TC) ./1000;
-            pK1fac = - ( (-(aa + bb.*TC) + 0.5.*((dd + gg.*TC)./hh) ...
+            pK1fac = - ( (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
                 .*Pbar) .*Pbar./RT ) ./ log(10);
             pK1fac_T = - ( (-(bb) + 0.5.*(gg./hh).*Pbar).*Pbar./RT + ...
-                (-(aa + bb.*TC) + 0.5.*((dd + gg.*TC)./hh) ...
+                (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
                 .*Pbar) .*(-Pbar.*RT_T./(RT.^2))  ) ./ log(10);
-            pK1fac_P = - ( 0.5.*((dd + gg.*TC)./hh) .* Pbar./RT + ...
-                (-(aa + bb.*TC) + 0.5.*((dd + gg.*TC)./hh) ...
+            pK1fac_P = - ( 0.5.*((dd + gg.*T)./hh) .* Pbar./RT + ...
+                (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
                 .*Pbar) .*(1./RT) ) ./ log(10);
             pK1 = pK1 + pK1fac;
             pK1_T = pK1_T + pK1fac_T;
@@ -430,10 +430,10 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpK1 = [pK1_T, pK1_S, pK1_P];
         end
-        [pK1,gpK1] = calc_pK1(TC,TK,S,Pbar,RT,RT_T);
+        [pK1,gpK1] = calc_pK1(T,TK,S,Pbar,RT,RT_T);
 
         % calculate pK2 (Mehrbach refit by Dickson and Millero 1987)---
-        function [pK2,gpK2] = calc_pK2(TC,TK,S,Pbar,RT,RT_T)
+        function [pK2,gpK2] = calc_pK2(T,TK,S,Pbar,RT,RT_T)
             a = 1394.7; b = 4.777; c = -0.0184; d = 0.000118;
             %pK2 = 1394.7./TK + 4.777 - 0.0184.*S + 0.000118.*S.^2;
             pK2 = a./TK + b + c.*S + d.*S.^2;
@@ -443,13 +443,13 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             % pressure correction
             aa = -15.82; bb = -0.0219; dd = 1.13; gg = -0.1475; hh = 1000;
             % dV = -15.82 - 0.0219 .* TC; % Ka = (1.13 - 0.1475 .*TC)./1000;
-            pK2fac = - ( (-(aa + bb.*TC) + 0.5.*((dd + gg.*TC)./hh) .*Pbar) ...
+            pK2fac = - ( (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) .*Pbar) ...
                 .*Pbar./RT ) ./ log(10) ;
             pK2fac_T = - ( (-(bb) + 0.5.*(gg./hh).*Pbar).*Pbar./RT + ...
-                (-(aa + bb.*TC) + 0.5.*((dd + gg.*TC)./hh) ...
+                (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
                 .*Pbar) .*(-Pbar.*RT_T./(RT.^2))  ) ./ log(10);
-            pK2fac_P = - ( 0.5.*((dd + gg.*TC)./hh) .* Pbar./RT + ...
-                (-(aa + bb.*TC) + 0.5.*((dd + gg.*TC)./hh) ...
+            pK2fac_P = - ( 0.5.*((dd + gg.*T)./hh) .* Pbar./RT + ...
+                (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
                 .*Pbar) .*(1./RT) ) ./ log(10);
 
             pK2 = pK2 + pK2fac;
@@ -458,10 +458,10 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpK2 = [pK2_T, pK2_S, pK2_P]; % gradient pK2 with pressure correction
         end
-        [pK2,gpK2] = calc_pK2(TC,TK,S,Pbar,RT,RT_T);
+        [pK2,gpK2] = calc_pK2(T,TK,S,Pbar,RT,RT_T);
 
         % Ammonia, added by Sharp et al 2021, from Clegg and Whitfield (1995)
-        function [pKnh4, gpKnh4] = calc_pKnh4(TC,TK,S,Pbar,RT,RT_T)
+        function [pKnh4, gpKnh4] = calc_pKnh4(T,TK,S,Pbar,RT,RT_T)
             a = 9.44605; b = -2729.33; c = 1/298.15; d = 0.04203362;
             g = -11.24742; h = -13.6416; l = 1.176949; m = -0.02860785;
             n = 545.4834; o = -0.1462507; r = 0.0090226468;
@@ -501,13 +501,13 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             dd = -5.03; gg = 0.0814; hh = 1000;
             % dV = -26.43 + 0.0889*TC - 0.000905*TC^2;
             % Ka = (-5.03 + 0.0814*TC)/1000;
-            pKnh4fac = - ( ( -(aa + bb.*TC + cc.*TC.^2) + 0.5.*...
-                ((dd + gg.*TC)./hh).*Pbar ) .*Pbar./RT ) ./ log(10);
-            pKnh4fac_P = -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
-                (Pbar.*((dd+gg.*TC)/hh)./RT) ) ./ log(10);
-            pKnh4fac_T = -( (-(bb + 2.*cc.*TC) + 0.5.*Pbar.*(gg./hh) ) ...
-                .* Pbar  ./ RT + (-(aa + bb.*TC + cc.*TC.^2) + ...
-                0.5.*Pbar.*((dd+gg.*TC)./hh)).* ...
+            pKnh4fac = - ( ( -(aa + bb.*T + cc.*T.^2) + 0.5.*...
+                ((dd + gg.*T)./hh).*Pbar ) .*Pbar./RT ) ./ log(10);
+            pKnh4fac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
+                (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
+            pKnh4fac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) ...
+                .* Pbar  ./ RT + (-(aa + bb.*T + cc.*T.^2) + ...
+                0.5.*Pbar.*((dd+gg.*T)./hh)).* ...
                 (-Pbar .* RT_T ./ RT.^2)) ./log(10);
             pKnh4 = pKnh4 + pKnh4fac;
             pKnh4_T = pKnh4_T + pKnh4fac_T;
@@ -515,10 +515,10 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpKnh4 = [pKnh4_T, pKnh4_S, pKnh4_P];
         end
-        [pKnh4,gpKnh4] = calc_pKnh4(TC,TK,S,Pbar,RT,RT_T);
+        [pKnh4,gpKnh4] = calc_pKnh4(T,TK,S,Pbar,RT,RT_T);
 
         % hydrogen sulfide, added by Sharp et al 2021, from Millero et al (1988)
-        function [pKh2s,gpKh2s] = calc_pKh2s(TC,TK,S,Pbar,RT,RT_T)
+        function [pKh2s,gpKh2s] = calc_pKh2s(T,TK,S,Pbar,RT,RT_T)
             a = 225.838; b = -13275.3; c = -34.6435;
             d = 0.3449; h = -0.0274;
             % lnKh2s = (225.838 - 13275.3/TK - 34.6435*log(TK) + ...
@@ -532,13 +532,13 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
             aa = -11.07; bb = -0.009; cc = -0.000942;
             dd = -2.89; gg = 0.054; hh = 1000;
             % dV = -11.07 - 0.009*TC - 0.000942*TC^2; Ka = (-2.89 + 0.054*TC)/1000;
-            pKh2sfac = - ( ( -(aa + bb.*TC + cc.*TC.^2) + 0.5.*...
-                ((dd + gg.*TC)./hh).*Pbar ) .* Pbar./RT ) ./ log(10);
-            pKh2sfac_P = -( (-(aa + bb.*TC + cc.*TC.^2)./RT ) + ...
-                (Pbar.*((dd+gg.*TC)/hh)./RT) ) ./ log(10);
-            pKh2sfac_T = -( (-(bb + 2.*cc.*TC) + 0.5.*Pbar.*(gg./hh) ) .* ...
-                Pbar  ./ RT + (-(aa + bb.*TC + cc.*TC.^2) + 0.5.* ...
-                Pbar.*((dd+gg.*TC)./hh)).* ...
+            pKh2sfac = - ( ( -(aa + bb.*T + cc.*T.^2) + 0.5.*...
+                ((dd + gg.*T)./hh).*Pbar ) .* Pbar./RT ) ./ log(10);
+            pKh2sfac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
+                (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
+            pKh2sfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* ...
+                Pbar  ./ RT + (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
+                Pbar.*((dd+gg.*T)./hh)).* ...
                 (-Pbar .* RT_T ./ RT.^2)) ./log(10);
 
             pKh2s = pKh2s + pKh2sfac;
@@ -547,7 +547,7 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 
             gpKh2s = [pKh2s_T, pKh2s_S, pKh2s_P];
         end
-        [pKh2s,gpKh2s] = calc_pKh2s(TC,TK,S,Pbar,RT,RT_T);
+        [pKh2s,gpKh2s] = calc_pKh2s(T,TK,S,Pbar,RT,RT_T);
 
         % corrections for pressure sources------------------------------------
         % Millero 1995, 1992, 1982, 1979; Takahashi et al. 1982;
