@@ -49,7 +49,7 @@ for i = 1:102
 
     pres(i) = in(i,3); % dbar
     %epres
-    %wpres
+    wpres(i) = (0.001).^(-2);
 
     
     psil(i)  = p( in(i,5) * 1e-6 ); % total Si mol/kg

@@ -25,13 +25,14 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
     [pK,gpK,ggpK] = local_pK(temp,sal,pres);
     pK0   = pK(1);  pK1  = pK(2);  pK2   = pK(3);  pKb   = pK(4);  
     pKw   = pK(5);  pKs  = pK(6);  pKf   = pK(7);  pK1p  = pK(8);  
-    pK2p  = pK(9);  pK3p = pK(10);  pKsi  = pK(11); pKnh4 = pK(12); 
+    pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
     pKh2s = pK(13); pp2f = pK(14);
     
 
     %
     % add "observations" for the equilibrium constants 
     %
+    
     if (ismember('K0',sys.variables))
         %wK0 = 1/(1 + (0.002/pKsys(1)))^2 ; % 0.002 error on pK0, taken from literature
         wobs(sys.iK0) = (0.002).^(-2);
@@ -82,16 +83,16 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
         yobs(sys.iKsi) = pKsi;
     end
     % add NH3 and H2S
-    if (ismember('Knh3',sys.variables))
-        wobs(sys.iKnh3) = (0.00017).^(-2);  % wKnh3 = 1/(1 + (0.00017/pKsys(11)))^2 ;
-        yobs(sys.iKnh3) = pKnh3;
+    if (ismember('Knh4',sys.variables))
+        wobs(sys.iKnh4) = (0.00017).^(-2);  % wKnh4 = 1/(1 + (0.00017/pKsys(11)))^2 ;
+        yobs(sys.iKnh4) = pKnh4;
     end
     if (ismember('Kh2s',sys.variables))
         wobs(sys.iKh2s) = (0.033).^(-2);  % wKh2s = 1/(1 + (0.033/pKsys(11)))^2 ;
         yobs(sys.iKh2s) = pKh2s;
     end
     
-    gun = @(z) grad_limpco2(z,yobs,wobs,gpK,ggpK,sys);
+    gun = @(z) grad_limpco2(z,yobs,wobs,pK,gpK,ggpK,sys);
     % test limpco2 gradient and hessian using complex step method
     %{
       
@@ -124,12 +125,12 @@ end
 
 %-----------------------------------------------------------------
 
-function [g,H] = grad_limpco2(z,y,w,gpK,ggpK,sys)
-    [~,g,H] = limpco2(z,y,w,gpK,ggpK,sys);
+function [g,H] = grad_limpco2(z,y,w,pK,gpK,ggpK,sys)
+    [~,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys);
     g = g(:);
 end
 
-function [f,g,H] = limpco2(z,y,w,gpK,ggpK,sys)
+function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
 % [f,g,H] = limpco2(z,y,w,tc,s,P)
 %
 % Negative log probability for the co2 system  a.k.a. log improbability i.e., limp!
@@ -153,7 +154,7 @@ function [f,g,H] = limpco2(z,y,w,gpK,ggpK,sys)
     M = sys.M;
     K = sys.K;
     nv = size(M,2);
-    nlam = size(M,1)+size(K,1); % + T,S,P ??? -----------------------------------!!!
+    nlam = size(M,1)+size(K,1);
     if (ismember('sulfate',sys.abr))
         nlam = nlam+1;
     end
@@ -171,22 +172,89 @@ function [f,g,H] = limpco2(z,y,w,gpK,ggpK,sys)
     % Build a matrix that Picks out the measured components of x
     I = eye(nv); % for chain rule
     
-    
-    P = I(i,:); % picking/pick out the measured ones
-    e = P*x - y;
+    PP = I(i,:); % picking/pick out the measured ones
+    e = PP*x - y;
+
+    % volumn vector with zeros and pK's at end
+    nrk = size(K,1)./2 ;
+    zpK = zeros(2*nrk,1);
+    zgpK = zeros(2*nrk,length(sys.variables));
+    zggpK = zeros(length(sys.variables),length(sys.variables));
+
+    % pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
+    %       (1)  (2) (3) (4) (5) (6) (7) (8)  (9)  (10) (11)  (12) (13) (14)
+    if (ismember('K0',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(1);
+        zgpK(nrk,1:3)   = gpK(1,1:3); % ∂T, ∂S, ∂P
+        %zggpK(nrk,[1:3,5:6,9]) = ggpK(1,1:6); % not sure yet
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(2);
+        zgpK(nrk,1:3)   = gpK(2,1:3);
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(3);
+        zgpK(nrk,1:3)   = gpK(3,1:3);
+    end
+    if (ismember('Kb',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(4);
+        zgpK(nrk,1:3)   = gpK(4,1:3);
+    end
+    if (ismember('Kw',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(5);
+        zgpK(nrk,1:3)   = gpK(5,1:3);
+    end
+    if (ismember('Ks',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(6);
+        zgpK(nrk,1:3)   = gpK(6,1:3);
+    end
+    if (ismember('Kf',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(7);
+        zgpK(nrk,1:3)   = gpK(7,1:3);
+    end
+    if (ismember('K1p',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(8);
+        zgpK(nrk,1:3)   = gpK(8,1:3);
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(9);
+        zgpK(nrk,1:3)   = gpK(9,1:3);
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(10);
+        zgpK(nrk,1:3)   = gpK(10,1:3);
+    end
+    if (ismember('Ksi',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(11);
+        zgpK(nrk,1:3)   = gpK(11,1:3);
+    end
+    if (ismember('Knh4',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(12);
+        zgpK(nrk,1:3)   = gpK(12,1:3);
+    end
+    if (ismember('Kh2s',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(13);
+        zgpK(nrk,1:3)   = gpK(13,1:3);
+    end
+    if (ismember('p2f',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(14);
+        zgpK(nrk,1:3)   = gpK(14,1:3);
+    end
     
     % constraint equations
-    
-    %TSP = zeros(3,42);
-    %TSP(1:3) = 1; % and then add this to front of c ??
-    
-    if (ismember('hf',sys.variables));
-        c = [  M * q( x ); ... % + T,S,P?? --------------------------------------!!!
-               -K * x;...
+    if (ismember('hf',sys.variables))
+        c = [  M * q( x ); ... 
+               (-K * x) - zpK;...
                sys.f2t(x) ] ; 
     else
         c = [  M * q( x ); ...
-               -K * x  ] ; 
+               (-K * x) - zpK  ] ; 
     end
     
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers
@@ -198,30 +266,35 @@ function [f,g,H] = limpco2(z,y,w,gpK,ggpK,sys)
             gf2t = zeros(1,nv);
             gf2t(1,[sys.ih, sys.iKs, sys.iTS, sys.ihf]) = sys.gf2t(x);
             dcdx = [ M * diag( sys.dqdx( x ) ); ...
-                     -K;...
+                     (-K - zgpK) ;...
                      gf2t ]; % constraint eqns wrt -log10(concentrations)
         else
             dcdx = [ M * diag( sys.dqdx( x ) ); ...
-                     -K ]; % constraint eqns wrt -log10(concentrations)
+                     (-K - zgpK) ]; % c'
         end    
-        g = [ e.' * W * P +  lam.' * dcdx ,  c.' ];
+        g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
         
     end
+    
     if ( nargout > 2 ) % compute the Hessian
-        
         ddq =  diag( sys.d2qdx2( x ) ); % q"
         [nr,nc] = size(M);
         gg = zeros(nc,1);
         for row = 1:nr
             gg = gg + lam(row)*diag(M(row,:))*ddq;
         end
+        nr = size(K,1);
+        for row = 1:nr
+            gg = gg + lam(row)*(-zggpK(row,:)); % ggpK (not right-MF)
+        end
+        keyboard
         if (ismember('hf',sys.variables))
             dhfdx2 = zeros(nc,nc);
             ii = [sys.iKs,sys.iTS];
             dhfdx2(ii,ii) = sys.ggf2t(x);
             gg = gg + lam(nr+1)*dhfdx2;
         end
-        H = [  P.'*W*P + gg , dcdx.'  ; ...
+        H = [  PP.'*W*PP + gg , dcdx.'  ; ...
                dcdx         , zeros(nlam)  ];
     end
 end
