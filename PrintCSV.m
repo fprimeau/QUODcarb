@@ -85,17 +85,27 @@ function out = PrintCSV(varargin)
         else
             ipK3p = 0;
         end            
-        if (ismember('KSi',sys.variables))
-            ipKSi = sys.iKSi;
+        if (ismember('Ksi',sys.variables))
+            ipKsi = sys.iKsi;
         else
-            ipKSi = 0;
-        end      
+            ipKsi = 0;
+        end  
+        if (ismember('Knh3',sys.variables))
+            ipKnh3 = sys.iKnh4;
+        else
+            ipKnh3 = 0;
+        end
+        if (ismember('Kh2s',sys.variables))
+            ipKh2s = sys.iKh2s;
+        else
+            ipKh2s = 0;
+        end
         
         nv = length(sys.variables);
         fprintf(fid,'%s, ','iflag');
         for i = 1:nv
             if ( ( i == iph  ) | ( i == iphf ) | ( i == ipK0 )  | ( i == ipK1 )  | ( i == ipK2 )  | ( i == ipKw ) | ( i == ipKb) | ...
-                 ( i == ipKS ) | ( i == ipKF ) | ( i == ipK1p ) | ( i == ipK2p ) | ( i == ipK3p ) | ( i == ipKSi ) )
+                 ( i == ipKS ) | ( i == ipKF ) | ( i == ipK1p ) | ( i == ipK2p ) | ( i == ipK3p ) | ( i == ipKsi )|(i == ipKnh3)|(i==ipKh2s) )
                 fprintf(fid, 'obs_p%s, sig_obs_p%s, ',sys.variables{i},sys.variables{i});
                 fprintf(fid, 'post_p%s, sig_post_p%s, ',sys.variables{i},sys.variables{i});
             else
@@ -107,7 +117,8 @@ function out = PrintCSV(varargin)
         fprintf(fid,'%s, ','0=good');
         for i = 1:nv
             if ( ( i == iph )  | ( i == iphf ) | ( i == ipK0 )  | ( i == ipK1 )  | ( i == ipK2 )  | ( i == ipKw ) | ( i == ipKb) | ...
-                 ( i == ipKS ) | ( i == ipKF ) | ( i == ipK1p ) | ( i == ipK2p ) | ( i == ipK3p ) | ( i == ipKSi ) | ( i == ip2f) )
+                 ( i == ipKS ) | ( i == ipKF ) | ( i == ipK1p ) | ( i == ipK2p ) | ( i == ipK3p ) | ( i == ipKsi ) | ...
+                 ( i == ipKnh3 ) | ( i == ipKh2s ) | ( i == ip2f) )
                 fprintf(fid, '%s, %s, ', ' ', ' ');
                 fprintf(fid, '%s, %s, ', ' ', ' ');
             elseif ( ( i == ipco2 ) | ( i == ifco2) )
@@ -200,12 +211,21 @@ function out = PrintCSV(varargin)
         else
             iK3p = 0;
         end            
-        if (ismember('KSi',sys.variables))
-            iKSi = sys.iKSi;
+        if (ismember('Ksi',sys.variables))
+            iKsi = sys.iKsi;
         else
-            iKSi = 0;
+            iKsi = 0;
         end      
-        
+        if (ismember('Knh3',sys.variables))
+            iKnh3 = sys.iKnh4;
+        else
+            iKnh3 = 0;
+        end
+        if (ismember('Kh2s',sys.variables))
+            iKh2s = sys.iKh2s;
+        else
+            iKh2s = 0;
+        end
         
         p = sys.p; % -log10(x)
         q = sys.q; % 10^(-x)
@@ -214,7 +234,7 @@ function out = PrintCSV(varargin)
         fprintf(fid,'%i, ',iflag);
         for i = 1:nv
             if ( ( i == ih ) | ( i == ihf ) | ( i == iK0 )  | ( i == iK1 )  | ( i == iK2  ) | ( i == iKw )  | ( i == iKb ) | ...
-                 ( i == iKS) | ( i == iKF ) | ( i == iK1p ) | ( i == iK2p ) | ( i == iK3p ) | ( i == iKSi ) )
+                 ( i == iKS) | ( i == iKF ) | ( i == iK1p ) | ( i == iK2p ) | ( i == iK3p ) | ( i == iKsi )|(i == iKnh3)|(i==iKh2s) )
                 conv = 1;
                 fprintf(fid, '%f, %f, ', conv * yobs(i), conv / sqrt( wobs(i) ) );
                 fprintf(fid, '%f, %f, ', conv * y(i), conv / sqrt( w(i) ) );
