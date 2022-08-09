@@ -23,7 +23,8 @@ function sys = mksys(sys)
         % K0 = [co2st]/fco2   
         % K1 = [h][hco3]/[co2st]
         % K2 = [h][co3]/[hco3]
-        carbonate =  { 'K0','K1','K2','TC','TA','fco2', 'co2st', 'hco3', 'co3', 'h', 'p2f', 'pco2'};
+        carbonate =  { 'T','S','P','K0','K1','K2','TC','TA','fco2', ...
+                        'co2st', 'hco3', 'co3', 'h', 'p2f', 'pco2'};
         sys.variables = carbonate;
         nrk = 4; % number of rows
         if ismember('water',sys.abr)
@@ -66,16 +67,16 @@ function sys = mksys(sys)
     
     if ismember('silicate',sys.abr)
         % KSi = [h][siooh3]/[sioh4]
-        silicate = {'KSi','TSi', 'siooh3', 'sioh4'};
+        silicate = {'Ksi','TSi', 'siooh3', 'sioh4'};
         nrk = nrk+1; % number of rows
         sys.variables = {sys.variables{:},silicate{:}};
     end
     
-    if ismember('ammonium',sys.abr)
+    if ismember('ammonia',sys.abr)
         % Knh3 = [h][nh3]/[nh4]
-        ammonium = {'Knh3','TNH3', 'nh3', 'nh4'};
+        ammonia = {'Knh4','TNH3', 'nh3', 'nh4'};
         nrk = nrk+1; % number of rows
-        sys.variables = {sys.variables{:},ammonium{:}};
+        sys.variables = {sys.variables{:},ammonia{:}};
     end
     
     if ismember('sulfide',sys.abr)
@@ -97,104 +98,157 @@ function sys = mksys(sys)
 
     
     %
-    K = zeros(nrk,nc);
+    K = zeros(2.*nrk,nc);
     %
-    row = 1;
+    row = 0;
     if (ismember('K0',sys.variables))
+        row = row+1;
         % K0 = [CO2*]/fCO2 ==> -pK0 + pco2st - pfco2 = 0 
         K(row,[iK0,ico2st,ifco2]) = [-1, 1, -1];
         sys.system{row} = 'K0';
-        row = row+1;
     end
     
     if (ismember('K1',sys.variables))
+        row = row+1;
         % K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pfco2 = 0
         K(row,[iK1,ih,ihco3,ico2st]) = [-1, 1, 1, -1];
         sys.system{row} = 'K1';
-        row = row+1;
     end
     
     if (ismember('K2',sys.variables))
+        row = row+1;
         % K2 = [CO3][H]/[HCO3]
         K(row,[iK2,ih,ico3,ihco3]) = [-1, 1, 1, -1];
         sys.system{row} = 'K2';
-        row = row+1;
     end
 
     if (ismember('p2f', sys.variables))
+        row = row+1;
         %fco2 = pco2*p2f;
         K(row,[ifco2,ipco2,ip2f]) = [1 -1 -1];
         sys.system{row} = 'p2f';
-        row = row+1;
     end
     
     if (ismember('Kw',sys.variables))
+        row = row+1;
         % Kw = [OH][H]
         K(row,[iKw,ih,ioh]) = [-1, 1, 1];
         sys.system{row} = 'Kw';
-        row = row+1;
     end
     
-    if (ismember('Kb',sys.variables));
+    if (ismember('Kb',sys.variables))
+        row = row+1;
         % Kb = [H][BOH4]/[BOH3]
         K(row,[iKb,ih,iboh4,iboh3]) = [-1, 1, 1, -1];
         sys.system{row} = 'Kb';
-        row = row+1;
     end
     
-    if (ismember('Ks',sys.variables));
+    if (ismember('Ks',sys.variables))
+        row = row+1;
         % KS  = [H]F[SO4]/[HSO4]
         K(row,[iKs,ihf,iso4,ihso4]) = [-1, 1, 1, -1];
         sys.system{row} = 'KS';
-        row = row+1;
     end
     
-    if (ismember('KF',sys.variables))
-        % KF = [H][F]/[HF]
-        K(row,[iKF, ih, iF, iHF]) = [-1, 1, 1, -1];
-        sys.system{row} = 'KF';
+    if (ismember('Kf',sys.variables))
         row = row+1;
+        % KF = [H][F]/[HF]
+        K(row,[iKf, ih, iF, iHF]) = [-1, 1, 1, -1];
+        sys.system{row} = 'Kf';
     end
     
     if (ismember('K1p',sys.variables))
+        row = row+1;
         % K1p = [H][H2PO4]/[H3PO4]
         K(row,[iK1p,ih,ih2po4,ih3po4]) = [-1, 1, 1, -1];
         sys.system{row} = 'K1p';
-        row = row+1;
     end
     
     if (ismember('K2p',sys.variables))
+        row = row+1;
         % K2p = [H][HPO4]/[H2PO4]
         K(row,[iK2p,ih,ihpo4,ih2po4]) = [-1, 1, 1, -1];
         sys.system{row} = 'K2p';
-        row = row+1;
     end
 
     if (ismember('K3p',sys.variables))
+        row = row+1;
         % K3p = [H][PO4]/[HPO4]
         K(row,[iK3p,ih,ipo4,ihpo4]) = [-1, 1, 1, -1];
         sys.system{row} = 'K3p';
-        row = row+1;
     end
 
-    if (ismember('KSi',sys.variables))
+    if (ismember('Ksi',sys.variables))
+        row = row+1;
         % KSi = [H][SiO(OH)3]/[Si(OH)4]
-        K(row,[iKSi,ih,isiooh3,isioh4]) = [-1, 1, 1, -1];
-        sys.system{row} = 'KSi';
-        row = row+1;
+        K(row,[iKsi,ih,isiooh3,isioh4]) = [-1, 1, 1, -1];
+        sys.system{row} = 'Ksi';
     end
 
-    if (ismember('Knh3',sys.variables))
-        % Knh3 = [H][NH3]/[NH4]
-        K(row,[iKnh3,ih,inh3,inh4]) = [-1, 1, 1, -1];
-        sys.system{row} = 'Knh3';
+    if (ismember('Knh4',sys.variables))
         row = row+1;
+        % Knh4 = [H][NH3]/[NH4+]
+        K(row,[iKnh4,ih,inh3,inh4]) = [-1, 1, 1, -1];
+        sys.system{row} = 'Knh4';
     end
 
     if (ismember('Kh2s',sys.variables))
+        row = row+1;
         % Kh2s = [H][HS]/[H2S]
         K(row,[iKh2s,ih,ihs,ih2s]) = [-1, 1, 1, -1];
         sys.system{row} = 'Kh2s';
+    end
+
+    % add rows of pK = 1 to K matrix
+    % pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
+    %       (1)  (2) (3) (4) (5) (6) (7) (8)  (9)  (10) (11)  (12) (13) (14)
+    if (ismember('K0',sys.variables))
+        row = row+1;
+        K(row,iK0) = 1; % K0
+        row = row+1;
+        K(row,iK1) = 1; % K1
+        row = row+1;
+        K(row,iK2) = 1; % K2
+    end
+    if (ismember('Kb',sys.variables))
+        row = row+1;
+        K(row,iKb) = 1; % Kb
+    end
+    if (ismember('Kw',sys.variables))
+        row = row+1;
+        K(row,iKw) = 1; % Kw
+    end
+    if (ismember('Ks',sys.variables))
+        row = row+1;
+        K(row,iKs) = 1; % Ks
+    end
+    if (ismember('Kf',sys.variables))
+        row = row+1;
+        K(row,iKf) = 1; % Kf
+    end
+    if (ismember('K1p',sys.variables))
+        row = row+1;
+        K(row,iK1p) = 1; % K1p
+        row = row+1;
+        K(row,iK2p) = 1; % K2p
+        row = row+1;
+        K(row,iK3p) = 1; % K3p
+    end
+    if (ismember('Ksi',sys.variables))
+        row = row+1;
+        K(row,iKsi) = 1; % Ksi
+    end
+    if (ismember('Knh4',sys.variables))
+        row = row+1;
+        K(row,iKnh4) = 1; % Knh4
+    end
+    if (ismember('Kh2s',sys.variables))
+        row = row+1;
+        K(row,iKh2s) = 1; % Kh2s
+    end
+    if (ismember('p2f',sys.variables))
+        row = row+1;
+        K(row,ip2f) = 1; % p2f
     end
 
     % "mass" conservation" equations
@@ -292,9 +346,9 @@ function sys = mksys(sys)
         row = row+1;
     end
 
-    % Total ammonium
+    % Total ammonia
     if (ismember('TNH3',sys.variables))
-        sys.mass{row} = 'amonia';
+        sys.mass{row} = 'ammonia';
         M(row,[iTNH3,inh4,inh3]) = [1, -1, -1];
         M(2,inh3) = -1; % alk
         row = row+1;

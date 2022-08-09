@@ -19,65 +19,80 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
     q = sys.q;
     nv = length(sys.variables);
     
-    [K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f] = local_K(temp,sal,pres);    
-    pk = p([K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f]);
+    %[K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,Ksi,p2f] = local_K(temp,sal,pres);    
+    %pk = p([K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f]);
 
+    [pK,gpK,ggpK] = local_pK(temp,sal,pres);
+    pK0   = pK(1);  pK1  = pK(2);  pK2   = pK(3);  pKb   = pK(4);  
+    pKw   = pK(5);  pKs  = pK(6);  pKf   = pK(7);  pK1p  = pK(8);  
+    pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
+    pKh2s = pK(13); pp2f = pK(14);
+    
 
     %
     % add "observations" for the equilibrium constants 
     %
+    
     if (ismember('K0',sys.variables))
         %wK0 = 1/(1 + (0.002/pKsys(1)))^2 ; % 0.002 error on pK0, taken from literature
         wobs(sys.iK0) = (0.002).^(-2);
-        yobs(sys.iK0) = p(K0);        
+        yobs(sys.iK0) = pK0;        
     end
     if (ismember('K1',sys.variables))
-        wobs(sys.iK1) = (0.01).^(-2);  %wK1 = 1/(1 + (0.01/pKsys(2)))^2 ;
-        yobs(sys.iK1) = p(K1);
+        wobs(sys.iK1) = (0.01).^(-2);  % wK1 = 1/(1 + (0.01/pKsys(2)))^2 ;
+        yobs(sys.iK1) = pK1;
     end
     if (ismember('K2',sys.variables))
-        wobs(sys.iK2) = (0.02).^(-2);  %wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
-        yobs(sys.iK2) = p(K2);
+        wobs(sys.iK2) = (0.02).^(-2);  % wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
+        yobs(sys.iK2) = pK2;
     end
     if (ismember('p2f',sys.variables))
-        wobs(sys.ip2f) = (0.001).^(-2); % check against co2sys and Weiss paper etc.
-        yobs(sys.ip2f) = p(p2f);
+        wobs(sys.ip2f) = (0.001).^(-2);
+        yobs(sys.ip2f) = pp2f;
     end
     if (ismember('Kb',sys.variables))
-        wobs(sys.iKb) = (0.01).^(-2);  %wKb = 1/(1 + (0.01/pKsys(4)))^2 ;
-        yobs(sys.iKb) = p(Kb);
+        wobs(sys.iKb) = (0.01).^(-2);  % wKb = 1/(1 + (0.01/pKsys(4)))^2 ;
+        yobs(sys.iKb) = pKb;
     end
     if (ismember('Kw',sys.variables))
-        wobs(sys.iKw) = (0.01).^(-2);  %wKw = 1/(1 + (0.01/pKsys(5)))^2 ;
-        yobs(sys.iKw) = p(Kw);
+        wobs(sys.iKw) = (0.01).^(-2);  % wKw = 1/(1 + (0.01/pKsys(5)))^2 ;
+        yobs(sys.iKw) = pKw;
     end
     if (ismember('Ks',sys.variables))
-        wobs(sys.iKs) = (0.0021).^(-2); %wKs = 1/(1 + (0.0021/pKsys(6)))^2 ;
-        yobs(sys.iKs) = p(Ks);
+        wobs(sys.iKs) = (0.0021).^(-2); % wKs = 1/(1 + (0.0021/pKsys(6)))^2 ;
+        yobs(sys.iKs) = pKs;
     end
     if (ismember('KF',sys.variables))
-        wobs(sys.iKF) = (0.02).^(-2);   %wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
-        yobs(sys.iKF) = p(KF);
+        wobs(sys.iKF) = (0.02).^(-2);   % wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
+        yobs(sys.iKF) = pKf;
     end
     if (ismember('K1p',sys.variables))
-        wobs(sys.iK1p) = (0.09).^(-2);  %wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
-        yobs(sys.iK1p) = p(K1p);
+        wobs(sys.iK1p) = (0.09).^(-2);  % wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
+        yobs(sys.iK1p) = pK1p;
     end
     if (ismember('K2p',sys.variables))
-        wobs(sys.iK2p) = (0.03).^(-2);  %wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
-        yobs(sys.iK2p) = p(K2p);
+        wobs(sys.iK2p) = (0.03).^(-2);  % wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
+        yobs(sys.iK2p) = pK2p;
     end
     if (ismember('K3p',sys.variables))
-        wobs(sys.iK3p) = (0.02).^(-2);  %wK3p = 1/(1 + (0.02/pKsys(10)))^2 ;
-        yobs(sys.iK3p) = p(K3p);
+        wobs(sys.iK3p) = (0.02).^(-2);  % wK3p = 1/(1 + (0.02/pKsys(10)))^2 ;
+        yobs(sys.iK3p) = pK3p;
     end
-    if (ismember('KSi',sys.variables))
-        wobs(sys.iKSi) = (0.02).^(-2);  %wKSi = 1/(1 + (0.02/pKsys(11)))^2 ;
-        yobs(sys.iKSi) = p(KSi);
+    if (ismember('Ksi',sys.variables))
+        wobs(sys.iKsi) = (0.02).^(-2);  % wKSi = 1/(1 + (0.02/pKsys(11)))^2 ;
+        yobs(sys.iKsi) = pKsi;
+    end
+    % add NH3 and H2S
+    if (ismember('Knh4',sys.variables))
+        wobs(sys.iKnh4) = (0.00017).^(-2);  % wKnh4 = 1/(1 + (0.00017/pKsys(11)))^2 ;
+        yobs(sys.iKnh4) = pKnh4;
+    end
+    if (ismember('Kh2s',sys.variables))
+        wobs(sys.iKh2s) = (0.033).^(-2);  % wKh2s = 1/(1 + (0.033/pKsys(11)))^2 ;
+        yobs(sys.iKh2s) = pKh2s;
     end
     
-    
-    gun = @(z) grad_limpco2(z,yobs,wobs,sys);
+    gun = @(z) grad_limpco2(z,yobs,wobs,pK,gpK,ggpK,sys);
     % test limpco2 gradient and hessian using complex step method
     %{
       
@@ -92,7 +107,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
       keyboard
       end
     %}
-    z0 = init(yobs,pk,sys);
+    z0 = init(yobs,pK,sys);
     tol = 1e-9;
     [z,J,iflag] = newtn(z0,gun,tol);
     
@@ -110,12 +125,12 @@ end
 
 %-----------------------------------------------------------------
 
-function [g,H] = grad_limpco2(z,y,w,sys)
-    [~,g,H] = limpco2(z,y,w,sys);
+function [g,H] = grad_limpco2(z,y,w,pK,gpK,ggpK,sys)
+    [~,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys);
     g = g(:);
 end
 
-function [f,g,H] = limpco2(z,y,w,sys)
+function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
 % [f,g,H] = limpco2(z,y,w,tc,s,P)
 %
 % Negative log probability for the co2 system  a.k.a. log improbability i.e., limp!
@@ -125,13 +140,15 @@ function [f,g,H] = limpco2(z,y,w,sys)
 %   z  := system state including equilibrium constants and lagrange multipliers
 %   y  := measured components, non-measured components set to NaN
 %   w  := measurement precisions, same size and order as y, non-measured components set to anything, they are ignored
-%
+% gpK  := first order derivatives of pK wrt T,S,P
+% ggpK := second order derivatives of pK wrt T,S,P
+
 % OUTPUT:
 %
 %   f := limp
 %   g := grad f w.r.t. x
 %   h := hessian of f w.r.t. x
-    
+  
     p = sys.p;
     q = sys.q;
     M = sys.M;
@@ -155,19 +172,89 @@ function [f,g,H] = limpco2(z,y,w,sys)
     % Build a matrix that Picks out the measured components of x
     I = eye(nv); % for chain rule
     
-    
-    P = I(i,:); % picking/pick out the measured ones
-    e = P*x - y;
+    PP = I(i,:); % picking/pick out the measured ones
+    e = PP*x - y;
+
+    % volumn vector with zeros and pK's at end
+    nrk = size(K,1)./2 ;
+    zpK = zeros(2*nrk,1);
+    zgpK = zeros(2*nrk,length(sys.variables));
+    zggpK = zeros(length(sys.variables),length(sys.variables));
+
+    % pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
+    %       (1)  (2) (3) (4) (5) (6) (7) (8)  (9)  (10) (11)  (12) (13) (14)
+    if (ismember('K0',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(1);
+        zgpK(nrk,1:3)   = gpK(1,1:3); % ∂T, ∂S, ∂P
+        %zggpK(nrk,[1:3,5:6,9]) = ggpK(1,1:6); % not sure yet
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(2);
+        zgpK(nrk,1:3)   = gpK(2,1:3);
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(3);
+        zgpK(nrk,1:3)   = gpK(3,1:3);
+    end
+    if (ismember('Kb',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(4);
+        zgpK(nrk,1:3)   = gpK(4,1:3);
+    end
+    if (ismember('Kw',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(5);
+        zgpK(nrk,1:3)   = gpK(5,1:3);
+    end
+    if (ismember('Ks',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(6);
+        zgpK(nrk,1:3)   = gpK(6,1:3);
+    end
+    if (ismember('Kf',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(7);
+        zgpK(nrk,1:3)   = gpK(7,1:3);
+    end
+    if (ismember('K1p',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(8);
+        zgpK(nrk,1:3)   = gpK(8,1:3);
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(9);
+        zgpK(nrk,1:3)   = gpK(9,1:3);
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(10);
+        zgpK(nrk,1:3)   = gpK(10,1:3);
+    end
+    if (ismember('Ksi',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(11);
+        zgpK(nrk,1:3)   = gpK(11,1:3);
+    end
+    if (ismember('Knh4',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(12);
+        zgpK(nrk,1:3)   = gpK(12,1:3);
+    end
+    if (ismember('Kh2s',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(13);
+        zgpK(nrk,1:3)   = gpK(13,1:3);
+    end
+    if (ismember('p2f',sys.variables))
+        nrk             = nrk+1;
+        zpK(nrk)        = pK(14);
+        zgpK(nrk,1:3)   = gpK(14,1:3);
+    end
     
     % constraint equations
-    
-    if (ismember('hf',sys.variables));
-        c = [  M * q( x ); ...
-               -K * x;...
+    if (ismember('hf',sys.variables))
+        c = [  M * q( x ); ... 
+               (-K * x) - zpK;...
                sys.f2t(x) ] ; 
     else
         c = [  M * q( x ); ...
-               -K * x  ] ; 
+               (-K * x) - zpK  ] ; 
     end
     
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers
@@ -179,30 +266,35 @@ function [f,g,H] = limpco2(z,y,w,sys)
             gf2t = zeros(1,nv);
             gf2t(1,[sys.ih, sys.iKs, sys.iTS, sys.ihf]) = sys.gf2t(x);
             dcdx = [ M * diag( sys.dqdx( x ) ); ...
-                     -K;...
+                     (-K - zgpK) ;...
                      gf2t ]; % constraint eqns wrt -log10(concentrations)
         else
             dcdx = [ M * diag( sys.dqdx( x ) ); ...
-                     -K ]; % constraint eqns wrt -log10(concentrations)
+                     (-K - zgpK) ]; % c'
         end    
-        g = [ e.' * W * P +  lam.' * dcdx ,  c.' ];
+        g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
         
     end
+    
     if ( nargout > 2 ) % compute the Hessian
-        
         ddq =  diag( sys.d2qdx2( x ) ); % q"
         [nr,nc] = size(M);
         gg = zeros(nc,1);
         for row = 1:nr
             gg = gg + lam(row)*diag(M(row,:))*ddq;
         end
+        nr = size(K,1);
+        for row = 1:nr
+            gg = gg + lam(row)*(-zggpK(row,:)); % ggpK (not right-MF)
+        end
+        keyboard
         if (ismember('hf',sys.variables))
             dhfdx2 = zeros(nc,nc);
             ii = [sys.iKs,sys.iTS];
             dhfdx2(ii,ii) = sys.ggf2t(x);
             gg = gg + lam(nr+1)*dhfdx2;
         end
-        H = [  P.'*W*P + gg , dcdx.'  ; ...
+        H = [  PP.'*W*PP + gg , dcdx.'  ; ...
                dcdx         , zeros(nlam)  ];
     end
 end
@@ -216,10 +308,11 @@ function z0 = init(yobs,pk,sys);
     k = q(pk);
     
     pK0 = pk(1);  pK1  = pk(2);  pK2  = pk(3);  pKb  = pk(4);   pKw  = pk(5);   pKs  = pk(6);   
-    pKF = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKSi = pk(11);  pp2f = pk(12);
-
+    pKF = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKsi = pk(11);  pp2f = pk(12);
+    % add pKnh3, pKh2s
+    
     K0 = k(1);  K1  = k(2);  K2  = k(3);  Kb  = k(4);   Kw  = k(5);   Ks  = k(6);   
-    KF = k(7);  K1p = k(8);  K2p = k(9);  K3p = k(10);  KSi = k(11);  p2f = k(12);
+    KF = k(7);  K1p = k(8);  K2p = k(9);  K3p = k(10);  Ksi = k(11);  p2f = k(12);
 
     y0  = yobs;
     dic = q(yobs(sys.iTC));
@@ -304,11 +397,11 @@ function z0 = init(yobs,pk,sys);
         y0(sys.ipo4)   = p(po4);
     end
     
-    if (ismember('KSi',sys.variables));
+    if (ismember('Ksi',sys.variables));
         TSi = q(yobs(sys.iTSi));
-        siooh3 = TSi / ( 1 + h / KSi );
+        siooh3 = TSi / ( 1 + h / Ksi );
         sioh4  = TSi - siooh3;
-        y0(sys.iKSi)    = pKSi;
+        y0(sys.iKsi)    = pKsi;
         y0(sys.isiooh3) = p(siooh3);
         y0(sys.isioh4)  = p(sioh4);
         y0(sys.iTSi)    = p(TSi);
@@ -453,11 +546,11 @@ function [Kh,K1,K2,Kb,Kw,Ks,Kf,K1p,K2p,K3p,Ksi,p2f] = local_K(T,S,P)
     lnK2pfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on K2p
 
     dV = -26.57 + 0.202 .*T - 0.003042.*T.^2;
-    K  = (-4.08 + 0.0714.*T)./1000;
+    Ka  = (-4.08 + 0.0714.*T)./1000;
     lnK3pfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on K3p
 
     dV = -29.48 + 0.1622.*T - 0.002608.*T.^2;
-    K  = -2.84./1000;
+    Ka  = -2.84./1000;
     lnKsifac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on Ksi
 
     % correct all Ks for pressure effects
