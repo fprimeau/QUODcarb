@@ -172,7 +172,7 @@ function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
     PP = I(i,:); % picking/pick out the measured ones
     e = PP*x - y;
 
-    % volumn vector with zeros and pK's at end
+    % column vector with zeros and pK's at end
     nrk = size(K,1)./2 ;
     zpK = zeros(2*nrk,1);
     zgpK = zeros(2*nrk,length(sys.variables));
@@ -181,9 +181,8 @@ function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
     % pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
     %       (1)  (2) (3) (4) (5) (6) (7) (8)  (9)  (10) (11)  (12) (13) (14)
     if (ismember('K0',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(1);
-        zgpK(nrk,1:3)   = gpK(1,1:3); % ∂T, ∂S, ∂P
+        zpK(sys.jK0)    = pK0;
+        zgpK([sys.jK0,[sys.iT,sys.iS,sys.iP])   = gpK(1,:); % ∂T, ∂S, ∂P
         %zggpK(nrk,[1:3,5:6,9]) = ggpK(1,1:6); % not sure yet
         nrk             = nrk+1;
         zpK(nrk)        = pK(2);

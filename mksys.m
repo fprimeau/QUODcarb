@@ -205,51 +205,99 @@ function sys = mksys(sys)
     %       (1)  (2) (3) (4) (5) (6) (7) (8)  (9)  (10) (11)  (12) (13) (14)
     if (ismember('K0',sys.variables))
         row = row+1;
-        K(row,iK0) = 1; % K0
+        jK0 = row;
+        sys.jK0 = jK0;
+        K(jK0,iK0) = 1; % K0
+        sys.system{row} = 'pK0(T,S,P)';
+
         row = row+1;
-        K(row,iK1) = 1; % K1
+        jK1 = row;
+        sys.jK1 = jK1;
+        K(jK1,iK1) = 1; % K1
+        sys.system{row} = 'pK1(T,S,P)';
+
         row = row+1;
-        K(row,iK2) = 1; % K2
+        jK2 = row;
+        sys.jK2 = jK2;
+        K(jK2,iK2) = 1; % K2
+        sys.system{row} = 'pK2(T,S,P)';
+
     end
     if (ismember('Kb',sys.variables))
         row = row+1;
-        K(row,iKb) = 1; % Kb
+        jKb = row;
+        sys.jKb = Kb;
+        K(jKb,iKb) = 1; % Kb
+        sys.system{row} = 'pKb(T,S,P)';
+
     end
     if (ismember('Kw',sys.variables))
         row = row+1;
-        K(row,iKw) = 1; % Kw
+        jKw = row;
+        sys.jKw = jKw;
+        K(jKw,iKw) = 1; % Kw
+        sys.system{row} = 'pKw(T,S,P)';
     end
     if (ismember('Ks',sys.variables))
         row = row+1;
-        K(row,iKs) = 1; % Ks
+        jKs = row;
+        sys.jKw = jKw;
+        K(jKs,iKs) = 1; % Ks
+        sys.system{row} = 'pKs(T,S,P)';
     end
     if (ismember('Kf',sys.variables))
         row = row+1;
-        K(row,iKf) = 1; % Kf
+        jKf = row;
+        sys.jKw = jKw;
+        K(jKf,iKf) = 1; % Kf
+        sys.system{row} = 'pKf(T,S,P)';
     end
     if (ismember('K1p',sys.variables))
         row = row+1;
-        K(row,iK1p) = 1; % K1p
+        jK1p = row
+        sys.jK1p = jK1p;
+        K(jK1p,iK1p) = 1; % K1p
+        sys.system{row} = 'pK1p(T,S,P)';
+
         row = row+1;
-        K(row,iK2p) = 1; % K2p
+        jK2p = row;
+        sys.jK2p = jK2p;
+        K(jK2p,iK2p) = 1; % K2p
+        sys.system{row} = 'pK2p(T,S,P)';
+
         row = row+1;
-        K(row,iK3p) = 1; % K3p
+        jK3p = row;
+        sys.jK3p = jK3p;
+        K(jK3p,iK3p) = 1; % K3p
+        sys.system{row} = 'pK3p(T,S,P)';
     end
     if (ismember('Ksi',sys.variables))
         row = row+1;
-        K(row,iKsi) = 1; % Ksi
+        jKsi = row;
+        sys.jKsi = jKsi;
+        K(jKsi,iKsi) = 1; % Ksi
+        sys.system{row} = 'pKSi(T,S,P)';
     end
     if (ismember('Knh4',sys.variables))
         row = row+1;
-        K(row,iKnh4) = 1; % Knh4
+        jKnh4 = jKnh4;
+        sys.jKnh4 = jKnh4;
+        K(jKnh4,iKnh4) = 1; % Knh4
+        sys.system{row} = 'pKnh4(T,S,P)';
     end
     if (ismember('Kh2s',sys.variables))
         row = row+1;
-        K(row,iKh2s) = 1; % Kh2s
+        jKh2s = row;
+        sys.jKh2s = jKh2s;
+        K(jKh2s,iKh2s) = 1; % Kh2s
+        sys.system{row} = 'pKh2s(T,S,P)';
     end
     if (ismember('p2f',sys.variables))
         row = row+1;
-        K(row,ip2f) = 1; % p2f
+        jp2f = row;
+        sys.jp2f = jp2r;
+        K(jp2f,ip2f) = 1; % p2f
+        sys.system{row} = 'p2f(T,S,P)';
     end
 
     % "mass" conservation" equations
