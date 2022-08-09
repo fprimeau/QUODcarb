@@ -17,11 +17,11 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
 
     p = sys.p;
     q = sys.q;
+
     nv = length(sys.variables);
     
-    [K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f] = local_K(temp,sal,pres);    
-    pk = p([K0,K1,K2,Kb,Kw,Ks,KF,K1p,K2p,K3p,KSi,p2f]);
 
+    [pK,gpK,ggpK] = local_K(temp,sal,pres);    
 
     %
     % add "observations" for the equilibrium constants 

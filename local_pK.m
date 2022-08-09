@@ -1,6 +1,3 @@
-% new version with subfunctions and derivatives -MF
-
-% calculate equilibrium constants-------------------------------------
 function [pK,gpK] = local_pK(TC,S,P)
 % base equations COPIED FROM co2sys.m Orr et al. (2018)  Github
 % Originally from  van Heuven et al. (2011)
@@ -12,9 +9,9 @@ function [pK,gpK] = local_pK(TC,S,P)
 %   P  = pressure (dbar) 
 %
 % OUTPUT:
-%    pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f]; % column vector of pK's
+%    pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
 %   gpK  = [pK_T, pK_S, pK_P]; first derivatives (gradient of pK)
-    
+%  ggpK  = [pK_TT, pK_TS, pK_TP, pK_SS, pK_SP, pK_PP]    
     TK = TC + 273.15; % convert to Kelvin
     Rgas = 83.1451; % RgasConstant, ml bar-1 K-1 mol-1, DOEv2
     RT = Rgas.*TK;

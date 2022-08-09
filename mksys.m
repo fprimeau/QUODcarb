@@ -23,7 +23,7 @@ function sys = mksys(sys)
         % K0 = [co2st]/fco2   
         % K1 = [h][hco3]/[co2st]
         % K2 = [h][co3]/[hco3]
-        carbonate =  { 'K0','K1','K2','TC','TA','fco2', 'co2st', 'hco3', 'co3', 'h', 'p2f', 'pco2'};
+        carbonate =  {'T','S','P','K0','K1','K2','TC','TA','fco2', 'co2st', 'hco3', 'co3', 'h', 'p2f', 'pco2'};
         sys.variables = carbonate;
         nrk = 4; % number of rows
         if ismember('water',sys.abr)
@@ -71,11 +71,11 @@ function sys = mksys(sys)
         sys.variables = {sys.variables{:},silicate{:}};
     end
     
-    if ismember('ammonium',sys.abr)
+    if ismember('ammonia',sys.abr)
         % Knh3 = [h][nh3]/[nh4]
-        ammonium = {'Knh3','TNH3', 'nh3', 'nh4'};
+        ammonia = {'Knh3','TNH3', 'nh3', 'nh4'};
         nrk = nrk+1; % number of rows
-        sys.variables = {sys.variables{:},ammonium{:}};
+        sys.variables = {sys.variables{:},ammonia{:}};
     end
     
     if ismember('sulfide',sys.abr)
@@ -292,9 +292,9 @@ function sys = mksys(sys)
         row = row+1;
     end
 
-    % Total ammonium
+    % Total ammonia
     if (ismember('TNH3',sys.variables))
-        sys.mass{row} = 'amonia';
+        sys.mass{row} = 'ammonia';
         M(row,[iTNH3,inh4,inh3]) = [1, -1, -1];
         M(2,inh3) = -1; % alk
         row = row+1;

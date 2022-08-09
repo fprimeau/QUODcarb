@@ -39,12 +39,15 @@ for i = 1:102
 
     sal(i) = in(i,1); % salinity
     esal(i) = in(i,10);
+    wsal(i) = (esal(i)).^(-2);
 
     temp(i) = in(i,2); % deg C
     etemp(i) = in(i,11); 
-
+    wtemp(i) = (etemp(i)).^(-2);
+    
     pres(i) = in(i,3); % dbar
-
+    epres(i) = 3e-2; % dbar  !!!!WARNING THIS IS ROUGH ESTIMATE OF ATMOSPHERIC PRESSURE VARIATION!!! 
+    wpres(i) = (epres(i)).^(-2);
     
     psil(i)  = p( in(i,5) * 1e-6 ); % total Si mol/kg
     wpsil(i) = w( in(i,5), in(i,13) );
@@ -117,6 +120,11 @@ for i = 1:102
     
     
     yobs = nan(n,1); wobs = nan(n,1);
+
+    yobs(sys.iT) = temp(i); wobs(sys.iT) = wT(i);
+    yobs(sys.iS) = sal(i);  wobs(sys.iS) = wS(i);
+    yobs(sys.iP) = pres(i); wobs(sys.iP) = wP(i);
+    
     yobs(sys.iTC) = pdic(i); wobs(sys.iTC) = wpdic(i);
     yobs(sys.iTA) = palk(i); wobs(sys.iTA) = wpalk(i);
     yobs(sys.ih)  = pH(i);   wobs(sys.ih)  = wpH(i);
