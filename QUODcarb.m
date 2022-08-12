@@ -152,7 +152,7 @@ function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
     K = sys.K;
     nv = size(M,2);
     nlam = size(M,1)+size(K,1);
-    if (ismember('sulfate',sys.abr))
+    if (ismember('sulfate',sys.abr)) % MF doesn't understand why this is here
         nlam = nlam+1;
     end
     x   =  z(1:nv);      % measureable variables
@@ -173,74 +173,115 @@ function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
     e = PP*x - y;
 
     % column vector with zeros and pK's at end
-    nrk = size(K,1)./2 ;
-    zpK = zeros(2*nrk,1);
-    zgpK = zeros(2*nrk,length(sys.variables));
-    zggpK = zeros(length(sys.variables),length(sys.variables));
+    nrk = size(K,1) ;
+    zpK = zeros(nrk,1);
+    zgpK = zeros(nrk,length(sys.variables));
+    zggpK = zeros(nrk,length(sys.variables),length(sys.variables));
 
     % pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
     %       (1)  (2) (3) (4) (5) (6) (7) (8)  (9)  (10) (11)  (12) (13) (14)
     if (ismember('K0',sys.variables))
-        zpK(sys.jK0)    = pK0;
-        zgpK([sys.jK0,[sys.iT,sys.iS,sys.iP])   = gpK(1,:); % ∂T, ∂S, ∂P
-        %zggpK(nrk,[1:3,5:6,9]) = ggpK(1,1:6); % not sure yet
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(2);
-        zgpK(nrk,1:3)   = gpK(2,1:3);
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(3);
-        zgpK(nrk,1:3)   = gpK(3,1:3);
+        zpK(sys.jK0)                               = pK(1); % pK0
+        zgpK([sys.jK0],[sys.iT,sys.iS,sys.iP])     = gpK(1,:); % ∂T, ∂S, ∂P
+        zggpK([sys.jK0],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(1,1:3);     % TT,TS,TP
+        zggpK([sys.jK0],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(1,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jK0],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(1,[3,5,6]); % PT,PS,PP
+        
+        zpK(sys.jK1)                               = pK(2); % pK1
+        zgpK([sys.jK1],[sys.iT,sys.iS,sys.iP])     = gpK(2,:);
+        zggpK([sys.jK1],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(2,1:3);     % TT,TS,TP
+        zggpK([sys.jK1],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(2,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jK1],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(2,[3,5,6]); % PT,PS,PP        
+        
+        zpK(sys.jK2)                               = pK(3); % pK2
+        zgpK([sys.jK2],[sys.iT,sys.iS,sys.iP])     = gpK(3,:);
+        zggpK([sys.jK2],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(3,1:3);     % TT,TS,TP
+        zggpK([sys.jK2],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(3,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jK2],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(3,[3,5,6]); % PT,PS,PP  
     end
+
     if (ismember('Kb',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(4);
-        zgpK(nrk,1:3)   = gpK(4,1:3);
+        zpK(sys.jKb)                               = pK(4); % pKb
+        zgpK([sys.jKb],[sys.iT,sys.iS,sys.iP])     = gpK(4,:);
+        zggpK([sys.jKb],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(4,1:3);     % TT,TS,TP
+        zggpK([sys.jKb],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(4,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jKb],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(4,[3,5,6]); % PT,PS,PP  
     end
+
     if (ismember('Kw',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(5);
-        zgpK(nrk,1:3)   = gpK(5,1:3);
+        zpK(sys.jKw)                               = pK(5); % pKw
+        zgpK([sys.jKw],[sys.iT,sys.iS,sys.iP])     = gpK(5,:);
+        zggpK([sys.jKw],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(5,1:3);     % TT,TS,TP
+        zggpK([sys.jKw],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(5,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jKw],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(5,[3,5,6]); % PT,PS,PP  
     end
+
     if (ismember('Ks',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(6);
-        zgpK(nrk,1:3)   = gpK(6,1:3);
+        zpK(sys.jKs)                               = pK(6); % pKs
+        zgpK([sys.jKs],[sys.iT,sys.iS,sys.iP])     = gpK(6,:);
+        zggpK([sys.jKs],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(6,1:3);     % TT,TS,TP
+        zggpK([sys.jKs],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(6,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jKs],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(6,[3,5,6]); % PT,PS,PP  
     end
+
     if (ismember('Kf',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(7);
-        zgpK(nrk,1:3)   = gpK(7,1:3);
+        zpK(sys.jKf)                               = pK(7); % pKf
+        zgpK([sys.jKf],[sys.iT,sys.iS,sys.iP])     = gpK(7,:);
+        zggpK([sys.jKf],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(7,1:3);     % TT,TS,TP
+        zggpK([sys.iKf],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(7,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jKf],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(7,[3,5,6]); % PT,PS,PP  
     end
+
     if (ismember('K1p',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(8);
-        zgpK(nrk,1:3)   = gpK(8,1:3);
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(9);
-        zgpK(nrk,1:3)   = gpK(9,1:3);
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(10);
-        zgpK(nrk,1:3)   = gpK(10,1:3);
+        zpK(sys.jK1p)                              = pK(8); % pK1p
+        zgpK([sys.jK1p],[sys.iT,sys.iS,sys.iP])    = gpK(8,:);
+        zggpK([sys.jK1p],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(8,1:3);     % TT,TS,TP
+        zggpK([sys.jK1p],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(8,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jK1p],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(8,[3,5,6]); % PT,PS,PP  
+
+        zpK(sys.jK2p)                              = pK(9); % pK2p
+        zgpK([sys.jK2p],[sys.iT,sys.iS,sys.iP])    = gpK(9,:);
+        zggpK([sys.jK2p],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(9,1:3);     % TT,TS,TP
+        zggpK([sys.jK2p],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(9,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jK2p],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(9,[3,5,6]); % PT,PS,PP  
+
+        zpK(sys.jK3p)                              = pK(10); % pK3p
+        zgpK([sys.jK3p],[sys.iT,sys.iS,sys.iP])    = gpK(10,:);
+        zggpK([sys.jK3p],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(10,1:3);     % TT,TS,TP
+        zggpK([sys.jK3p],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(10,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jK3p],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(10,[3,5,6]); % PT,PS,PP  
     end
+
     if (ismember('Ksi',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(11);
-        zgpK(nrk,1:3)   = gpK(11,1:3);
+        zpK(sys.jKsi)                              = pK(11); % pKsi
+        zgpK([sys.jKsi],[sys.iT,sys.iS,sys.iP])    = gpK(11,:);
+        zggpK([sys.jKsi],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(11,1:3);     % TT,TS,TP
+        zggpK([sys.jKsi],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(11,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jKsi],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(11,[3,5,6]); % PT,PS,PP  
     end
+
     if (ismember('Knh4',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(12);
-        zgpK(nrk,1:3)   = gpK(12,1:3);
+        zpK(sys.jKnh4)                             = pK(12); % pKnh4
+        zgpK([sys.jKnh4],[sys.iT,sys.iS,sys.iP])   = gpK(12,:);
+        zggpK([sys.jKnh4],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(12,1:3);     % TT,TS,TP
+        zggpK([sys.jKnh4],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(12,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jKnh4],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(12,[3,5,6]); % PT,PS,PP  
     end
+
     if (ismember('Kh2s',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(13);
-        zgpK(nrk,1:3)   = gpK(13,1:3);
+        zpK(sys.Kh2s)                              = pK(13); % pKh2s
+        zgpK([sys.jKh2s],[sys.iT,sys.iS,sys.iP])   = gpK(13,:);
+        zggpK([sys.jKh2s],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(13,1:3);     % TT,TS,TP
+        zggpK([sys.jKh2s],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(13,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jKh2s],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(13,[3,5,6]); % PT,PS,PP  
     end
+
     if (ismember('p2f',sys.variables))
-        nrk             = nrk+1;
-        zpK(nrk)        = pK(14);
-        zgpK(nrk,1:3)   = gpK(14,1:3);
+        zpK(sys.jp2f)                              = pK(14); % pp2f
+        zgpK([sys.jp2f],[sys.iT,sys.iS,sys.iP])    = gpK(14,:);
+        zggpK([sys.jp2f],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(14,1:3);     % TT,TS,TP
+        zggpK([sys.jp2f],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(14,[2,4,5]); % ST,SS,SP
+        zggpK([sys.jp2f],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(14,[3,5,6]); % PT,PS,PP  
     end
     
     % constraint equations
@@ -276,14 +317,14 @@ function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
         ddq =  diag( sys.d2qdx2( x ) ); % q"
         [nr,nc] = size(M);
         gg = zeros(nc,1);
-        for row = 1:nr
+        for row = (1:nr)
             gg = gg + lam(row)*diag(M(row,:))*ddq;
         end
-        nr = size(K,1);
-        for row = 1:nr
-            gg = gg + lam(row)*(-zggpK(row,:)); % ggpK (not right-MF)
+        for row = (nr+1):(nr+nrk)
+            gg = gg + lam(row)*(-zggpK((row-nr),:,:)); % ggpK
         end
         keyboard
+        % gg is 24x42x42 right now, idk how to get it down to 42x42 (-MF)
         if (ismember('hf',sys.variables))
             dhfdx2 = zeros(nc,nc);
             ii = [sys.iKs,sys.iTS];
@@ -413,168 +454,3 @@ function z0 = init(yobs,pk,sys);
 
 end
 
-% calculate equilibrium constants-------------------------------------
-function [Kh,K1,K2,Kb,Kw,Ks,Kf,K1p,K2p,K3p,Ksi,p2f] = local_K(T,S,P)
-% COPIED FROM co2sys.m Orr et al. (2018)  Github
-% Originally from  van Heuven et al. (2011)
-% Original co2sys is from Lewis and Wallace (1998)
-% 
-% T = Temp (deg C) input
-% P = pressure (dbar)    
-    
-    TK = T + 273.15; % convert to Kelvin
-    Rgas = 83.1451; % RgasConstant, ml bar-1 K-1 mol-1, DOEv2
-    RT = Rgas.*TK;
-    Pbar = P./10;
-    IonS = 19.924 .* S ./ (1000-1.005 .* S); % from DOE handbook
-
-    % pCO2 to fCO2 conversion (Weiss 1974) valid to within 0.1%
-    Pstd = 1.01325; 
-    delC = (57.7 - 0.118.*TK); 
-    B = -1636.75 + 12.0408.*TK - 0.0327957.*TK.^2 + 3.16528.*0.00001.*TK.^3;
-    p2f = exp((B + 2.*delC).*Pstd./(RT));
-
-    % calculate TF (Riley 1965)--------------------------------------
-    TF = (0.000067./18.998).*(S./1.80655); % mol/kg-SW
-
-    % calculate TS (Morris & Riley 1966)-----------------------------
-    TS = (0.14./96.062).*(S./1.80655); % mol/kg-SW
-    
-    % calculate Kh (Weiss 1974)--------------------------------------
-    TK100 = TK./100;
-    lnKh = -60.2409 + 93.4517 ./ TK100 + 23.3585 .* log(TK100) + S .* ...
-        (0.023517 - 0.023656 .* TK100 + 0.0047036 .* TK100 .^2);
-    Kh = exp(lnKh);
-
-    % calculate Ks (Dickson 1990a)----------------------------------
-    lnKs = -4276.1./TK + 141.328 - 23.093 .* log(TK) + ...
-        (-13856./TK + 324.57 - 47.986 .* log(TK)) .* sqrt(IonS) + ...
-        (35474./TK - 771.54 + 114.723 .* log(TK)) .* IonS + ...
-        (-2698./TK) .* sqrt(IonS) .* IonS + (1776./TK) .* IonS.^2;
-    Ks = exp(lnKs) .* (1 - 0.001005 .* S); % converted to mol/kg-SW
-
-    % calculate Kf (Dickson 1979)----------------------------------
-    lnKf = 1590.2/TK - 12.641 + 1.525 .* IonS.^0.5;
-    Kf = exp(lnKf) .* (1 - 0.001005 .* S); % converted to mol/kg-SW
-   
-    % pH scale conversion factors (not pressure corrected)-----------
-    SWS2tot = (1 + TS ./Ks)./(1 + TS ./Ks + TF./Kf);
-    FREE2tot = 1 + TS./Ks;
-    
-    % calculate fH (Takahashi et al 1982)--------------------------
-    fH = 1.2948 - 0.002036 .* TK + (0.0004607 - ...
-        0.000001475 .* TK) .* S.^2 ;
-
-    % calculate Kb (Dickson 1990)----------------------------------
-    lnKbt = -8966.9 - 2890.53 .* sqrt(S) - 77.942 .* S + ...
-        1.728 .* sqrt(S) .* S - 0.0996 .* S.^2;
-    lnKb = lnKbt./ TK + 148.0248 + 137.1942 .* sqrt(S) + ...
-        1.62142 .* S + (-24.4344 - 25.085 .* sqrt(S) - 0.2474 .* ...
-        S) .* log(TK) + 0.053105 .* sqrt(S) .* TK;
-    Kb = exp(lnKb)./SWS2tot; % SWS pH scale, mol/kg-SW
-
-    % calculate Kw (Millero 1995)--------------------------------
-    lnKw = 148.9802 - 13847.26 ./ TK - 23.6521 .* log(TK) + ...
-        (-5.977 + 118.67 ./ TK + 1.0495 .* log(TK)) .* ...
-        sqrt(S) - 0.01615 .* S;
-    Kw = exp(lnKw);
-
-    % calculate K1p, K2p, K3p, Ksi (Yao and Millero 1995)-------
-    lnK1p = -4576.752 ./TK + 115.54 - 18.453 .* log(TK) + ...
-        (-106.736./TK + 0.69171) .* sqrt(S) + (-0.65643./TK - 0.01844).*S;
-    K1p = exp(lnK1p);
-
-    lnK2p = -8814.715./TK + 172.1033 - 27.927.*log(TK) + ...
-        (-160.34./TK + 1.3566).*sqrt(S) + (0.37335./TK - 0.05778).*S;
-    K2p = exp(lnK2p);
-
-    lnK3p = -3070.75./TK - 18.126 + (17.27039./TK + 2.81197).*sqrt(S) + ...
-        (-44.99486./TK - 0.09984).*S;
-    K3p = exp(lnK3p);
-
-    lnKsi = -8904.2./TK + 117.4 - 19.334.*log(TK) + (-458.79./TK + ...
-        3.5913).*sqrt(IonS) + (188.74/TK - 1.5998).*IonS + ...
-        (-12.1652./TK + 0.07871).*IonS.^2;
-    Ksi = exp(lnKsi).*(1 - 0.001005.*S); % convert to mol/kg-SW
-
-    % calculate K1 & K2 (Mehrbach refit by Dickson and Millero 1987)---
-    pK1 = 3670.7 ./TK - 62.008 + 9.7944 .* log(TK) - 0.0118.*S + ...
-        0.000116.*S.^2;
-    K1 = 10.^(-pK1); % SWS pH scale in mol/kg-SW
-   
-    pK2 = 1394.7./TK + 4.777 - 0.0184.*S + 0.000118.*S.^2;
-    K2 = 10.^(-pK2); % SWS pH scale in mol/kg-SW
-
-    % corrections for pressure---------------------------------------
-    % sources: Millero 1995, 1992, 1982, 1979; Takahashi et al. 1982;
-    %   Culberson & Pytkowicz 1968; Edmond & Gieskes 1970.
-
-    dV = -25.5 + 0.1271.*T;
-    Ka = (-3.08 + 0.0877 .* T) ./1000;
-    lnK1fac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on K1
-
-    dV = -15.82 - 0.0219 .* T;
-    Ka = (1.13 - 0.1475 .*T)./1000;
-    lnK2fac = (-dV + 0.5.*Ka .*Pbar).*Pbar./RT; % pressure effect on K2
-
-    dV = -29.48 + 0.1622.*T - 0.002608.*T.^2;
-    Ka = -2.84./1000;
-    lnKbfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on Kb
-
-    dV = -20.02 + 0.1119.*T - 0.001409 .*T.^2;
-    Ka = (-5.13 + 0.0794.*T)./1000;
-    lnKwfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on Kw
-
-    dV = -9.78 - 0.009.*T - 0.000942.*T.^2;
-    Ka = (-3.91 + 0.054.*T)./1000;
-    lnKffac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on Kf
-
-    dV = -18.03 + 0.0466.*T + 0.000316.*T.^2;
-    Ka = (-4.53 + 0.09.*T)./1000;
-    lnKsfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on Ks
-
-    dV = -14.51 + 0.1211.*T - 0.000321.*T.^2;
-    Ka  = (-2.67 + 0.0427.*T)./1000;
-    lnK1pfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on K1p
-
-    dV = -23.12 + 0.1758.*T - 0.002647.*T.^2;
-    Ka  = (-5.15 + 0.09  .*T)./1000;
-    lnK2pfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on K2p
-
-    dV = -26.57 + 0.202 .*T - 0.003042.*T.^2;
-    Ka  = (-4.08 + 0.0714.*T)./1000;
-    lnK3pfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on K3p
-
-    dV = -29.48 + 0.1622.*T - 0.002608.*T.^2;
-    Ka  = -2.84./1000;
-    lnKsifac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on Ksi
-
-    % correct all Ks for pressure effects
-    K1fac  = exp(lnK1fac);  K1  = K1 .*K1fac;
-    K2fac  = exp(lnK2fac);  K2  = K2 .*K2fac;
-    Kwfac  = exp(lnKwfac);  Kw  = Kw .*Kwfac;
-    Kbfac  = exp(lnKbfac);  Kb  = Kb .*Kbfac;
-    Kffac  = exp(lnKffac);  Kf  = Kf .*Kffac;
-    Ksfac  = exp(lnKsfac);  Ks  = Ks .*Ksfac;
-    K1pfac = exp(lnK1pfac); K1p = K1p.*K1pfac;
-    K2pfac = exp(lnK2pfac); K2p = K2p.*K2pfac;
-    K3pfac = exp(lnK3pfac); K3p = K3p.*K3pfac;
-    Ksifac = exp(lnKsifac); Ksi = Ksi.*Ksifac;
-
-    % CorrectpHScaleConversionsForPressure:
-    % fH has been assumed to be independent of pressure.
-    SWS2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
-    FREE2tot =  1 + TS./Ks;
-    
-    % Convert K's from SWS to TOT scale
-    K1 = K1.*SWS2tot;
-    K2 = K2.*SWS2tot;
-    Kw = Kw.*SWS2tot;
-    Kb = Kb.*SWS2tot;
-    K1p = K1p.*SWS2tot;
-    K2p = K2p.*SWS2tot;
-    K3p = K3p.*SWS2tot;
-    Ksi = Ksi.*SWS2tot;
-    
-    
-end

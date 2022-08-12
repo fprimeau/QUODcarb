@@ -226,7 +226,7 @@ function sys = mksys(sys)
     if (ismember('Kb',sys.variables))
         row = row+1;
         jKb = row;
-        sys.jKb = Kb;
+        sys.jKb = jKb;
         K(jKb,iKb) = 1; % Kb
         sys.system{row} = 'pKb(T,S,P)';
 
@@ -241,7 +241,7 @@ function sys = mksys(sys)
     if (ismember('Ks',sys.variables))
         row = row+1;
         jKs = row;
-        sys.jKw = jKw;
+        sys.jKs = jKs;
         K(jKs,iKs) = 1; % Ks
         sys.system{row} = 'pKs(T,S,P)';
     end
@@ -254,7 +254,7 @@ function sys = mksys(sys)
     end
     if (ismember('K1p',sys.variables))
         row = row+1;
-        jK1p = row
+        jK1p = row;
         sys.jK1p = jK1p;
         K(jK1p,iK1p) = 1; % K1p
         sys.system{row} = 'pK1p(T,S,P)';
@@ -280,7 +280,7 @@ function sys = mksys(sys)
     end
     if (ismember('Knh4',sys.variables))
         row = row+1;
-        jKnh4 = jKnh4;
+        jKnh4 = row;
         sys.jKnh4 = jKnh4;
         K(jKnh4,iKnh4) = 1; % Knh4
         sys.system{row} = 'pKnh4(T,S,P)';
@@ -295,7 +295,7 @@ function sys = mksys(sys)
     if (ismember('p2f',sys.variables))
         row = row+1;
         jp2f = row;
-        sys.jp2f = jp2r;
+        sys.jp2f = jp2f;
         K(jp2f,ip2f) = 1; % p2f
         sys.system{row} = 'p2f(T,S,P)';
     end
