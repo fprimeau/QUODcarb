@@ -20,7 +20,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
 
     nv = length(sys.variables);
     
-    [pK,gpK,ggpK] = local_pK(temp,sal,pres);
+    [pK,gpK] = local_pK(temp,sal,pres);
     pK0   = pK(1);  pK1  = pK(2);  pK2   = pK(3);  pKb   = pK(4);  
     pKw   = pK(5);  pKs  = pK(6);  pKf   = pK(7);  pK1p  = pK(8);  
     pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
@@ -89,7 +89,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
         yobs(sys.iKh2s) = pKh2s;
     end
     
-    gun = @(z) grad_limpco2(z,yobs,wobs,pK,gpK,ggpK,sys);
+    gun = @(z) grad_limpco2(z,yobs,wobs,pK,gpK,sys);
     % test limpco2 gradient and hessian using complex step method
     %{
       
@@ -122,13 +122,19 @@ end
 
 %-----------------------------------------------------------------
 
-function [g,H] = grad_limpco2(z,y,w,pK,gpK,ggpK,sys)
-    [~,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys);
-    g = g(:);
+function [g,H] = grad_limpco2(z,y,w,pK,gpK,sys)
+    I = eye(length(z));
+    H = zeros(length(z),length(z));
+    for k = 1:length(z)
+        [~,g] = limpco2(z+sqrt(-1)*(eps^3)*I(:,k),y,w,pK,gpK,sys);
+        H(k,:) = imag(g(:))/(eps^3);
+    end
+    g = real(g(:));
+    %H = imag(g(:)/eps^3); % complex step 
 end
 
-function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
-% [f,g,H] = limpco2(z,y,w,tc,s,P)
+function [f,g] = limpco2(z,y,w,pK,gpK,sys)
+% [f,g] = limpco2(z,y,w,tc,s,P)
 %
 % Negative log probability for the co2 system  a.k.a. log improbability i.e., limp!
 %
@@ -176,112 +182,70 @@ function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
     nrk = size(K,1) ;
     zpK = zeros(nrk,1);
     zgpK = zeros(nrk,length(sys.variables));
-    zggpK = zeros(nrk,length(sys.variables),length(sys.variables));
+    %zggpK = zeros(nrk,length(sys.variables),length(sys.variables));
 
     % pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
     %       (1)  (2) (3) (4) (5) (6) (7) (8)  (9)  (10) (11)  (12) (13) (14)
     if (ismember('K0',sys.variables))
         zpK(sys.jK0)                               = pK(1); % pK0
         zgpK([sys.jK0],[sys.iT,sys.iS,sys.iP])     = gpK(1,:); % ∂T, ∂S, ∂P
-        zggpK([sys.jK0],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(1,1:3);     % TT,TS,TP
-        zggpK([sys.jK0],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(1,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jK0],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(1,[3,5,6]); % PT,PS,PP
         
         zpK(sys.jK1)                               = pK(2); % pK1
-        zgpK([sys.jK1],[sys.iT,sys.iS,sys.iP])     = gpK(2,:);
-        zggpK([sys.jK1],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(2,1:3);     % TT,TS,TP
-        zggpK([sys.jK1],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(2,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jK1],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(2,[3,5,6]); % PT,PS,PP        
+        zgpK([sys.jK1],[sys.iT,sys.iS,sys.iP])     = gpK(2,:);       
         
         zpK(sys.jK2)                               = pK(3); % pK2
-        zgpK([sys.jK2],[sys.iT,sys.iS,sys.iP])     = gpK(3,:);
-        zggpK([sys.jK2],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(3,1:3);     % TT,TS,TP
-        zggpK([sys.jK2],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(3,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jK2],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(3,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jK2],[sys.iT,sys.iS,sys.iP])     = gpK(3,:);  
     end
 
     if (ismember('Kb',sys.variables))
         zpK(sys.jKb)                               = pK(4); % pKb
         zgpK([sys.jKb],[sys.iT,sys.iS,sys.iP])     = gpK(4,:);
-        zggpK([sys.jKb],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(4,1:3);     % TT,TS,TP
-        zggpK([sys.jKb],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(4,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jKb],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(4,[3,5,6]); % PT,PS,PP  
     end
 
     if (ismember('Kw',sys.variables))
         zpK(sys.jKw)                               = pK(5); % pKw
-        zgpK([sys.jKw],[sys.iT,sys.iS,sys.iP])     = gpK(5,:);
-        zggpK([sys.jKw],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(5,1:3);     % TT,TS,TP
-        zggpK([sys.jKw],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(5,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jKw],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(5,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jKw],[sys.iT,sys.iS,sys.iP])     = gpK(5,:);  
     end
 
     if (ismember('Ks',sys.variables))
         zpK(sys.jKs)                               = pK(6); % pKs
-        zgpK([sys.jKs],[sys.iT,sys.iS,sys.iP])     = gpK(6,:);
-        zggpK([sys.jKs],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(6,1:3);     % TT,TS,TP
-        zggpK([sys.jKs],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(6,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jKs],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(6,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jKs],[sys.iT,sys.iS,sys.iP])     = gpK(6,:);  
     end
 
     if (ismember('Kf',sys.variables))
         zpK(sys.jKf)                               = pK(7); % pKf
         zgpK([sys.jKf],[sys.iT,sys.iS,sys.iP])     = gpK(7,:);
-        zggpK([sys.jKf],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(7,1:3);     % TT,TS,TP
-        zggpK([sys.iKf],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(7,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jKf],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(7,[3,5,6]); % PT,PS,PP  
     end
 
     if (ismember('K1p',sys.variables))
         zpK(sys.jK1p)                              = pK(8); % pK1p
-        zgpK([sys.jK1p],[sys.iT,sys.iS,sys.iP])    = gpK(8,:);
-        zggpK([sys.jK1p],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(8,1:3);     % TT,TS,TP
-        zggpK([sys.jK1p],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(8,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jK1p],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(8,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jK1p],[sys.iT,sys.iS,sys.iP])    = gpK(8,:); 
 
         zpK(sys.jK2p)                              = pK(9); % pK2p
-        zgpK([sys.jK2p],[sys.iT,sys.iS,sys.iP])    = gpK(9,:);
-        zggpK([sys.jK2p],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(9,1:3);     % TT,TS,TP
-        zggpK([sys.jK2p],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(9,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jK2p],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(9,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jK2p],[sys.iT,sys.iS,sys.iP])    = gpK(9,:); 
 
         zpK(sys.jK3p)                              = pK(10); % pK3p
-        zgpK([sys.jK3p],[sys.iT,sys.iS,sys.iP])    = gpK(10,:);
-        zggpK([sys.jK3p],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(10,1:3);     % TT,TS,TP
-        zggpK([sys.jK3p],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(10,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jK3p],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(10,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jK3p],[sys.iT,sys.iS,sys.iP])    = gpK(10,:); 
     end
 
     if (ismember('Ksi',sys.variables))
         zpK(sys.jKsi)                              = pK(11); % pKsi
-        zgpK([sys.jKsi],[sys.iT,sys.iS,sys.iP])    = gpK(11,:);
-        zggpK([sys.jKsi],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(11,1:3);     % TT,TS,TP
-        zggpK([sys.jKsi],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(11,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jKsi],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(11,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jKsi],[sys.iT,sys.iS,sys.iP])    = gpK(11,:); 
     end
 
     if (ismember('Knh4',sys.variables))
         zpK(sys.jKnh4)                             = pK(12); % pKnh4
-        zgpK([sys.jKnh4],[sys.iT,sys.iS,sys.iP])   = gpK(12,:);
-        zggpK([sys.jKnh4],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(12,1:3);     % TT,TS,TP
-        zggpK([sys.jKnh4],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(12,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jKnh4],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(12,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jKnh4],[sys.iT,sys.iS,sys.iP])   = gpK(12,:);  
     end
 
     if (ismember('Kh2s',sys.variables))
         zpK(sys.Kh2s)                              = pK(13); % pKh2s
-        zgpK([sys.jKh2s],[sys.iT,sys.iS,sys.iP])   = gpK(13,:);
-        zggpK([sys.jKh2s],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(13,1:3);     % TT,TS,TP
-        zggpK([sys.jKh2s],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(13,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jKh2s],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(13,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jKh2s],[sys.iT,sys.iS,sys.iP])   = gpK(13,:); 
     end
 
     if (ismember('p2f',sys.variables))
         zpK(sys.jp2f)                              = pK(14); % pp2f
-        zgpK([sys.jp2f],[sys.iT,sys.iS,sys.iP])    = gpK(14,:);
-        zggpK([sys.jp2f],[sys.iT],[sys.iT,sys.iS,sys.iP]) = ggpK(14,1:3);     % TT,TS,TP
-        zggpK([sys.jp2f],[sys.iS],[sys.iT,sys.iS,sys.iP]) = ggpK(14,[2,4,5]); % ST,SS,SP
-        zggpK([sys.jp2f],[sys.iP],[sys.iT,sys.iS,sys.iP]) = ggpK(14,[3,5,6]); % PT,PS,PP  
+        zgpK([sys.jp2f],[sys.iT,sys.iS,sys.iP])    = gpK(14,:); 
     end
     
     % constraint equations
@@ -312,28 +276,28 @@ function [f,g,H] = limpco2(z,y,w,pK,gpK,ggpK,sys)
         g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
         
     end
-    
-    if ( nargout > 2 ) % compute the Hessian
-        ddq =  diag( sys.d2qdx2( x ) ); % q"
-        [nr,nc] = size(M);
-        gg = zeros(nc,1);
-        for row = (1:nr)
-            gg = gg + lam(row)*diag(M(row,:))*ddq;
-        end
-        for row = (nr+1):(nr+nrk)
-            gg = gg + lam(row)*(-zggpK((row-nr),:,:)); % ggpK
-        end
-        keyboard
-        % gg is 24x42x42 right now, idk how to get it down to 42x42 (-MF)
-        if (ismember('hf',sys.variables))
-            dhfdx2 = zeros(nc,nc);
-            ii = [sys.iKs,sys.iTS];
-            dhfdx2(ii,ii) = sys.ggf2t(x);
-            gg = gg + lam(nr+1)*dhfdx2;
-        end
-        H = [  PP.'*W*PP + gg , dcdx.'  ; ...
-               dcdx         , zeros(nlam)  ];
-    end
+%     
+%     if ( nargout > 2 ) % compute the Hessian
+%         ddq =  diag( sys.d2qdx2( x ) ); % q"
+%         [nr,nc] = size(M);
+%         gg = zeros(nc,1);
+%         for row = (1:nr)
+%             gg = gg + lam(row)*diag(M(row,:))*ddq;
+%         end
+%         for row = (nr+1):(nr+nrk)
+%             gg = gg + lam(row)*(-zggpK((row-nr),:,:)); % ggpK
+%         end
+%         keyboard
+%         % gg is 24x42x42 right now, idk how to get it down to 42x42 (-MF)
+%         if (ismember('hf',sys.variables))
+%             dhfdx2 = zeros(nc,nc);
+%             ii = [sys.iKs,sys.iTS];
+%             dhfdx2(ii,ii) = sys.ggf2t(x);
+%             gg = gg + lam(nr+1)*dhfdx2;
+%         end
+%         H = [  PP.'*W*PP + gg , dcdx.'  ; ...
+%                dcdx         , zeros(nlam)  ];
+%     end
 end
 
 
