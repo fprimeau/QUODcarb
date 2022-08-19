@@ -100,14 +100,9 @@ function sys = mksys(sys)
     
     %
     K = zeros(2*nrk,nc);
-    % pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKF;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
-    %       (1)  (2) (3) (4) (5) (6) (7) (8)  (9)  (10) (11)  (12) (13) (14)
-
     %
     row = 0;
-    if (ismember('K0',sys.variables))
-        % K0 = [CO2*]/fCO2 ==> -pK0 + pco2st - pfco2 = 0 
-        
+    if (ismember('K0',sys.variables))        % K0 = [CO2*]/fCO2 ==> -pK0 + pco2st - pfco2 = 0         
         row = row+1;
         K(row,[iK0,ico2st,ifco2]) = [-1, 1, -1];
         sys.system{row} = 'K0';
@@ -116,13 +111,10 @@ function sys = mksys(sys)
         jK0 = row;
         sys.jK0 = jK0;
         K(jK0,iK0) = 1; % K0
-        sys.system{jK0} = 'pK0(T,S,P)';
-        
+        sys.system{jK0} = 'pK0(T,S,P)';  
     end
     
-    if (ismember('K1',sys.variables))
-        % K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pfco2 = 0
-        
+    if (ismember('K1',sys.variables))        % K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pfco2 = 0
         row = row+1;
         K(row,[iK1,ih,ihco3,ico2st]) = [-1, 1, 1, -1];
         sys.system{row} = 'K1';
@@ -240,14 +232,10 @@ function sys = mksys(sys)
         sys.system{jK1p} = 'pK1p(T,S,P)';
 
     end
-    
     if (ismember('K2p',sys.variables))
         % K2p = [H][HPO4]/[H2PO4]
-
-        row = row+1;
         K(row,[iK2p,ih,ihpo4,ih2po4]) = [-1, 1, 1, -1];
         sys.system{row} = 'K2p';
-    
         row = row+1;
         jK2p = row;
         sys.jK2p = jK2p;
@@ -294,7 +282,7 @@ function sys = mksys(sys)
         sys.system{row} = 'Knh4';
 
         row = row+1;
-        jKnh4 = jKnh4;
+        jKnh4 = row;
         sys.jKnh4 = jKnh4;
         K(jKnh4,iKnh4) = 1; % Knh4
         sys.system{jKnh4} = 'pKnh4(T,S,P)';
@@ -313,7 +301,6 @@ function sys = mksys(sys)
         sys.jKh2s = jKh2s;
         K(jKh2s,iKh2s) = 1; % Kh2s
         sys.system{jKh2s} = 'pKh2s(T,S,P)';
-
     end
 
     % "mass" conservation" equations
