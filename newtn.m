@@ -16,7 +16,7 @@ function [x,J,iflag] = newtn(x0, F, tol,vararin)
 %                      tolerance
 %        1 ==> Newton's method did not converge 
     iprint = 1;
-    MAXIT = 25;
+    MAXIT = 40;
     x = x0;
     if (nargin==4)
         [F0,iJ] = F(x);

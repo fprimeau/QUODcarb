@@ -105,7 +105,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
       end
     %}
     z0 = init(yobs,pK,sys);
-    tol = 1e-9;
+    tol = 1e-7;
     [z,J,iflag] = newtn(z0,gun,tol);
     
     if (iflag ~=0)
@@ -126,7 +126,8 @@ function [g,H] = grad_limpco2(z,y,w,pK,gpK,sys)
     I = eye(length(z));
     H = zeros(length(z),length(z));
     for k = 1:length(z)
-        [~,g] = limpco2(z+sqrt(-1)*(eps^3)*I(:,k),y,w,pK,gpK,sys);
+        [f,g] = limpco2(z+sqrt(-1)*(eps^3)*I(:,k),y,w,pK,gpK,sys);
+        %fprintf('grad ok?:%i %e %e \n',k,imag(f)/eps^3,real(g(k)));
         H(k,:) = imag(g(:))/(eps^3);
     end
     g = real(g(:));
@@ -257,11 +258,10 @@ function [f,g] = limpco2(z,y,w,pK,gpK,sys)
         c = [  M * q( x ); ...
                (-K * x) - zpK  ] ; 
     end
-    
+
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers
     
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
-    
     if ( nargout > 1 ) % compute the gradient
         if (ismember('hf',sys.variables))
             gf2t = zeros(1,nv);
@@ -309,11 +309,11 @@ function z0 = init(yobs,pk,sys);
     k = q(pk);
     
     pK0 = pk(1);  pK1  = pk(2);  pK2  = pk(3);  pKb  = pk(4);   pKw  = pk(5);   pKs  = pk(6);   
-    pKF = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKsi = pk(11);  pp2f = pk(12);
+    pKf = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKsi = pk(11);  pp2f = pk(12);
     % add pKnh3, pKh2s
     
     K0 = k(1);  K1  = k(2);  K2  = k(3);  Kb  = k(4);   Kw  = k(5);   Ks  = k(6);   
-    KF = k(7);  K1p = k(8);  K2p = k(9);  K3p = k(10);  Ksi = k(11);  p2f = k(12);
+    Kf = k(7);  K1p = k(8);  K2p = k(9);  K3p = k(10);  Ksi = k(11);  p2f = k(12);
 
     y0  = yobs;
     dic = q(yobs(sys.iTC));
@@ -371,11 +371,11 @@ function z0 = init(yobs,pk,sys);
         y0(sys.iso4)  = p(so4);
     end
     
-    if (ismember('KF',sys.variables));
+    if (ismember('Kf',sys.variables));
         TF = q(yobs(sys.iTF));
-        HF = TF / ( 1 + KF / h );
-        F  = KF * HF / h;
-        y0(sys.iKF) = pKF;
+        HF = TF / ( 1 + Kf / h );
+        F  = Kf * HF / h;
+        y0(sys.iKf) = pKf;
         y0(sys.iTF) = p(TF);
         y0(sys.iF)  = p(F);
         y0(sys.iHF) = p(HF);

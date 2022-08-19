@@ -51,8 +51,8 @@ function sys = mksys(sys)
     end
     
     if ismember('fluoride',sys.abr)
-        % KF = [h][F]/[HF]
-        fluoride = {'KF','TF', 'F', 'HF'};
+        % Kf = [h][F]/[HF]
+        fluoride = {'Kf','TF', 'F', 'HF'};
         nrk = nrk+1; % number of rows
         sys.variables = {sys.variables{:},fluoride{:}};
     end
@@ -102,7 +102,8 @@ function sys = mksys(sys)
     K = zeros(2*nrk,nc);
     %
     row = 0;
-    if (ismember('K0',sys.variables))        % K0 = [CO2*]/fCO2 ==> -pK0 + pco2st - pfco2 = 0         
+    if (ismember('K0',sys.variables))        
+        % K0 = [CO2*]/fCO2 ==> -pK0 + pco2st - pfco2 = 0         
         row = row+1;
         K(row,[iK0,ico2st,ifco2]) = [-1, 1, -1];
         sys.system{row} = 'K0';
@@ -114,7 +115,8 @@ function sys = mksys(sys)
         sys.system{jK0} = 'pK0(T,S,P)';  
     end
     
-    if (ismember('K1',sys.variables))        % K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pfco2 = 0
+    if (ismember('K1',sys.variables))       
+        % K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pfco2 = 0
         row = row+1;
         K(row,[iK1,ih,ihco3,ico2st]) = [-1, 1, 1, -1];
         sys.system{row} = 'K1';
@@ -124,12 +126,10 @@ function sys = mksys(sys)
         sys.jK1 = jK1;
         K(jK1,iK1) = 1; % K1
         sys.system{jK1} = 'pK1(T,S,P)';
-
     end
     
     if (ismember('K2',sys.variables))
         % K2 = [CO3][H]/[HCO3]
-        
         row = row+1;
         K(row,[iK2,ih,ico3,ihco3]) = [-1, 1, 1, -1];
         sys.system{row} = 'K2';
@@ -139,12 +139,10 @@ function sys = mksys(sys)
         sys.jK2 = jK2;
         K(jK2,iK2) = 1; % K2
         sys.system{jK2} = 'pK2(T,S,P)';
-
     end
 
     if (ismember('p2f', sys.variables))
         %fco2 = pco2*p2f;
-
         row = row+1;
         K(row,[ifco2,ipco2,ip2f]) = [1 -1 -1];
         sys.system{row} = 'p2f';
@@ -154,12 +152,10 @@ function sys = mksys(sys)
         sys.jp2f = jp2f;
         K(jp2f,ip2f) = 1; % p2f
         sys.system{jp2f} = 'p2f(T,S,P)';
-    
     end
     
     if (ismember('Kw',sys.variables))
         % Kw = [OH][H]
-
         row = row+1;
         K(row,[iKw,ih,ioh]) = [-1, 1, 1];
         sys.system{row} = 'Kw';
@@ -174,7 +170,6 @@ function sys = mksys(sys)
     
     if (ismember('Kb',sys.variables))
         % Kb = [H][BOH4]/[BOH3]
-
         row = row+1;
         K(row,[iKb,ih,iboh4,iboh3]) = [-1, 1, 1, -1];
         sys.system{row} = 'Kb';
@@ -183,14 +178,11 @@ function sys = mksys(sys)
         jKb = row;
         sys.jKb = jKb;
         K(jKb,iKb) = 1; % Kb
-        sys.system{jKb} = 'pKb(T,S,P)';
-
-    
+        sys.system{jKb} = 'pKb(T,S,P)';    
     end
     
     if (ismember('Ks',sys.variables))
         % KS  = [H]F[SO4]/[HSO4]
-        
         row = row+1;
         K(row,[iKs,ihf,iso4,ihso4]) = [-1, 1, 1, -1];
         sys.system{row} = 'Ks';
@@ -200,27 +192,23 @@ function sys = mksys(sys)
         sys.jKs = jKs;
         K(jKs,iKs) = 1; % Ks
         sys.system{jKs} = 'pKs(T,S,P)';
-
     end
     
-    if (ismember('KF',sys.variables))
-        % KF = [H][F]/[HF]
+    if (ismember('Kf',sys.variables))
+        % Kf = [H][F]/[HF]
+        row = row+1;
+        K(row,[iKf, ih, iF, iHF]) = [-1, 1, 1, -1];
+        sys.system{row} = 'Kf';
 
         row = row+1;
-        K(row,[iKF, ih, iF, iHF]) = [-1, 1, 1, -1];
-        sys.system{row} = 'KF';
-
-        row = row+1;
-        jKF = row;
-        sys.jKF = jKF;
-        K(jKF,iKF) = 1; % KF
-        sys.system{jKF} = 'pKF(T,S,P)';
-
+        jKf = row;
+        sys.jKf = jKf;
+        K(jKf,iKf) = 1; % Kf
+        sys.system{jKf} = 'pKf(T,S,P)';
     end
     
     if (ismember('K1p',sys.variables))
         % K1p = [H][H2PO4]/[H3PO4]
-
         row = row+1;
         K(row,[iK1p,ih,ih2po4,ih3po4]) = [-1, 1, 1, -1];
         sys.system{row} = 'K1p';
@@ -230,23 +218,21 @@ function sys = mksys(sys)
         sys.jK1p = jK1p;
         K(jK1p,iK1p) = 1; % K1p
         sys.system{jK1p} = 'pK1p(T,S,P)';
-
     end
     if (ismember('K2p',sys.variables))
         % K2p = [H][HPO4]/[H2PO4]
         K(row,[iK2p,ih,ihpo4,ih2po4]) = [-1, 1, 1, -1];
         sys.system{row} = 'K2p';
+
         row = row+1;
         jK2p = row;
         sys.jK2p = jK2p;
         K(jK2p,iK2p) = 1; % K2p
         sys.system{jK2p} = 'pK2p(T,S,P)';
-
     end
 
     if (ismember('K3p',sys.variables))
-        % K3p = [H][PO4]/[HPO4]
-        
+        % K3p = [H][PO4]/[HPO4]        
         row = row+1;
         K(row,[iK3p,ih,ipo4,ihpo4]) = [-1, 1, 1, -1];
         sys.system{row} = 'K3p';
@@ -256,12 +242,10 @@ function sys = mksys(sys)
         sys.jK3p = jK3p;
         K(jK3p,iK3p) = 1; % K3p
         sys.system{jK3p} = 'pK3p(T,S,P)';
-
     end
 
     if (ismember('Ksi',sys.variables))
         % KSi = [H][SiO(OH)3]/[Si(OH)4]
-        
         row = row+1;
         K(row,[iKsi,ih,isiooh3,isioh4]) = [-1, 1, 1, -1];
         sys.system{row} = 'Ksi';
@@ -271,12 +255,10 @@ function sys = mksys(sys)
         sys.jKsi = jKsi;
         K(jKsi,iKsi) = 1; % Ksi
         sys.system{jKsi} = 'pKSi(T,S,P)';
-    
     end
 
     if (ismember('Knh4',sys.variables))
         % Knh4 = [H][NH3]/[NH4+]
-
         row = row+1;
         K(row,[iKnh4,ih,inh3,inh4]) = [-1, 1, 1, -1];
         sys.system{row} = 'Knh4';
@@ -286,12 +268,10 @@ function sys = mksys(sys)
         sys.jKnh4 = jKnh4;
         K(jKnh4,iKnh4) = 1; % Knh4
         sys.system{jKnh4} = 'pKnh4(T,S,P)';
-
     end
 
     if (ismember('Kh2s',sys.variables))
         % Kh2s = [H][HS]/[H2S]
-
         row = row+1;
         K(row,[iKh2s,ih,ihs,ih2s]) = [-1, 1, 1, -1];
         sys.system{row} = 'Kh2s';
@@ -360,17 +340,17 @@ function sys = mksys(sys)
         f2t_pTS = @(z) dpdx( q( z(iKs) ) + q( z(iTS) ) ) * dqdx( z(iTS) );
         f2t_pKs = @(z) dpdx( q( z(iKs) ) + q( z(iTS) ) ) * dqdx( z(iKs) ) - 1;
 
-        f2t_2pKs = @(z) dpdx( q( z(iKs) ) + q( z(iTS) ) ) * d2qdx2( z(iKs) ) + ...
-            d2pdx2( q( z(iKs) ) + q( z(iTS) ) ) * dqdx( z(iKs) ).^2;
+        %f2t_2pKs = @(z) dpdx( q( z(iKs) ) + q( z(iTS) ) ) * d2qdx2( z(iKs) ) + ...
+        %    d2pdx2( q( z(iKs) ) + q( z(iTS) ) ) * dqdx( z(iKs) ).^2;
         
-        f2t_2pTS = @(z) dpdx( q( z(iKs) ) + q( z(iTS) ) ) * d2qdx2( z(iTS) ) + ...
-            d2pdx2( q( z(iKs) ) + q( z(iTS) ) ) * dqdx( z(iTS) ).^2;
+        %f2t_2pTS = @(z) dpdx( q( z(iKs) ) + q( z(iTS) ) ) * d2qdx2( z(iTS) ) + ...
+        %    d2pdx2( q( z(iKs) ) + q( z(iTS) ) ) * dqdx( z(iTS) ).^2;
         
-        f2t_pTS_pKs = @(z) d2pdx2( q( z(iKs) ) + q( z(iTS) ) ) * dqdx( z(iTS) ) * dqdx( z(iKs) );
+        %f2t_pTS_pKs = @(z) d2pdx2( q( z(iKs) ) + q( z(iTS) ) ) * dqdx( z(iTS) ) * dqdx( z(iKs) );
 
         sys.gf2t = @(z) [ f2t_ph(z), f2t_pKs(z), f2t_pTS(z), f2t_phf(z)];
-        sys.ggf2t = @(z) [ [f2t_2pKs(z), f2t_pTS_pKs(z)]; ...
-                           [f2t_pTS_pKs(z), f2t_2pTS(z)]  ];
+        %sys.ggf2t = @(z) [ [f2t_2pKs(z), f2t_pTS_pKs(z)]; ...
+        %                   [f2t_pTS_pKs(z), f2t_2pTS(z)]  ];
         row = row+1;
     end
 
