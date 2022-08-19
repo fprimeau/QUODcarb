@@ -1,4 +1,4 @@
-function [pK,gpK,ggpK] = local_pK(T,S,P)
+function [pK,gpK] = local_pK(T,S,P)
 % base equations COPIED FROM co2sys.m Orr et al. (2018)  Github
 % Originally from  van Heuven et al. (2011)
 % Original co2sys is from Lewis and Wallace (1998)
@@ -16,24 +16,24 @@ function [pK,gpK,ggpK] = local_pK(T,S,P)
 %       -> [d/dTdT, d/dTdS, d/dTdP, d/dSdS, d/dSdP, d/dPdP];
 
     % set up complex variables
-    Ti = T + sqrt(-1)*eps^3;
-    Si = S + sqrt(-1)*eps^3;
-    Pi = P + sqrt(-1)*eps^3;
-
-    [pK,gpK_T] = calc_pK(Ti,S,P); % imaginary in T
-    [~,gpK_S]  = calc_pK(T,Si,P); % imaginary in S
-    [~,gpK_P]  = calc_pK(T,S,Pi); % imaginary in P
-
-    ggpK = zeros(14,6);
-
-    % ggpK
-    ggpK(:,1:3) = imag(gpK_T(:,1:3))./eps^3; % K_TT, K_ST, K_PT
-    ggpK(:,4) = imag(gpK_S(:,2))./eps^3; % K_SS
-    ggpK(:,5:6) = imag(gpK_P(:,2:3))./eps^3; % K_SP, K_PP
-
-    pK = real(pK);
-    gpK = real(gpK_T);
-
+%     Ti = T + sqrt(-1)*eps^3;
+%     Si = S + sqrt(-1)*eps^3;
+%     Pi = P + sqrt(-1)*eps^3;
+% 
+%     [pK,gpK_T] = calc_pK(Ti,S,P); % imaginary in T
+%     [~,gpK_S]  = calc_pK(T,Si,P); % imaginary in S
+%     [~,gpK_P]  = calc_pK(T,S,Pi); % imaginary in P
+% 
+%     ggpK = zeros(14,6);
+% 
+%     % ggpK
+%     ggpK(:,1:3) = imag(gpK_T(:,1:3))./eps^3; % K_TT, K_ST, K_PT
+%     ggpK(:,4) = imag(gpK_S(:,2))./eps^3; % K_SS
+%     ggpK(:,5:6) = imag(gpK_P(:,2:3))./eps^3; % K_SP, K_PP
+% 
+%     pK = real(pK);
+%     gpK = real(gpK_T);
+    [pK,gpK] = calc_pK(T,S,P);
 
     % calculate equilibrium constants-------------------------------------
     function [pK,gpK] = calc_pK(T,S,P)
