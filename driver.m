@@ -41,15 +41,15 @@ for i = 1:102
 
     sal(i) = in(i,1); % salinity
     esal(i) = in(i,10);
-    wsal(i) = (1e0*esal(i)).^(-2);
+    wsal(i) = (esal(i)).^(-2);
 
     temp(i) = in(i,2); % deg C
     etemp(i) = in(i,11); 
-    wtemp(i) = (1e0*etemp(i)).^(-2);
+    wtemp(i) = (etemp(i)).^(-2);
 
     pres(i) = in(i,3); % dbar
     %epres = 0.03
-    wpres(i) = (1e0*0.03).^(-2);
+    wpres(i) = (0.03).^(-2);
     
     psil(i)  = p( in(i,5) * 1e-6 ); % total Si mol/kg
     wpsil(i) = w( in(i,5), in(i,13) );

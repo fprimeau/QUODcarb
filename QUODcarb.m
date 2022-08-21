@@ -25,7 +25,20 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
     pKw   = pK(5);  pKs  = pK(6);  pKf   = pK(7);  pK1p  = pK(8);  
     pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
     pKh2s = pK(13); pp2f = pK(14);
-    
+
+    % check the derivatives
+    % im = sqrt(-1);
+    % [pK,gpK] = local_pK(temp+eps^3*im, sal         , pres         );
+    % pK_T = imag(pK)/eps^3;
+    % [pK,gpK] = local_pK(temp         , sal+eps^3*im, pres         );
+    % pK_S = imag(pK)/eps^3;
+    % [pK,gpK] = local_pK(temp         , sal         , pres+eps^3*im);
+    % pK_P = imag(pK)/eps^3;
+    %[ pK_T, real( gpK(:,1) ) ]
+    %[ pK_S, real( gpK(:,2) ) ]
+    %[ pK_P, real( gpK(:,3) ) ]
+    % keyboard
+
     %
     % add "observations" for the equilibrium constants 
     %
@@ -89,21 +102,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
         yobs(sys.iKh2s) = pKh2s;
     end
     
-    gun = @(z) grad_limpco2(z,yobs,wobs,pK,gpK,sys);
-    % test limpco2 gradient and hessian using complex step method
-    %{
-      
-      [f0,g0,H0] = limpco2(z0,yobs,wobs,sys);
-      I = eye(length(z0));
-      for k = 1:length(z0)
-      [f,g,H] = limpco2(z0+sqrt(-1)*eps^3*I(:,k),yobs,wobs,sys);
-      fprintf('%i %e %e \n',k,imag(f)/eps^3,real(g(k)))
-      for kk = 1:length(z0)
-      fprintf('(%i,%i) %e %e \n',k,kk,imag(g(kk))/eps^3,real(H(k,kk)));
-      end
-      keyboard
-      end
-    %}
+    gun = @(z) grad_limpco2(z,yobs,wobs,sys);
     z0 = init(yobs,pK,sys);
     tol = 1e-7;
     [z,J,iflag] = newtn(z0,gun,tol);
@@ -122,19 +121,22 @@ end
 
 %-----------------------------------------------------------------
 
-function [g,H] = grad_limpco2(z,y,w,pK,gpK,sys)
+function [g,H] = grad_limpco2(z,y,w,sys)
     I = eye(length(z));
     H = zeros(length(z),length(z));
+    im = sqrt(-1);
+    %test_g = zeros(length(z),1);
     for k = 1:length(z)
-        [f,g] = limpco2(z+sqrt(-1)*(eps^3)*I(:,k),y,w,pK,gpK,sys);
-        %fprintf('grad ok?:%i %e %e \n',k,imag(f)/eps^3,real(g(k)));
-        H(k,:) = imag(g(:))/(eps^3);
+        [f,g] = limpco2( z + im * eps^3 * I(:,k), y, w, sys);
+        %   test_g(k) = imag(f)/eps^3;
+        H(k,:) = imag( g(:) ) / eps^3 ;
     end
-    g = real(g(:));
-    %H = imag(g(:)/eps^3); % complex step 
+    g = real( g(:) );
+    % [ g, test_g ]
+    %keyboard
 end
 
-function [f,g] = limpco2(z,y,w,pK,gpK,sys)
+function [f,g] = limpco2(z,y,w,sys)
 % [f,g] = limpco2(z,y,w,tc,s,P)
 %
 % Negative log probability for the co2 system  a.k.a. log improbability i.e., limp!
@@ -165,8 +167,7 @@ function [f,g] = limpco2(z,y,w,pK,gpK,sys)
     x   =  z(1:nv);      % measureable variables
     lam =  z(nv+1:end);  % Lagrange multipliers 
     
-    % Make a vector of measured quantities
-    
+    % Make a vector of measured quantities    
     i = find(~isnan(y));
     y = y(i);
     
@@ -178,6 +179,8 @@ function [f,g] = limpco2(z,y,w,pK,gpK,sys)
     
     PP = I(i,:); % picking/pick out the measured ones
     e = PP*x - y;
+    
+    [pK,gpK] = local_pK(x(sys.iT),x(sys.iS),x(sys.iP));
 
     % column vector with zeros and pK's at end
     nrk = size(K,1) ;
@@ -252,29 +255,28 @@ function [f,g] = limpco2(z,y,w,pK,gpK,sys)
     % constraint equations
     if (ismember('hf',sys.variables))
         c = [  M * q( x ); ... 
-               (-K * x) - zpK;...
+               (-K * x) + zpK;...
                sys.f2t(x) ] ; 
     else
         c = [  M * q( x ); ...
-               (-K * x) - zpK  ] ; 
+               (-K * x) + zpK  ] ; 
     end
 
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers
-    
+
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
     if ( nargout > 1 ) % compute the gradient
         if (ismember('hf',sys.variables))
             gf2t = zeros(1,nv);
             gf2t(1,[sys.ih, sys.iKs, sys.iTS, sys.ihf]) = sys.gf2t(x);
             dcdx = [ M * diag( sys.dqdx( x ) ); ...
-                     (-K - zgpK) ;...
+                     (-K + zgpK) ;...
                      gf2t ]; % constraint eqns wrt -log10(concentrations)
         else
             dcdx = [ M * diag( sys.dqdx( x ) ); ...
-                     (-K - zgpK) ]; % c'
+                     (-K + zgpK) ]; % c'
         end    
         g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
-        
     end
 %     
 %     if ( nargout > 2 ) % compute the Hessian
@@ -308,12 +310,14 @@ function z0 = init(yobs,pk,sys);
     p = sys.p;
     k = q(pk);
     
-    pK0 = pk(1);  pK1  = pk(2);  pK2  = pk(3);  pKb  = pk(4);   pKw  = pk(5);   pKs  = pk(6);   
-    pKf = pk(7);  pK1p = pk(8);  pK2p = pk(9);  pK3p = pk(10);  pKsi = pk(11);  pp2f = pk(12);
+    pK0 = pk(1); pK1  = pk(2); pK2  = pk(3); pKb  = pk(4);  pKw  = pk(5);  pKs   = pk(6);   
+    pKf = pk(7); pK1p = pk(8); pK2p = pk(9); pK3p = pk(10); pKsi = pk(11); pKnh4 = pk(12);
+    pKh2s = pk(13); pp2f = pk(14);
     % add pKnh3, pKh2s
     
-    K0 = k(1);  K1  = k(2);  K2  = k(3);  Kb  = k(4);   Kw  = k(5);   Ks  = k(6);   
-    Kf = k(7);  K1p = k(8);  K2p = k(9);  K3p = k(10);  Ksi = k(11);  p2f = k(12);
+    K0 = k(1); K1  = k(2); K2  = k(3); Kb  = k(4);  Kw  = k(5);  Ks  = k(6);   
+    Kf = k(7); K1p = k(8); K2p = k(9); K3p = k(10); Ksi = k(11); Knh4 = k(12);
+    Kh2s = k(13); p2f = k(14);
 
     y0  = yobs;
     dic = q(yobs(sys.iTC));
@@ -342,7 +346,7 @@ function z0 = init(yobs,pk,sys);
     y0(sys.ico3)   = p(co3);
     y0(sys.ifco2)  = p(fco2);
     y0(sys.ipco2)  = p(pco2);
-
+    
     if (ismember('Kw',sys.variables))
         oh = Kw / h;
         y0(sys.iKw) = pKw;

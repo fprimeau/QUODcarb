@@ -4,7 +4,7 @@ function [pK,gpK] = local_pK(T,S,P)
 % Original co2sys is from Lewis and Wallace (1998)
 
 % INPUT:
-%   TC = Temp (deg C)
+%   T = Temp (deg C)
 %   S  = Salinity
 %   P  = pressure (dbar)
 
@@ -12,561 +12,507 @@ function [pK,gpK] = local_pK(T,S,P)
 %    pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
 %   gpK  = [pK_T, pK_S, pK_P]; first derivatives (gradient of pK)
 
-%     [pK,gpK_T] = calc_pK(Ti,S,P); 
-%     [~,gpK_S]  = calc_pK(T,Si,P);
-%     [~,gpK_P]  = calc_pK(T,S,Pi); 
-% 
-    
-    TK = T + 273.15; % convert to Kelvin
+    TK   = T + 273.15; % convert to Kelvin
     Rgas = 83.1451; % RgasConstant, ml bar-1 K-1 mol-1, DOEv2
-    RT = Rgas.*TK;
-    Pbar = P./10;
-    IonS = 19.924 .* S ./ (1000-1.005 .* S); % from DOE handbook
-                                             % derivatives
+    RT   = Rgas * TK;
     RT_T = Rgas;
-    IonS_S = (19.924.*(1000-1.005.*S) + 1.005*(19.924.*S) )./...
-             ((1000-1.005*S).^2); % NEW as of 7/25 (bug before)
+    
+    Pbar = P / 10; % convert from dbar to bar
+    ions   = @(S) 19.924 * S / ( 1000 - 1.005 * S); % from DOE handbook
+    ions_S = @(S) 19.924 / ( 1000 - 1.005 * S ) + ...
+             1.005 * 19.924 * S / ( 1000 -1.005 * S )^2 ; 
     
     LOG10 = log(10);
     p = @(x) -log10(x);
-    q = @(x) 10.^(-x);  % use q, i.e., a backward p
-    dpdx = @(x) -1 / (x .* LOG10); % p'
-    dqdx = @(x) - LOG10 * 10.^( -x );  % q'
+    q = @(x) 10.^(-x);  % inverse p, i.e., a backward p
+    dpdx = @(x) -1 / (x * LOG10);     % p'
+    dqdx = @(x) -LOG10 * 10.^( -x );  % q'
     
-    % pCO2 to fCO2 conversion (Weiss 1974) valid to within 0.1% ----------
-    function [pp2f,gpp2f] = calc_p2f(TK,RT,RT_T)
-        Pstd = 1.01325;
-        delC = (57.7 - 0.118.*TK);
-        a = -1636.75; b = 12.0408; c = -0.0327957;
-        d = 3.16528*0.00001; h = -0.118;
-        %B = -1636.75 + 12.0408.*TK - 0.0327957.*TK.^2 + 3.16528.*0.00001.*TK.^3;
-        B = a + b.*TK + c.*TK.^2 + d.*TK.^3;
-        B_T = b + 2*c*TK + 3*d*TK^2;
-        
-        pp2f = -((B + 2.*delC).*Pstd./(RT))/log(10);
-        pp2f_T =  (-(B + 2.*delC).* (-Pstd.*(RT.^-2)*RT_T) - ...
-                   (B_T + 2*h) * Pstd/RT ) / log(10); % derivative wrt T
-        
-        gpp2f = [pp2f_T, 0, 0]; % gradient of p(p2f);
-    end
-    [pp2f,gpp2f] = calc_p2f(TK,RT,RT_T);
     
-    % calculate K0 (Weiss 1974)-------------------------------------------
-    function [pK0,gpK0] = calc_pK0(TK,S)
-        TK100 = TK./100;
-        TK100_T = 1/100;
-        a = -60.2409; b = 93.4517; c = 23.3585; d = 0.023517;
-        g = -0.023656; h = 0.0047036;
-        %lnK0 = -60.2409 + 93.4517 ./ TK100 + 23.3585 .* log(TK100) + S .* ...
-        %(0.023517 - 0.023656 .* TK100 + 0.0047036 .* TK100 .^2);
-        pK0 = -( a + b./TK100 + c.*log(TK100) + S.*( d + g.*TK100 + ...
-                                                     h.*(TK100.^2) ) ) ./ log(10);
-        pK0_T =  -(-b.*TK100_T./(TK100.^2) + c.*TK100_T./TK100 + ...
-                   S.* (g.*TK100_T + 2.*h.*TK100.*TK100_T) ) ./log(10); % derivative wrt T
-        pK0_S = -( d + g.*TK100 + h.*(TK100.^2)  ) ./log(10); % derivative wrt S
-        
-        gpK0 = [pK0_T, pK0_S, 0];
-    end
-    [pK0,gpK0] = calc_pK0(TK,S);
-    
-    % calculate Ks (Dickson 1990a)----------------------------------------
-    function [pKs,gpKs] = calc_pKs(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T)
-        a = -4276.1; b = 141.328; c = -23.093; d = -13856;
-        g = 324.57; h = -47.986; l = 35474; m = -771.54;
-        n = 114.723; o = -2698; r = 1776;
-        %lnKs = -4276.1./TK + 141.328 - 23.093 .* log(TK) + ...
-        %    (-13856./TK + 324.57 - 47.986 .* log(TK)) .* sqrt(IonS) + ...
-        %    (35474./TK - 771.54 + 114.723 .* log(TK)) .* IonS + ...
-        %    (-2698./TK) .* sqrt(IonS) .* IonS + (1776./TK) .* IonS.^2;
-        sqrtIonS_S = 0.5*IonS_S/sqrt(IonS);
-        pKs = - ( a./TK + b + c.*log(TK) + ...
-                  ( d./TK + g + h.*log(TK) ).*sqrt(IonS) + ...
-                  ( l./TK + m + n.*log(TK) ).*IonS + ...
-                  ( o./TK ).*sqrt(IonS).*IonS + ...
-                  ( r./TK ).*(IonS.^2) ) ./ log(10) + p(1 - 0.001005.*S);
-        pKs_T = - ( -a./(TK.^2) + c./TK + ...
-                    ( -d./(TK.^2) + h./TK ).*sqrt(IonS) + ...
-                    ( -l./(TK.^2) + n./TK ).*IonS + ...
-                    ( -o./(TK.^2) ).* sqrt(IonS).*IonS + ...
-                    ( -r./(TK.^2) ).*(IonS.^2) ) ./ log(10);
-        pKs_S = -( (d./TK + g + h.*log(TK) ).*sqrtIonS_S + ...
-                   ( l./TK + m + n.*log(TK) ) .* IonS_S + ...
-                   ( o./TK ).*sqrtIonS_S.*IonS + ( o/TK ).*sqrt(IonS).*IonS_S + ...
-                   ( r./TK).*(2.*IonS.*IonS_S) )./ log(10) + ...
-                dpdx(1 - 0.001005 .* S).*(-0.001005);
-        
-        % pressure correction
-        aa = -18.03; bb = 0.0466; cc = 0.000316;
-        dd = -4.53; gg = 0.09; hh = 1000;
-        %dV = -18.03 + 0.0466.*T + 0.000316.*T.^2;
-        %Ka = (-4.53 + 0.09.*T)./1000;
-        %lnKsfac = (-dV + 0.5.*Ka.*Pbar).*Pbar./RT; % pressure effect on Ks
-        pKsfac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.*...
-                     ((dd+gg.*T)./hh).*Pbar ).* Pbar./RT ) ./ log(10);
-        pKsfac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                      (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
-        pKsfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* ...
-                      Pbar./RT + ( -(aa + bb.*T + cc.*T.^2) + 0.5.* ...
-                                   Pbar.*((dd+gg.*T)./hh)).*(-Pbar.*RT_T./RT.^2) ) ...
-            ./ log(10);
-        
-        pKs = pKs + pKsfac;
-        pKs_T = pKs_T + pKsfac_T;
-        pKs_P = pKsfac_P;
-        
-        gpKs = [pKs_T, pKs_S, pKs_P];
-    end
-    [pKs,gpKs] = calc_pKs(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T);
-    
-    % calculate Kf (Dickson 1979)----------------------------------
-    function [pKf,gpKf] = calc_pKf(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T)
-        sqrtIonS_S = 0.5*IonS_S/sqrt(IonS);
-        a = 1590.2; b = -12.641; c = 1.525;
-        %lnKf = 1590.2/TK - 12.641 + 1.525 .* IonS.^0.5;
-        pKf = -( a/TK + b + c .* sqrt(IonS) ) ./log(10) ...
-              + p(1 - 0.001005 .* S) ; % converted to mol/kg-SW
-        pKf_T = -(-a/(TK.^2) )./log(10); % derivative wrt T
-        pKf_S =  -c.*sqrtIonS_S ./ log(10) + ...
-                 dpdx(1 - 0.001005 .*S).*(-0.001005) ;  % derivative wrt S
-        
-        % pressure correction
-        aa = -9.78; bb = -0.009; cc = -0.000942;
-        dd = -3.91; gg = 0.054; hh = 1000;
-        %dV = -9.78 - 0.009.*T - 0.000942.*T.^2; %Ka = (-3.91 + 0.054.*T)./1000;
-        pKffac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
-                     ((dd + gg*T)./hh).*Pbar ) .* Pbar./RT) ./ log(10);
-        pKffac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                       (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
-        pKffac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ).* ...
-                      Pbar./RT + (-(aa + bb.*T + cc.*T.^2) + 0.5.*Pbar.* ...
-                                  ((dd+gg.*T)./hh)).*(-Pbar .* RT_T ./ RT.^2)) ./log(10);
-        
-        pKf = pKf + pKffac;
-        pKf_T = pKf_T + pKffac_T;
-        pKf_P = pKffac_P;
-        
-        gpKf = [pKf_T, pKf_S, pKf_P];
-    end
-    [pKf,gpKf] = calc_pKf(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T);
-    
-    % calculate TF (Riley 1965)--------------------------------------
-    TF = (0.000067./18.998).*(S./1.80655); % mol/kg-SW
-    TF_S = 1.95217e-6; % derivative wrt S
-    pTF = p(TF);
-    pTF_S = dpdx(TF).*TF_S;
-    
-    % calculate TS (Morris & Riley 1966)-----------------------------
-    TS = (0.14./96.062).*(S./1.80655); % mol/kg-SW
-    TS_S = 0.000806727; % derivative wrt S
-    pTS = p(TS);
-    pTS_S = dpdx(TS).*TS_S;
-    
-    % calculate fH (Takahashi et al 1982)--------------------------
-    %fH = 1.2948 - 0.002036 .* TK + (0.0004607 - ...
-    %   0.000001475 .* TK) .* S.^2 ;
-    
-    % calculate Kb (Dickson 1990)----------------------------------
-    function [pKb,gpKb] = calc_pKb(T,TK,S,Pbar,RT,RT_T)
-        a = -8966.9; b = -2890.53; c = -77.942; d = 1.728; g = -0.0996;
-        h = 148.0248; l = 137.1942; m = 1.62142; n = -24.4344;
-        o = -25.085; r = -0.2474; x = 0.053105;
-        %lnKbt = -8966.9 - 2890.53 .* sqrt(S) - 77.942 .* S + ...
-        %    1.728 .* sqrt(S) .* S - 0.0996 .* S.^2;
-        %lnKb = lnKbt./ TK + 148.0248 + 137.1942 .* sqrt(S) + ...
-        %    1.62142 .* S + (-24.4344 - 25.085 .* sqrt(S) - 0.2474 .* ...
-        %    S) .* log(TK) + 0.053105 .* sqrt(S) .* TK;
-        lnKbtop = a + b.*sqrt(S) + c.*S + d.*sqrt(S).*S + g.*S.^2;
-        pKb = - (lnKbtop./TK + h + l.*sqrt(S) + m.*S + log(TK).* ...
-                 (n + o.*sqrt(S) + r.*S ) + x.*sqrt(S).*TK ) ./ log(10);
-        pKb_T = -(-lnKbtop./(TK.^2) + (1./TK).*(n + o.*sqrt(S) + r.*S) + ...
-                  x.*sqrt(S) ) ./ log(10); % derivative wrt T
-        pKb_S = - ((0.5.*b./(sqrt(S).*TK)) + (c./TK) + 1.5.*d.*sqrt(S)./TK + ...
-                   2.*g.*S./TK + (0.5.*l./sqrt(S)) + m + ...
-                   log(TK).*((0.5.*o./sqrt(S)) + r) + (0.5.*x.*TK./sqrt(S)) )...
-                ./ log(10); % derivative wrt S
-        
-        % pressure correction
-        aa = -29.48; bb = 0.1622; cc = -0.002608; dd = -2.84; hh = 1000;
-        %dV = -29.48 + 0.1622.*T - 0.002608.*T.^2; % Ka = -2.84./1000;
-        pKbfac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.*(dd./hh).*Pbar)...
-                    .*Pbar./RT)./log(10);
-        pKbfac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                      (Pbar.*(dd./hh)./RT) ) ./ log(10);
-        pKbfac_T = -( (-(bb + 2.*cc.*T) ) .* Pbar  ./ RT + ...
-                      (-(aa + bb.*T + cc.*T.^2) + 0.5.*Pbar.*(dd./hh)).* ...
-                      (-Pbar .* RT_T ./ RT.^2)) ./log(10);
-        
-        pKb = pKb + pKbfac;
-        pKb_T = pKb_T + pKbfac_T;
-        pKb_P = pKbfac_P;
-        
-        gpKb = [pKb_T, pKb_S, pKb_P];
-    end
-    [pKb,gpKb] = calc_pKb(T,TK,S,Pbar,RT,RT_T);
-    
-    % calculate Kw (Millero 1995)--------------------------------
-    function [pKw,gpKw] = calc_pKw(T,TK,S,Pbar,RT,RT_T)
-        a = 148.9802; b = -13847.26; c = -23.6521; d = -5.977;
-        g = 118.67; h = 1.0495; l = -0.01615;
-        %lnKw = 148.9802 - 13847.26 ./ TK - 23.6521 .* log(TK) + ...
-        %    (-5.977 + 118.67 ./ TK + 1.0495 .* log(TK)) .* ...
-        %    sqrt(S) - 0.01615 .* S;
-        pKw   =  -( a + b / TK   + c * log( TK ) + ( d + g / TK   + h * log( TK ) ) * sqrt(S)            + l * S ) / log(10);
-        pKw_T =  -(   - b / TK^2 + c / TK        + (   - g / TK^2 + h / TK        ) * sqrt(S)                    ) / log(10); % derivative wrt T
-        pKw_S =  -(                              + ( d + g / TK   + h * log( TK ) ) * ( 0.5 / sqrt(S) )  + l     ) / log(10); % derivative wrt S
-
-        % pressure correction
-        aa = -20.02; bb = 0.1119; cc = -0.001409;
-        dd = -5.13; gg = 0.0794; hh = 1000;
-        % dV = -20.02 + 0.1119.*TC - 0.001409 .*TC.^2; % Ka = (-5.13 + 0.0794.*TC)./1000;
-        pKwfac = - ( (-(aa + bb.*T + cc.*T.^2) + 0.5.*((dd+gg.*T)./hh)...
-                      .*Pbar).*Pbar./RT ) ./ log(10) ;
-        pKwfac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                       (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
-        pKwfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) ...
-                      .* Pbar ./ RT + (-(aa + bb.*T + cc.*T.^2) + ...
-                                       0.5.*Pbar.*((dd+gg.*T)./hh)).* ...
-                      (-Pbar .* RT_T ./ RT.^2)) ./log(10);
-        pKw = pKw + pKwfac;
-        pKw_T = pKw_T + pKwfac_T;
-        pKw_P = pKwfac_P;
-        
-        gpKw = [pKw_T,pKw_S,pKw_P];
-    end
-    [pKw,gpKw] = calc_pKw(T,TK,S,Pbar,RT,RT_T);
-    
-    % calculate K1p (Yao and Millero 1995)--------------------------------
-    function [pK1p,gpK1p] = calc_pK1p(T,TK,S,Pbar,RT,RT_T)
-        a = -4576.752; b = 115.54; c = -18.453; d = -106.736;
-        g = 0.69171; h = -0.65643; l = -0.01844;
-        %lnK1p = -4576.752 ./TK + 115.54 - 18.453 .* log(TK) + ...
-        %    (-106.736./TK + 0.69171) .* sqrt(S) + (-0.65643./TK - 0.01844).*S;
-        
-        pK1p = - (a./TK + b + c.*log(TK) + ...
-                  (d./TK + g ).*sqrt(S) + (h./TK + l).*S ) ./ log(10);
-        pK1p_T = - ( -a./(TK.^2) + c./TK + sqrt(S) .* (-d./(TK.^2)) + ...
-                     (-h./(TK.^2)).*S ) ./ log(10); % derivative wrt T
-        pK1p_S = - ( (d./TK + g).*(0.5./sqrt(S)) + ...
-                     (h./TK + l) ) ./ log(10);
-        
-        % pressure correction
-        aa = -14.51; bb = 0.1211; cc = -0.000321;
-        dd = -2.67; gg = 0.0427; hh = 1000;
-        % dV = -14.51 + 0.1211.*TC - 0.000321.*TC.^2; % Ka  = (-2.67 + 0.0427.*TC)./1000;
-        pK1pfac = - ( ( -(aa + bb.*T + cc.*T.^2) + 0.5.* ...
-                        ((dd + gg.*T)./hh).*Pbar ) .*Pbar./RT ) ./ log(10);
-        pK1pfac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                        (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
-        pK1pfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* ...
-                       Pbar./RT + (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
-                                   Pbar.*((dd+gg.*T)./hh)).* ...
-                       (-Pbar .* RT_T ./ RT.^2)) ./log(10);
-        pK1p = pK1p + pK1pfac;
-        pK1p_T = pK1p_T + pK1pfac_T;
-        pK1p_P = pK1pfac_P;
-        
-        gpK1p = [pK1p_T,pK1p_S,pK1p_P];
-    end
-    [pK1p,gpK1p] = calc_pK1p(T,TK,S,Pbar,RT,RT_T);
-    
-    % calculate K2p (Yao and Millero 1995)--------------------------------
-    function [pK2p,gpK2p] = calc_pK2p(T,TK,S,Pbar,RT,RT_T)
-        a = -8814.715; b = 172.1033; c = -27.927; d = -160.34;
-        g = 1.3566; h = 0.37335; l = -0.05778;
-        %lnK2p = -8814.715./TK + 172.1033 - 27.927.*log(TK) + ...
-        %    (-160.34./TK + 1.3566).*sqrt(S) + (0.37335./TK - 0.05778).*S;
-        pK2p = -( a./TK + b + c.*log(TK) + (d./TK + g).*sqrt(S) + ...
-                  (h./TK + l).*S ) ./log(10);
-        pK2p_T = -( -a./(TK.^2) + c./TK + sqrt(S).* (-d./(TK.^2)) + ...
-                    (-h./(TK.^2)).*S ) ./ log(10);
-        pK2p_S = -( (d./TK + g) .* ( 0.5./sqrt(S) ) + ...
-                    (h./TK + l) ) ./ log(10);
-        
-        % pressure correction
-        aa = -23.12; bb = 0.1758; cc = -0.002647;
-        dd = -5.15; gg = 0.09; hh = 1000;
-        % dV = -23.12 + 0.1758.*TC - 0.002647.*TC.^2; % Ka  = (-5.15 + 0.09  .*TC)./1000;
-        pK2pfac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.*((dd + gg.*T)/hh) ...
-                      .*Pbar) .*Pbar./RT ) ./ log(10);
-        pK2pfac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                        (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
-        pK2pfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* Pbar  ./ RT + ...
-                       (-(aa + bb.*T + cc.*T.^2) + 0.5.*Pbar.*((dd+gg.*T)./hh)).* ...
-                       (-Pbar .* RT_T ./ RT.^2)) ./log(10);
-        pK2p = pK2p + pK2pfac;
-        pK2p_T = pK2p_T + pK2pfac_T;
-        pK2p_P = pK2pfac_P;
-        
-        gpK2p = [pK2p_T, pK2p_S, pK2p_P];
-    end
-    [pK2p,gpK2p] = calc_pK2p(T,TK,S,Pbar,RT,RT_T);
-    
-    % calculate K3p (Yao and Millero 1995)--------------------------------
-    function [pK3p,gpK3p] = calc_pK3p(T,TK,S,Pbar,RT,RT_T)
-        a = -3070.75; b = -18.126; c = 17.27039; d = 2.81197;
-        g = -44.99486; h = -0.09984;
-        %lnK3p = -3070.75./TK - 18.126 + (17.27039./TK + 2.81197).*sqrt(S) + ...
-        %    (-44.99486./TK - 0.09984).*S;
-        pK3p = -( a./TK + b + (c./TK + d).*sqrt(S) +...
-                  (g./TK + h) .*S ) ./ log(10);
-        pK3p_T = - (-a./(TK.^2) + (-c./(TK.^2).*sqrt(S) + ...
-                                   (-g./(TK.^2)).*S )  )./ log(10);
-        pK3p_S = - ( (c./TK + d) .* (0.5./sqrt(S)) + ...
-                     (g./TK + h) ) ./ log(10);
-        
-        % pressure correction
-        aa = -26.57; bb = 0.202; cc = -0.003042;
-        dd = -4.08; gg = 0.0714; hh = 1000;
-        % dV = -26.57 + 0.202 .*TC - 0.003042.*TC.^2; %Ka  = (-4.08 + 0.0714.*TC)./1000;
-        pK3pfac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
-                      ((dd + gg.*T)./hh) .*Pbar) .* Pbar./RT ) ./log(10);
-        pK3pfac_P =  -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                        (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
-        pK3pfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* ...
-                       Pbar  ./ RT + (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
-                                      Pbar.*((dd+gg.*T)./hh)).* ...
-                       (-Pbar .* RT_T ./ RT.^2)) ./log(10);
-        pK3p = pK3p + pK3pfac;
-        pK3p_T = pK3p_T + pK3pfac_T;
-        pK3p_P = pK3pfac_P;
-        
-        gpK3p = [pK3p_T, pK3p_S, pK3p_P]; % gradient pK3p
-    end
-    [pK3p,gpK3p] = calc_pK3p(T,TK,S,Pbar,RT,RT_T);
-    % S and P are fine but T is NOT
-    
-    % calculate Ksi (Yao and Millero 1995)--------------------------------
-    function [pKsi,gpKsi] = calc_pKsi(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T)
-        sqrtIonS_S = 0.5*IonS_S/sqrt(IonS);
-        a = -8904.2; b = 117.4; c = -19.334; d = -458.79;
-        g = 3.5913; h = 188.74; l = -1.5998; m = -12.1652; n = 0.07871;
-        %lnKsi = -8904.2./TK + 117.4 - 19.334.*log(TK) + (-458.79./TK + ...
-        %    3.5913).*sqrt(IonS) + (188.74/TK - 1.5998).*IonS + ...
-        %    (-12.1652./TK + 0.07871).*IonS.^2;
-        pKsi = - ( a./TK + b + c.*log(TK) + (d./TK + g).*sqrt(IonS) + ...
-                   (h./TK + l).*IonS + (m./TK + n).*IonS.^2 ) ./ log(10) + ...
-               p(1 - 0.001005.*S) ; % convert to mol/kg-SW
-        pKsi_T = - ( -a./(TK.^2) + c./TK + sqrt(IonS).*(-d./(TK.^2)) + ...
-                     IonS.*(-h./(TK.^2)) + IonS.^2.*(-m./(TK.^2)) ) ./ log(10) ;
-        pKsi_S = - ( (d./TK + g).*(sqrtIonS_S) + (h./TK + l).*IonS_S + ...
-                     2.*IonS.*IonS_S.*(m./TK + n) ) ...
-                 ./ log(10) + dpdx(1 - 0.001005.*S).*(-0.001005) ;
-        
-        % pressure correction
-        aa = -29.48; bb = 0.1622; cc = -0.002608;
-        dd = -2.84; hh = 1000;
-        % dV = -29.48 + 0.1622.*TC - 0.002608.*TC.^2; % Ka  = -2.84./1000;
-        pKsifac = -( (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
-                      (dd/hh).*Pbar).*Pbar./RT ) ./ log(10);
-        pKsifac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                       (Pbar.*(dd./hh)./RT) ) ./ log(10);
-        pKsifac_T = -( (-(bb + 2.*cc.*T) ) .* Pbar  ./ RT + ...
-                       (-(aa + bb.*T + cc.*T.^2) + 0.5.*Pbar.*(dd./hh)).* ...
-                       (-Pbar .* RT_T ./ RT.^2)) ./log(10);
-        
-        pKsi = pKsi + pKsifac;
-        pKsi_T = pKsi_T + pKsifac_T;
-        pKsi_P = pKsifac_P;
-        
-        gpKsi = [pKsi_T, pKsi_S, pKsi_P]; % gradient pKsi
-    end
-    [pKsi,gpKsi] = calc_pKsi(T,TK,S,IonS,IonS_S,Pbar,RT,RT_T);
-    
-    % calculate pK1 (Mehrbach refit by Dickson and Millero 1987)---
-    function [pK1,gpK1] = calc_pK1(T,TK,S,Pbar,RT,RT_T)
-        a = 3670.7; b = -62.008; c = 9.7944; d = -0.0118; g = 0.000116;
-        %pK1 = 3670.7 ./TK - 62.008 + 9.7944 .* log(TK) - 0.0118.*S + ...
-        %    0.000116.*S.^2;
-        pK1 = a./TK + b + c.*log(TK) + d.*S + g.*S.^2;
-        pK1_T = -a./(TK.^2) + c./TK;
-        pK1_S = d + 2.*g.*S;
-        
-        % pressure correction
-        aa = -25.5; bb = 0.1271; dd = -3.08; gg = 0.0877; hh = 1000;
-        % dV = -25.5 + 0.1271.*TC; % Ka = (-3.08 + 0.0877 .* TC) ./1000;
-        pK1fac = - ( (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
-                      .*Pbar) .*Pbar./RT ) ./ log(10);
-        pK1fac_T = - ( (-(bb) + 0.5.*(gg./hh).*Pbar).*Pbar./RT + ...
-                       (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
-                        .*Pbar) .*(-Pbar.*RT_T./(RT.^2))  ) ./ log(10);
-        pK1fac_P = - ( 0.5.*((dd + gg.*T)./hh) .* Pbar./RT + ...
-                       (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
-                        .*Pbar) .*(1./RT) ) ./ log(10);
-        pK1 = pK1 + pK1fac;
-        pK1_T = pK1_T + pK1fac_T;
-        pK1_P = pK1fac_P;
-        
-        gpK1 = [pK1_T, pK1_S, pK1_P];
-    end
-    [pK1,gpK1] = calc_pK1(T,TK,S,Pbar,RT,RT_T);
-    
-    % calculate pK2 (Mehrbach refit by Dickson and Millero 1987)---
-    function [pK2,gpK2] = calc_pK2(T,TK,S,Pbar,RT,RT_T)
-        a = 1394.7; b = 4.777; c = -0.0184; d = 0.000118;
-        %pK2 = 1394.7./TK + 4.777 - 0.0184.*S + 0.000118.*S.^2;
-        pK2 = a./TK + b + c.*S + d.*S.^2;
-        pK2_T = -a./(TK.^2);
-        pK2_S = c + 2*d*S;
-        
-        % pressure correction
-        aa = -15.82; bb = -0.0219; dd = 1.13; gg = -0.1475; hh = 1000;
-        % dV = -15.82 - 0.0219 .* TC; % Ka = (1.13 - 0.1475 .*TC)./1000;
-        pK2fac = - ( (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) .*Pbar) ...
-                     .*Pbar./RT ) ./ log(10) ;
-        pK2fac_T = - ( (-(bb) + 0.5.*(gg./hh).*Pbar).*Pbar./RT + ...
-                       (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
-                        .*Pbar) .*(-Pbar.*RT_T./(RT.^2))  ) ./ log(10);
-        pK2fac_P = - ( 0.5.*((dd + gg.*T)./hh) .* Pbar./RT + ...
-                       (-(aa + bb.*T) + 0.5.*((dd + gg.*T)./hh) ...
-                        .*Pbar) .*(1./RT) ) ./ log(10);
-        
-        pK2 = pK2 + pK2fac;
-        pK2_T = pK2_T + pK2fac_T;
-        pK2_P = pK2fac_P;
-        
-        gpK2 = [pK2_T, pK2_S, pK2_P]; % gradient pK2 with pressure correction
-    end
-    [pK2,gpK2] = calc_pK2(T,TK,S,Pbar,RT,RT_T);
-    
-    % Ammonia, added by Sharp et al 2021, from Clegg and Whitfield (1995)
-    function [pKnh4, gpKnh4] = calc_pKnh4(T,TK,S,Pbar,RT,RT_T)
-        a = 9.44605; b = -2729.33; c = 1/298.15; d = 0.04203362;
-        g = -11.24742; h = -13.6416; l = 1.176949; m = -0.02860785;
-        n = 545.4834; o = -0.1462507; r = 0.0090226468;
-        t = -0.0001471361; v = 10.5425; w = 0.004669309;
-        x = -0.0001691742; y = -0.5677934; z = -2.354039e-05;
-        az = 0.009698623;
-        % pKnh4 = 9.44605 - 2729.33 * (1/298.15-1/TK)) +...
-        % (0.04203362 - 11.24742/TK) * S^0.25 +...
-        % (-13.6416 + 1.176949 * sqrt(TK) - ...
-        % 0.02860785*TK + 545.4834/TK)*sqrt(S) + ...
-        % (-0.1462507 + 0.0090226468*sqrt(TK) - ...
-        % 0.0001471361*TK + 10.5425/TK)*sqrt(S)*S + ...
-        % (0.004669309 - 0.0001691742*sqrt(TK) - ...
-        % 0.5677934/TK) * (S^2) + ...
-        % (-2.354039e-05 + 0.009698623/TK)*(S^2.5); % total pH scale
-        % pKnh4 = pKnh4 + p(1-0.001005*S); % convert to mol/kg-SW
-        pKnh4 = a + b.* (c - 1./TK) + (d + g./TK).*S.^(0.25) + ...
-                (h + l.*sqrt(TK) + m.*TK + n./TK ).*sqrt(S) + ...
-                (o + r.*sqrt(TK) + t.*TK + v./TK ).*sqrt(S).*S + ...
-                (w + x.*sqrt(TK) + y./TK ).*(S.^2) + ...
-                (z + az./TK) .*(S.^(2.5)) ...
-                + p(1 - 0.001005.*S); % convert to mol/kg-SW, on the total scale
-        pKnh4_T = b./(TK.^2) - g./(TK.^2).*S.^(0.25) + ...
-                  (0.5*l./sqrt(TK) + m - n./(TK.^2) ).*sqrt(S) + ...
-                  (0.5*r./sqrt(TK) + t - v./(TK.^2) ).*sqrt(S).*S + ...
-                  (0.5*x./sqrt(TK) - y./(TK.^2) ).*(S.^2) + ...
-                  (-az./(TK.^2)).*(S.^(2.5));
-        pKnh4_S = (d + g./TK).*( 0.25./(S.^(0.75)) ) + ...
-                  (h + l.*sqrt(TK) + m.*TK + n./TK ).*(0.5./sqrt(S)) + ...
-                  (o + r.*sqrt(TK) + t.*TK + v./TK ).*(1.5.*sqrt(S)) + ...
-                  (w + x.*sqrt(TK) + y./TK ).*(2.*S) + ...
-                  (z + az./TK) .*(2.5.*S.^(1.5)) ...
-                  + dpdx(1 - 0.001005.*S).*(-0.001005);
-        
-        % pressure correction
-        aa = -26.43; bb = 0.0889; cc = -0.000905;
-        dd = -5.03; gg = 0.0814; hh = 1000;
-        % dV = -26.43 + 0.0889*TC - 0.000905*TC^2;
-        % Ka = (-5.03 + 0.0814*TC)/1000;
-        pKnh4fac = - ( ( -(aa + bb.*T + cc.*T.^2) + 0.5.*...
-                         ((dd + gg.*T)./hh).*Pbar ) .*Pbar./RT ) ./ log(10);
-        pKnh4fac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                        (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
-        pKnh4fac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) ...
-                        .* Pbar  ./ RT + (-(aa + bb.*T + cc.*T.^2) + ...
-                                          0.5.*Pbar.*((dd+gg.*T)./hh)).* ...
-                        (-Pbar .* RT_T ./ RT.^2)) ./log(10);
-        pKnh4 = pKnh4 + pKnh4fac;
-        pKnh4_T = pKnh4_T + pKnh4fac_T;
-        pKnh4_P = pKnh4fac_P;
-        
-        gpKnh4 = [pKnh4_T, pKnh4_S, pKnh4_P];
-    end
-    [pKnh4,gpKnh4] = calc_pKnh4(T,TK,S,Pbar,RT,RT_T);
-    
-    % hydrogen sulfide, added by Sharp et al 2021, from Millero et al (1988)
-    function [pKh2s,gpKh2s] = calc_pKh2s(T,TK,S,Pbar,RT,RT_T)
-        a = 225.838; b = -13275.3; c = -34.6435;
-        d = 0.3449; h = -0.0274;
-        % lnKh2s = (225.838 - 13275.3/TK - 34.6435*log(TK) + ...
-        %           0.3449*sqrt(S) - 0.0274*S); % total scale
-        pKh2s = - (a + b./TK + c.*log(TK) + d.*sqrt(S) + ...
-                   h.*S) ./ log(10);
-        pKh2s_T = - (-b./(TK.^2) + c./TK ) ./ log(10);
-        pKh2s_S = - (0.5.*d./sqrt(S) + h) ./ log(10);
-        
-        % pressure correction
-        aa = -11.07; bb = -0.009; cc = -0.000942;
-        dd = -2.89; gg = 0.054; hh = 1000;
-        % dV = -11.07 - 0.009*TC - 0.000942*TC^2; Ka = (-2.89 + 0.054*TC)/1000;
-        pKh2sfac = - ( ( -(aa + bb.*T + cc.*T.^2) + 0.5.*...
-                         ((dd + gg.*T)./hh).*Pbar ) .* Pbar./RT ) ./ log(10);
-        pKh2sfac_P = -( (-(aa + bb.*T + cc.*T.^2)./RT ) + ...
-                        (Pbar.*((dd+gg.*T)/hh)./RT) ) ./ log(10);
-        pKh2sfac_T = -( (-(bb + 2.*cc.*T) + 0.5.*Pbar.*(gg./hh) ) .* ...
-                        Pbar  ./ RT + (-(aa + bb.*T + cc.*T.^2) + 0.5.* ...
-                                       Pbar.*((dd+gg.*T)./hh)).* ...
-                        (-Pbar .* RT_T ./ RT.^2)) ./log(10);
-        
-        pKh2s = pKh2s + pKh2sfac;
-        pKh2s_T = pKh2s_T + pKh2sfac_T;
-        pKh2s_P = pKh2sfac_P;
-        
-        gpKh2s = [pKh2s_T, pKh2s_S, pKh2s_P];
-    end
-    [pKh2s,gpKh2s] = calc_pKh2s(T,TK,S,Pbar,RT,RT_T);
-    
-    % corrections for pressure sources------------------------------------
+    % corrections for pressure------------------------------------
     % Millero 1995, 1992, 1982, 1979; Takahashi et al. 1982;
     %   Culberson & Pytkowicz 1968; Edmond & Gieskes 1970.
+    dV   = @(T,a) a(1) + a(2) * T +     a(3) * T^2; 
+    dV_T = @(T,a)        a(2)     + 2 * a(3) * T;
+    Ka   = @(T,b) ( b(1) + b(2) * T ) / 1000;
+    Ka_T = @(T,b) b(2) / 1000;
+    ppfac   = @(T,Pbar,a,b)... 
+              -( -dV(T,a)   * Pbar   + 0.5 * Ka(T,b)   * Pbar^2 )      / ( RT   * LOG10 );
+    ppfac_T = @(T,Pbar,a,b)... 
+              -( -dV_T(T,a) * Pbar   + 0.5 * Ka_T(T,b) * Pbar^2 )      / ( RT   * LOG10 ) ...
+              -( -dV(T,a)   * Pbar   + 0.5 * Ka(T,b)   * Pbar^2 ) * (-RT_T / ( RT^2 * LOG10 ));
+    ppfac_P = @(T,Pbar,a,b)... 
+              -( -dV(T,a)         +       Ka(T,b)   * Pbar ) / (10 * RT * LOG10 ) ;
     
-    % pH scale conversion factors (now pressure corrected)-----------
-    function [pSWS2tot,gpSWS2tot] = calc_pSWS2tot(pTS,pTS_S,pTF,pTF_S,pKs,gpKs,pKf,gpKf)
-    % FREE2tot = 1 + TS./Ks; % not needed for right now
-        top = 1 + q(pTS - pKs) ;
-        top_T = dqdx(pTS - pKs) * (-gpKs(1)) ;
-        top_S = dqdx(pTS - pKs) * (pTS_S - gpKs(2)) ;
-        bot = top + q(pTF - pKf) ;
-        bot_T = top_T + dqdx(pTF - pKf) * (-gpKf(1)) ;
-        bot_S = top_S + dqdx(pTF - pKf) * (pTF_S - gpKf(2));
-        
-        pSWS2tot = p(top./bot);
-        pSWS2tot_T = (-top_T / (top*log(10)) ) + (bot_T / (bot*log(10)) );
-        pSWS2tot_S = (-top_S / (top*log(10)) ) + (bot_S / (bot*log(10)) );
-        
-        gpSWS2tot = [pSWS2tot_T, pSWS2tot_S,0];
-    end
-    [pSWS2tot,gpSWS2tot] = calc_pSWS2tot(pTS,pTS_S,pTF,pTF_S,pKs,gpKs,pKf,gpKf);
+
     
+
+    
+    % compute the pK's and their derivatives w.r.t. T,P,and S
+    [pp2f    , gpp2f    ] = calc_p2f(T,RT,RT_T);
+    [pK0     , gpK0     ] = calc_pK0(T,S);
+    [pKs     , gpKs     ] = calc_pKs(T,S,Pbar,RT,RT_T);
+    [pKf     , gpKf     ] = calc_pKf(T,S,Pbar,RT,RT_T);
+    [pKb     , gpKb     ] = calc_pKb(T,S,Pbar,RT,RT_T);
+    [pKw     , gpKw     ] = calc_pKw(T,S,Pbar,RT,RT_T);
+    [pK1p    , gpK1p    ] = calc_pK1p(T,S,Pbar,RT,RT_T);
+    [pK2p    , gpK2p    ] = calc_pK2p(T,S,Pbar,RT,RT_T);
+    [pK3p    , gpK3p    ] = calc_pK3p(T,S,Pbar,RT,RT_T);
+    [pKsi    , gpKsi    ] = calc_pKsi(T,S,Pbar,RT,RT_T);
+    [pK1     , gpK1     ] = calc_pK1(T,S,Pbar,RT,RT_T);
+    [pK2     , gpK2     ] = calc_pK2(T,S,Pbar,RT,RT_T);
+    [pKnh4   , gpKnh4   ] = calc_pKnh4(T,S,Pbar,RT,RT_T);
+    [pKh2s   , gpKh2s   ] = calc_pKh2s(T,S,Pbar,RT,RT_T);
+    [pSWS2tot, gpSWS2tot] = calc_pSWS2tot(S,pKs,gpKs,pKf,gpKf);
+
     % convert from SWS to pH total scale ----------------------------------
-    pK1 = pK1 + pSWS2tot;
-    gpK1(1) = gpK1(1) + gpSWS2tot(1); gpK1(2) = gpK1(2) + gpSWS2tot(2);
+    pK1  = pK1  + pSWS2tot;  gpK1  = gpK1  + gpSWS2tot;
+    pK2  = pK2  + pSWS2tot;  gpK2  = gpK2  + gpSWS2tot;
+    pKw  = pKw  + pSWS2tot;  gpKw  = gpKw  + gpSWS2tot;
+    pK1p = pK1p + pSWS2tot;  gpK1p = gpK1p + gpSWS2tot;
+    pK2p = pK2p + pSWS2tot;  gpK2p = gpK2p + gpSWS2tot;
+    pK3p = pK3p + pSWS2tot;  gpK3p = gpK3p + gpSWS2tot;
+    pKsi = pKsi + pSWS2tot;  gpKsi = gpKsi + gpSWS2tot;
+
     
-    pK2 = pK2 + pSWS2tot;
-    gpK2(1) = gpK2(1) + gpSWS2tot(1); gpK2(2) = gpK2(2) + gpSWS2tot(2);
-    
-    pKw = pKw + pSWS2tot;
-    gpKw(1) = gpKw(1) + gpSWS2tot(1); gpKw(2) = gpKw(2) + gpSWS2tot(2);
-    
-    pK1p = pK1p + pSWS2tot;
-    gpK1p(1) = gpK1p(1) + gpSWS2tot(1); gpK1p(2) = gpK1p(2) + gpSWS2tot(2);
-    
-    pK2p = pK2p + pSWS2tot;
-    gpK2p(1) = gpK2p(1) + gpSWS2tot(1); gpK2p(2) = gpK2p(2) + gpSWS2tot(2);
-    
-    pK3p = pK3p + pSWS2tot;
-    gpK3p(1) = gpK3p(1) + gpSWS2tot(1); gpK3p(2) = gpK3p(2) + gpSWS2tot(2);
-    
-    pKsi = pKsi + pSWS2tot;
-    gpKsi(1) = gpKsi(1) + gpSWS2tot(1); gpKsi(2) = gpKsi(2) + gpSWS2tot(2);
-    
-    % p(K) = -log10(K); % K = equilibrium constants
+    %
+    % output
+    %
     pK = [pK0;    pK1;  pK2;  pKb;  pKw;  pKs;  pKf;  pK1p;  pK2p; ...
           pK3p;  pKsi;  pKnh4;  pKh2s;  pp2f];
-    % g(pK) = gradient(pK); % first derivatives of pK-> [d/dT, d/dS, d/dP];
     gpK = [gpK0; gpK1; gpK2; gpKb; gpKw; gpKs; gpKf; gpK1p; gpK2p; ...
            gpK3p; gpKsi; gpKnh4; gpKh2s; gpp2f];
 
+    
+    
+    %
+    % subfunctions
+    %
+ 
+    function [pp2f,gpp2f] = calc_p2f(T,RT,RT_T)
+    % pCO2 to fCO2 conversion (Weiss 1974) valid to within 0.1% ----------
+
+        TK = T + 273.15; % convert to Kelvin
+        Pstd = 1.01325;
+        delC = (57.7 - 0.118.*TK);
+        delC_T = -0.118;
+
+        a = [ -1636.75; 12.0408; 0.0327957; 3.16528e-5 ]; 
+        
+        f  = @(T,a) a(1) + a(2) * T +     a(3) * T^2 +     a(4) * T^3;
+        df = @(T,a)        a(2)     + 2 * a(3) * T   + 3 * a(4) * T^2;
+  
+        pp2f   = -( ( f(TK,a) + 2 * delC ) * Pstd / RT ) / LOG10;
+        pp2f_T = -( ( df(TK,a) + 2 * delC_T ) * Pstd / RT - ...
+                    ( f(TK,a) + 2 * delC ) * Pstd * RT_T / RT^2 ) / LOG10;
+        pp2f_S = 0;
+        pp2f_P = 0;
+        
+        gpp2f = [pp2f_T, pp2f_S, pp2f_P]; % gradient of p(p2f);
+    end
+    
+    function [pK0,gpK0] = calc_pK0(T,S)
+    % calculate K0 (Weiss 1974)-------------------------------------------
+        TK = T + 273.15; % convert to Kelvin
+        TK100 = TK./100;
+        TK100_T = 1/100;
+
+        a = [  -60.2409;   93.4517;   23.3585    ];
+        b = [    0.023517; -0.023656;  0.0047036 ];
+
+        f  = @(T,a) a(1)  + a(2) / T   + a(3) * log(T);
+        df = @(T,a)       - a(2) / T^2 + a(3) / T;
+        
+        g  = @(T,b) b(1) + b(2) * T +     b(3) * T^2;
+        dg = @(T,b)        b(2)     + 2 * b(3) * T; 
+        
+        pK0   = -(  f(TK100,a) +  g(TK100,b) * S ) / LOG10;
+        pK0_T = -( df(TK100,a) + dg(TK100,b) * S ) * TK100_T / LOG10;
+        pK0_S = -(                g(TK100,b)     ) / LOG10;
+        
+        gpK0 = [pK0_T, pK0_S, 0];
+    end
+    
+    function [pKs,gpKs] = calc_pKs(T,S,Pbar,RT,RT_T)
+    % calculate Ks (Dickson 1990a)----------------------------------------
+        TK = T + 273.15; % convert to Kelvin
+        IonS = ions(S);
+        IonS_S = ions_S(S);
+        sqrtIonS_S = 0.5*IonS_S/sqrt(IonS);
+
+        a1 = [  -4276.1;  141.328; -23.093 ]; 
+        a2 = [ -13856.0;  324.57;  -47.986 ];
+        a3 = [  35474.0; -771.54;  114.723 ];
+        a4 = [  -2698.0;    0.0;     0.0   ];
+        a5 = [   1776.0;    0.0;     0.0   ];
+
+        f  = @(T,a)  a(1) / T    + a(2) + a(3) * log(T);
+        df = @(T,a) -a(1) / T^2         + a(3) / T;
+        
+        pKs = -( f(TK,a1) + ...
+                 f(TK,a2) * sqrt(IonS) + ...
+                 f(TK,a3) * IonS + ...
+                 f(TK,a4) * IonS^(1.5) + ...
+                 f(TK,a5) * IonS^2 ) / LOG10 + p(1 - 0.001005 * S );
+        pKs_T = -( df(TK,a1) + ...
+                   df(TK,a2) * sqrt(IonS) + ...
+                   df(TK,a3) * IonS + ...
+                   df(TK,a4) * IonS^(1.5) + ...
+                   df(TK,a5) * IonS^2 ) / LOG10;
+        pKs_S = -( f(TK,a2) * IonS_S * 0.5 / sqrt(IonS) + ...
+                   f(TK,a3) * IonS_S + ...
+                   f(TK,a4) * IonS_S * 1.5 * IonS^(0.5) + ...
+                   f(TK,a5) * IonS_S * 2.0 * IonS ) / LOG10 - 0.001005 * dpdx(1 - 0.001005 * S );
+
+        
+        % pressure correction
+        a = [ -18.03; 0.0466; 0.000316 ];
+        b = [-4.53; 0.09 ];
+        
+        pKs = pKs + ppfac(T,Pbar,a,b);
+        pKs_T = pKs_T + ppfac_T(T,Pbar,a,b);
+        pKs_P = ppfac_P(T,Pbar,a,b);
+     
+        gpKs = [pKs_T, pKs_S, pKs_P];
+    end
+    
+    function [pKf,gpKf] = calc_pKf(T,S,Pbar,RT,RT_T)
+    % calculate Kf (Dickson 1979)----------------------------------
+        
+        TK = T + 273.15; % convert to Kelvin
+        IonS = ions(S);
+        IonS_S = ions_S(S);
+        sqrtIonS_S = 0.5*IonS_S/sqrt(IonS);
+        a = 1590.2; b = -12.641; c = 1.525;
+
+        pKf = -( a/TK + b + c * sqrt(IonS) ) ./LOG10 + p(1 - 0.001005 * S) ;
+        pKf_T = -(-a/(TK.^2) ) / LOG10; 
+        pKf_S =  -c * sqrtIonS_S / LOG10 + dpdx(1 - 0.001005  *S) * (-0.001005) ;  
+        
+        % pressure correction
+        a = [ -9.78; -0.009; -0.000942 ];
+        b = [ -3.91; 0.054 ];
+        
+        pKf = pKf + ppfac(T,Pbar,a,b);
+        pKf_T = pKf_T + ppfac_T(T,Pbar,a,b);
+        pKf_P = ppfac_P(T,Pbar,a,b);
+        
+        gpKf = [pKf_T, pKf_S, pKf_P];
+    end
+    
+    
+     
+    function [pKb,gpKb] = calc_pKb(T,S,Pbar,RT,RT_T)
+    % calculate Kb (Dickson 1990)----------------------------------
+        TK = T + 273.15; % convert to Kelvin
+
+        a1 = [ -8966.9;    -2890.53;     -77.942;   1.728; -0.0996 ];
+        a2 = [   148.0248;   137.1942;     1.62142; 0.0;    0.0    ];
+        a3 = [   -24.4344;   -25.085;     -0.2474;  0.0;    0.0    ];
+        a4 = [     0.0;        0.053105;   0.0;     0.0;    0.0    ];
+
+        f  = @(S,a) a(1)      + a(2) * S^(0.5)  + a(3) * S +       a(4) * S^(1.5) +     a(5) * S^2;
+        df = @(S,a)       0.5 * a(2) * S^(-0.5) + a(3)     + 1.5 * a(4) * S^(0.5) + 2 * a(5) * S;
+
+        pKb   = -(  f(S,a1) / TK +  f(S,a2)  +  f(S,a3) * log(TK)  +  f(S,a4) * TK ) / LOG10;
+        pKb_T = -( -f(S,a1) / TK^2           +  f(S,a3) / TK       +  f(S,a4)      ) / LOG10;
+        pKb_S = -( df(S,a1) / TK + df(S,a2)  + df(S,a3) * log(TK)  + df(S,a4) * TK ) / LOG10;
+        
+        % pressure correction
+        a = [ -29.48; 0.1622; -0.002608 ];
+        b = [ -2.84; 0];
+        
+        pKb = pKb + ppfac(T,Pbar,a,b);
+        pKb_T = pKb_T + ppfac_T(T,Pbar,a,b);
+        pKb_P = ppfac_P(T,Pbar,a,b);
+        
+        gpKb = [pKb_T, pKb_S, pKb_P];
+    end
+    
+    function [pKw,gpKw] = calc_pKw(T,S,Pbar,RT,RT_T)
+    % calculate Kw (Millero 1995)--------------------------------
+        TK = T + 273.15; % convert to Kelvin
+
+        a1 = [ 148.9802; -13847.26; -23.6521 ];
+        a2 = [  -5.977;     118.67;   1.0495 ];
+        a3 = [  -0.01615;     0.0;    0.0    ];
+
+        f  = @(T,a)   a(1) + a(2) / T    + a(3) * log(T);
+        df = @(T,a)        - a(2) / T^2  + a(3) / T;
+
+        pKw   = -(  f(TK,a1) +  f(TK,a2) * sqrt(S)       +  f(TK,a3) * S ) / LOG10;
+        pKw_T = -( df(TK,a1) + df(TK,a2) * sqrt(S)       + df(TK,a3) * S ) / LOG10;
+        pKw_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
+
+
+        % pressure correction
+        a = [ -20.02; 0.1119; -0.001409];
+        b = [ -5.13; 0.0794 ];
+
+        pKw   = pKw + ppfac(T,Pbar,a,b);
+        pKw_T = pKw_T + ppfac_T(T,Pbar,a,b);
+        pKw_P = ppfac_P(T,Pbar,a,b);
+        
+        gpKw = [pKw_T,pKw_S,pKw_P];
+    end
+    
+    function [pK1p,gpK1p] = calc_pK1p(T,S,Pbar,RT,RT_T)
+    % calculate K1p (Yao and Millero 1995)--------------------------------
+        TK = T + 273.15; % convert to Kelvin
+        
+        a1 = [ -4576.752;    115.54;    -18.453 ];
+        a2 = [  -106.736;      0.69171;   0.0   ];
+        a3 = [    -0.65643;   -0.01844;   0.0   ];
+
+        f  = @(T,a)   a(1) / T   + a(2) + a(3) * log(T);
+        df = @(T,a) - a(1) / T^2        + a(3) / T;
+
+        pK1p   = -(  f(TK,a1) +  f(TK,a2) * sqrt(S)       +  f(TK,a3) * S ) / LOG10;
+        pK1p_T = -( df(TK,a1) + df(TK,a2) * sqrt(S)       + df(TK,a3) * S ) / LOG10;
+        pK1p_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
+
+        
+        % pressure correction       
+        a = [ -14.51; 0.1211; -0.000321 ];
+        b = [  -2.67; 0.0427 ];
+
+        pK1p = pK1p + ppfac(T,Pbar,a,b);
+        pK1p_T = pK1p_T + ppfac_T(T,Pbar,a,b);
+        pK1p_P = ppfac_P(T,Pbar,a,b);
+
+        gpK1p = [pK1p_T,pK1p_S,pK1p_P];
+
+    end
+    
+    function [pK2p,gpK2p] = calc_pK2p(T,S,Pbar,RT,RT_T)
+    % calculate K2p (Yao and Millero 1995)--------------------------------
+        TK = T + 273.15; % convert to Kelvin
+
+        a1 = [-8814.715;   172.1033;  -27.927 ]; 
+        a2 = [ -160.34;      1.3566;    0.0   ];
+        a3 = [    0.37335;  -0.05778;   0.0   ];
+        
+        f  = @(T,a)   a(1) / T   + a(2) + a(3) * log(T);
+        df = @(T,a) - a(1) / T^2        + a(3) / T;
+
+        pK2p   = -(  f(TK,a1) +  f(TK,a2) * sqrt(S)       +  f(TK,a3) * S ) / LOG10;
+        pK2p_T = -( df(TK,a1) + df(TK,a2) * sqrt(S)       + df(TK,a3) * S ) / LOG10;
+        pK2p_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
+
+        % pressure correction
+        a = [ -23.12; 0.1758; -0.002647 ];
+        b = [ -5.15; 0.09 ]; 
+
+        pK2p = pK2p + ppfac(T,Pbar,a,b);
+        pK2p_T = pK2p_T + ppfac_T(T,Pbar,a,b);
+        pK2p_P = ppfac_P(T,Pbar,a,b);
+        
+        gpK2p = [pK2p_T, pK2p_S, pK2p_P];
+    end
+    
+    function [pK3p,gpK3p] = calc_pK3p(T,S,Pbar,RT,RT_T)
+    % calculate K3p (Yao and Millero 1995)--------------------------------
+        TK = T + 273.15; % convert to Kelvin
+        
+        a1 = [ -3070.75;   -18.126   ];
+        a2 = [    17.27039;  2.81197 ];
+        a3 = [   -44.99486; -0.09984 ];
+                
+        f  = @(T,a)   a(1) / T   + a(2);
+        df = @(T,a) - a(1) / T^2;
+        
+        pK3p   = -(  f(TK,a1) +  f(TK,a2) * sqrt(S) +  f(TK,a3) * S ) / LOG10;
+        pK3p_T = -( df(TK,a1) + df(TK,a2) * sqrt(S) + df(TK,a3) * S ) / LOG10;
+        pK3p_S = -(              f(TK,a2) * 0.5 / sqrt(S) + f(TK,a3) ) / LOG10;
+                
+        % pressure correction
+        a = [ -26.57; 0.202; -0.003042 ];
+        b = [ -4.08; 0.0714 ];
+
+        pK3p = pK3p + ppfac(T,Pbar,a,b);
+        pK3p_T = pK3p_T + ppfac_T(T,Pbar,a,b);
+        pK3p_P = ppfac_P(T,Pbar,a,b);
+        
+        gpK3p = [pK3p_T, pK3p_S, pK3p_P]; 
+    end
+
+    
+    function [pKsi,gpKsi] = calc_pKsi(T,S,Pbar,RT,RT_T)
+    % calculate Ksi (Yao and Millero 1995)--------------------------------
+        TK = T + 273.15; % convert to Kelvin
+        IonS = ions(S);
+        IonS_S = ions_S(S);
+        sqrtIonS_S = 0.5 * IonS_S / sqrt(IonS);
+        
+        f  = @(T,a)   a(1) / T   + a(2) + a(3) * log(T);
+        df = @(T,a) - a(1) / T^2        + a(3) / T;
+        
+        a1 = [ -8904.2;    117.4;   -19.334 ];
+        a2 = [  -458.79;     3.5913;  0.0   ]; 
+        a3 = [   188.74;    -1.5998;  0.0   ];
+        a4 = [   -12.1652;   0.07871; 0.0   ];
+        
+        pKsi = -( f(TK,a1) + ...
+                  f(TK,a2) * sqrt(IonS) + ...
+                  f(TK,a3) * IonS + ...
+                  f(TK,a4) * IonS^2  ) / LOG10 + p(1 - 0.001005 * S);
+
+        pKsi_T = -( df(TK,a1) + ...
+                    df(TK,a2) * sqrt(IonS) + ...
+                    df(TK,a3) * IonS + ...
+                    df(TK,a4) * IonS^2 ) / LOG10;
+        
+        pKsi_S = -( f(TK,a2) * sqrtIonS_S + ...
+                    f(TK,a3) * IonS_S + ...
+                    f(TK,a4) * 2 * IonS_S * IonS) / LOG10 ...
+                 -0.001005 * dpdx(1 - 0.001005 * S);
+        
+        % pressure correction
+        a = [ -29.48; 0.1622; -0.002608 ];
+        b =[ -2.84; 0];
+        
+        pKsi = pKsi + ppfac(T,Pbar,a,b);
+        pKsi_T = pKsi_T + ppfac_T(T,Pbar,a,b);
+        pKsi_P = ppfac_P(T,Pbar,a,b);
+        
+        gpKsi = [pKsi_T, pKsi_S, pKsi_P]; % gradient pKsi
+    end
+    
+    function [pK1,gpK1] = calc_pK1(T,S,Pbar,RT,RT_T)
+    % calculate pK1 (Mehrbach refit by Dickson and Millero 1987)---
+        TK = T + 273.15; % convert to Kelvin
+        a = 3670.7; b = -62.008; c = 9.7944; d = -0.0118; g = 0.000116;
+        pK1   =  a / TK   + b + c * log(TK) + d * S + g * S^2;
+        pK1_T = -a / TK^2     + c / TK;
+        pK1_S = d + 2.*g.*S;
+        
+        % pressure correction
+        a = [-25.5; 0.1271; 0];
+        b = [ -3.08; 0.0877 ];
+
+        pK1   = pK1 + ppfac(T,Pbar,a,b);
+        pK1_T = pK1_T + ppfac_T(T,Pbar,a,b);
+        pK1_P = ppfac_P(T,Pbar,a,b);
+
+        gpK1 = [pK1_T, pK1_S, pK1_P];
+
+    end
+    
+    function [pK2,gpK2] = calc_pK2(T,S,Pbar,RT,RT_T)
+    % calculate pK2 (Mehrbach refit by Dickson and Millero 1987)---
+        TK = T + 273.15; % convert to Kelvin
+        a = 1394.7; b = 4.777; c = -0.0184; d = 0.000118;
+        pK2 = a / TK + b + c * S + d * S^2;
+        pK2_T = -a / (TK^2);
+        pK2_S = c + 2 * d * S;
+        
+        % pressure correction
+        a = [ -15.82; -0.0219; 0 ];
+        b = [ 1.13; -0.1475 ];
+        
+        pK2 = pK2 + ppfac(T,Pbar,a,b);
+        pK2_T = pK2_T + ppfac_T(T,Pbar,a,b);
+        pK2_P = ppfac_P(T,Pbar,a,b);
+        
+        gpK2 = [pK2_T, pK2_S, pK2_P]; 
+    end
+    
+    function [pKnh4, gpKnh4] = calc_pKnh4(T,S,Pbar,RT,RT_T)
+    % Ammonia, added by Sharp et al 2021, from Clegg and Whitfield (1995)
+        TK = T + 273.15; % convert to Kelvin
+        a = 9.44605; b = -2729.33; c = 1/298.15; d = 0.04203362; g = -11.24742; 
+
+        f  = @(T,a) a(1)  + a(2) * sqrt(T) + a(3) * T + a(4) / T;
+        df = @(T,a)    0.5 *a(2) / sqrt(T) + a(3)     - a(4) / T^2;
+
+        a1 = [ -13.6416;      1.176949;     -0.02860785;   545.4834       ];
+        a2 = [  -0.1462507;    0.0090226468; -0.0001471361;  10.5425      ];
+        a3 = [   0.004669309; -0.0001691742;  0;             -0.5677934   ];
+        a4 = [  -2.354039e-05; 0;             0;              0.009698623 ];
+
+        pKnh4 = a + b * (c - 1 / TK) + (d + g / TK) * S^(0.25) + ...
+                f(TK,a1) * S^0.5 + ...
+                f(TK,a2) * S^1.5 + ...
+                f(TK,a3) * S^2   + ...
+                f(TK,a4) * S^2.5 + ...
+                + p(1 - 0.001005 * S); 
+        
+        pKnh4_T = b / (TK^2) - g / (TK^2) * S^(0.25) + ...
+                  df(TK,a1) * S^0.5 + ...
+                  df(TK,a2) * S^1.5 + ...
+                  df(TK,a3) * S^2   + ...
+                  df(TK,a4) * S^2.5;
+
+        pKnh4_S = 0.25 * (d + g / TK) * S^(-0.75) + ...
+                  f(TK,a1) * 0.5 * S^-0.5 + ...
+                  f(TK,a2) * 1.5 * S^0.5 + ...
+                  f(TK,a3) * 2.0 * S   + ...
+                  f(TK,a4) * 2.5 * S^1.5 - ...
+                  0.001005 * dpdx(1 - 0.001005 * S); 
+        
+        % pressure correction
+        a = [ -26.43; 0.0889; -0.000905 ];
+        b = [ -5.03; 0.0814 ];
+
+        pKnh4 = pKnh4 + ppfac(T,Pbar,a,b);
+        pKnh4_T = pKnh4_T + ppfac_T(T,Pbar,a,b);
+        pKnh4_P = ppfac_P(T,Pbar,a,b);
+        
+        gpKnh4 = [pKnh4_T, pKnh4_S, pKnh4_P];
+    end
+    
+    function [pKh2s,gpKh2s] = calc_pKh2s(T,S,Pbar,RT,RT_T)
+    % hydrogen sulfide, added by Sharp et al 2021, from Millero et al (1988)
+        TK = T + 273.15; % convert to Kelvin
+        a = 225.838; b = -13275.3; c = -34.6435;
+        d = 0.3449; h = -0.0274;
+        pKh2s = - (a + b./TK + c.*log(TK) + d.*sqrt(S) + ...
+                   h.*S) ./ LOG10;
+        pKh2s_T = - (-b./(TK.^2) + c./TK ) ./ LOG10;
+        pKh2s_S = - (0.5.*d./sqrt(S) + h) ./ LOG10;
+        
+        % pressure correction
+        a = [ -11.07; -0.009; -0.000942 ];
+        b = [ -2.89;  0.054 ];
+        
+        pKh2s = pKh2s + ppfac(T,Pbar,a,b);
+        pKh2s_T = pKh2s_T + ppfac_T(T,Pbar,a,b);
+        pKh2s_P = ppfac_P(T,Pbar,a,b);
+        
+        gpKh2s = [pKh2s_T, pKh2s_S, pKh2s_P];
+    end
+    
+    
+    function [pSWS2tot,gpSWS2tot] = calc_pSWS2tot(S,pKs,gpKs,pKf,gpKf)
+    % pH scale conversion factors (not pressure corrected)-----------
+    % FREE2tot = 1 + TS./Ks; 
+
+    % calculate TF (Riley 1965)--------------------------------------
+        TF = (0.000067./18.998).*(S./1.80655); % mol/kg-SW
+        TF_S = 1.95217e-6; % derivative wrt S
+        pTF = p(TF);
+        pTF_S = dpdx(TF).*TF_S;
+        
+        % calculate TS (Morris & Riley 1966)-----------------------------
+        TS = (0.14./96.062).*(S./1.80655); % mol/kg-SW
+        TS_S = 0.000806727; % derivative wrt S
+        pTS = p(TS);
+        pTS_S = dpdx(TS).*TS_S;
+        
+        top = 1 + q(pTS - pKs) ;
+        top_T = dqdx(pTS - pKs) * (-gpKs(1)) ;
+        top_S = dqdx(pTS - pKs) * (pTS_S - gpKs(2)) ;
+        top_P = dqdx(pTS - pKs) * (-gpKs(3)) ;
+        bot = top + q(pTF - pKf) ;
+        bot_T = top_T + dqdx(pTF - pKf) * (-gpKf(1)) ;
+        bot_S = top_S + dqdx(pTF - pKf) * (pTF_S - gpKf(2));
+        bot_P = top_P + dqdx(pTF - pKf) * ( -gpKf(3));
+        pSWS2tot = p(top./bot);
+        pSWS2tot_T = (-top_T / (top*LOG10) ) + (bot_T / (bot*LOG10) );
+        pSWS2tot_S = (-top_S / (top*LOG10) ) + (bot_S / (bot*LOG10) );
+        pSWS2tot_P = (-top_P / (top*LOG10) ) + (bot_P / (bot*LOG10) );
+        gpSWS2tot = [pSWS2tot_T, pSWS2tot_S, pSWS2tot_P];
+    end
+    
 end
 
