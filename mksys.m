@@ -213,7 +213,7 @@ function sys = mksys(sys)
         K(row,[iK1p,ih,ih2po4,ih3po4]) = [-1, 1, 1, -1];
         sys.system{row} = 'K1p';
 
-        row = row+1;
+        row = row + 1;
         jK1p = row;
         sys.jK1p = jK1p;
         K(jK1p,iK1p) = 1; % K1p
@@ -221,9 +221,9 @@ function sys = mksys(sys)
     end
     if (ismember('K2p',sys.variables))
         % K2p = [H][HPO4]/[H2PO4]
+        row = row + 1;
         K(row,[iK2p,ih,ihpo4,ih2po4]) = [-1, 1, 1, -1];
         sys.system{row} = 'K2p';
-
         row = row+1;
         jK2p = row;
         sys.jK2p = jK2p;

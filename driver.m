@@ -91,13 +91,12 @@ for i = 1:102
     tsu   = ((0.14+2.3e-4)/96.062).*(sal(i)/1.80655);
     tsl   = ((0.14-2.3e-4)/96.062).*(sal(i)/1.80655);
     ets = (tsu - tsl)/2;
-    pts(i) = p(ts);
-    wpts(i) = w(ts,ets);
-
+    pts(i) = p(ts);                              
+    wpts(i) = w(ts,ets);%                                     
     % need to add NH4 and H2S
     
 end
-
+                        
 %
 % initialize the QUODcarb CO2-system solver
 %
