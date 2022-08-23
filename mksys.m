@@ -254,7 +254,7 @@ function sys = mksys(sys)
         jKsi = row;
         sys.jKsi = jKsi;
         K(jKsi,iKsi) = 1; % Ksi
-        sys.system{jKsi} = 'pKSi(T,S,P)';
+        sys.system{jKsi} = 'pKsi(T,S,P)';
     end
 
     if (ismember('Knh4',sys.variables))

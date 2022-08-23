@@ -72,9 +72,9 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
         wobs(sys.iKs) = (0.0021).^(-2); % wKs = 1/(1 + (0.0021/pKsys(6)))^2 ;
         yobs(sys.iKs) = pKs;
     end
-    if (ismember('KF',sys.variables))
-        wobs(sys.iKF) = (0.02).^(-2);   % wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
-        yobs(sys.iKF) = pKf;
+    if (ismember('Kf',sys.variables))
+        wobs(sys.iKf) = (0.02).^(-2);   % wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
+        yobs(sys.iKf) = pKf;
     end
     if (ismember('K1p',sys.variables))
         wobs(sys.iK1p) = (0.09).^(-2);  % wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
