@@ -78,7 +78,7 @@ function sys = mksysV2(obs,sys)
         iTH2S = i; sys.iTH2S = sys.iTH2S;
     end
     for j = 1:nTP
-        if (isgood(obs.m(j).T) & isgood(obs.m(j).P))
+        if (isgood(obs.m(j).T) && isgood(obs.m(j).P))
             i = i + 1;
             m(j).iT = i; 
             i = i + 1;

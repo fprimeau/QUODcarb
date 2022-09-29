@@ -26,7 +26,8 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
     end
     
     if (~isfield(obs, 'wsal'));
-        error('Need to provide precision for salinity measurement.');
+        obs.wsal = (0.002).^(-2);
+        fprintf('Warning: Assuming salinity uncertainty is 0.002 PSU');
     else
         wobs(sys.isal) = obs.wsal;
     end
@@ -126,7 +127,7 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
             obs.TB = 0.0004106 * obs.sal / 35 ;
             yobs(sys.iTB) = p(obs.TB);
         else
-            ybos(sys.iTB) = p(obs.TB);
+            yobs(sys.iTB) = p(obs.TB);
         end
         if (~isfield(obs, 'wTB'))
             obs.wTB = ( 35 / 0.0004106 )^2 * obs.wsal ;
@@ -330,7 +331,7 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
         if (~isfield(obs.m(1), 'siooh3'))
             obs.m(1).siooh3 = [];
         end
-        if (~isfield(obs.m(1), '2siooh3'))
+        if (~isfield(obs.m(1), 'wsiooh3'))
             obs.m(1).wsiooh3 = [];
         end
     end
@@ -853,7 +854,7 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
     gun = @(z) grad_limpco2(z,yobs,wobs,sys);
     z0 = init(yobs,sys);
     tol = 1e-7;
-    keyboard
+    %keyboard
     [z,J,iflag] = newtn(z0,gun,tol);
     if (iflag ~=0)
         fprintf('Newton''s method iflag = %i\n',iflag);

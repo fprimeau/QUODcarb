@@ -194,7 +194,6 @@ for i = 1:102
     [y,sigy,yobs_out,wobs_out,iflag] = QUODcarb(yobs,wobs,temp(i),sal(i),pres(i),sys); 
     w = sigy.^(-2); 
     PrintCSV(y,w,yobs_out,wobs_out,sys,iflag,fid5);
-
 end
 fclose(fid2);
 fclose(fid3);
