@@ -105,8 +105,7 @@ function [y,sigy,yobs,wobs,iflag] = QUODcarb(yobs,wobs,temp,sal,pres,sys)
     gun = @(z) grad_limpco2(z,yobs,wobs,sys);
     z0 = init(yobs,pK,sys);
     tol = 1e-7;
-    [z,J,iflag] = newtn(z0,gun,tol);
-    
+    [z,J,iflag] = newtn(z0,gun,tol);    
     if (iflag ~=0)
         fprintf('Newton''s method iflag = %i\n',iflag);
     end

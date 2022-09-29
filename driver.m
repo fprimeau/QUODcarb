@@ -100,13 +100,13 @@ end
 %
 % initialize the QUODcarb CO2-system solver
 %
-%sys.abr = {'air-sea','carbonate'};
+sys.abr = {'air-sea','carbonate'};
 %sys.abr = {'air-sea','carbonate','water'};
 %sys.abr = {'air-sea','carbonate','water','borate'};
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate'};
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride'};
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate'};
-sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
+%sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
 % 'phosphate','silicate','ammonia'};
 %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
