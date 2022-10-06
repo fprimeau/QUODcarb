@@ -50,6 +50,7 @@ function [A] = compare(obs,pair,est)
     % a = TA, c = DIC, p = pH -> 3 input pairs
     if pair == 1 % TA TC
         OUT = CO2SYS(par1,par2,par1type,par2type,sal,tempin,tempout,presin,presout,sil,po4,pHscale,k1k2c,kso4c);
+        keyboard
         err = errors(par1,par2,par1type,par2type,sal,tempin,tempout,presin,presout,sil,po4,epar1,epar2,esal,etemp,esi,epo4,epK,eBt,r,pHscale,k1k2c,kso4c);
     elseif pair == 2 % TC pH
         OUT = CO2SYS(par2,par3,par2type,par3type,sal,tempin,tempout,presin,presout,sil,po4,pHscale,k1k2c,kso4c);
