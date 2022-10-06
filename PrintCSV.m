@@ -146,7 +146,7 @@ function out = PrintCSV(varargin)
     else
         %
         % Print the output
-        %
+        % NEED TO CHANGE THIS
         y     = varargin{1}; % posterior estimate
         w     = varargin{2}; % posterior marginal precision
         yobs  = varargin{3}; % measurement

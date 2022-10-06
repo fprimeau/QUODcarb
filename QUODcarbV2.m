@@ -10,7 +10,7 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
 %   obs  := co2-system measured quantities with precisions 
 %   sys  := struct with stuff for co2-system solver (initialized using mksys.m)
 
-    isgood = @(thing) (~isempty(thing) | ~isnan(thing));
+    isgood = @(thing) (~isempty(thing) & ~isnan(thing));
     p = sys.p;
     q = sys.q;
     w = @(x,e) p(1+e./x).^(-2); % convert x+/-e into precision for p(x)
