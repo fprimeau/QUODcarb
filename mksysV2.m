@@ -19,7 +19,7 @@ function sys = mksysV2(obs,sys)
     sys.d2pdx2 = d2pdx2;
     sys.d2qdx2 = d2qdx2;
     
-    isgood = @(thing) (~isempty(thing) | ~isnan(thing));
+    isgood = @(thing) (~sum(isnan(thing)) & ~isempty(thing));
     field_names = union( fieldnames(obs), fieldnames(obs.m) );
     nTP = length(obs.m); % number of different (T,P) measurements
     i = 0;
