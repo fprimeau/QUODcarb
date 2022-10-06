@@ -685,7 +685,7 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
                 wobs(sys.m(i).iK2p) = (0.03).^(-2);  % wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
                 obs.m(i).wK2p = wobs(sys.m(i).iK2p);
             end
-            if (~isgood(obs.m(i).pK2p))
+            if (isgood(obs.m(i).pK2p))
                 yobs(sys.m(i).iK2p) = obs.m(i).pK2p;
             else
                 yobs(sys.m(i).iK2p) = pK2p;
