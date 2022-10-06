@@ -50,45 +50,4 @@ sys.abr = {'carbonate','water','borate','sulfate','fluoride','phosphate','silica
 %           'phosphate','silicate','ammonia','sulfide'};
 sys = mksysV2(obs,sys);
 
-%[est,obs,iflag] = QUODcarbV2(obs,sys);
-
-% Marina's new stuff ...
-obs_backup = obs;
-
-fid2 = fopen('test_TA_TC.csv','w');
-fid3 = fopen('test_TA_pH.csv','w');
-fid4 = fopen('test_TC_pH.csv','w');
-fid5 = fopen('test_Q5.csv','w');
-
-% TA TC
-obs.m(1).pH = nan; obs.m(1).wpH = nan;
-obs.m(2).pco2 = nan; obs.m(2).wpco2 = nan;
 [est,obs,iflag] = QUODcarbV2(obs,sys);
-% compare to CO2SYS
-[out] = compare(obs,1);
-Qac = [est.TA];
-A = [out; Qac];
-% writematrix(A,fid2,'Sheet',1,'Range','A1:A2');
-
-% TA pH
-obs = obs_backup;
-obs.TC = nan; obs.wTC = nan;
-obs.m(2).pco2 = nan; obs.m(2).wpco2 = nan;
-%[est,obs,iflag] = QUODcarbV2(obs,sys);
-% compare to CO2SYS
-
-% TC pH
-obs = obs_backup;
-obs.TA = nan; obs.wTA = nan;
-obs.m(2).pco2 = nan; obs.m(2).wpco2 = nan;
-%[est,obs,iflag] = QUODcarbV2(obs,sys);
-% compare to CO2SYS
-
-% TA TA pH pco2
-obs = obs_backup;
-%[est,obs,iflag] = QUODcarbV2(obs,sys);
-
-
-
-
-
