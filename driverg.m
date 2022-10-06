@@ -9,55 +9,66 @@ w = @(x,e) p(1+e./x).^(-2); % convert x+/-e into precision for p(x)
 
 load datag.mat; % data_gomecc
 [in] = datag;
+nD = length(in);
+
+fid2 = fopen('gomecc_TA_TC_v2.csv','w');    %PrintCSV(sys,fid2);
+fid3 = fopen('gomecc_TA_ph_v2.csv','w');    %PrintCSV(sys,fid3);
+fid4 = fopen('gomecc_TC_ph_v2.csv','w');    %PrintCSV(sys,fid4);
+fid5 = fopen('gomecc_Q5_v2.csv','w');       %PrintCSV(sys,fid5);
+fid6 = fopen('compare.csv','w');
+fprintf(fid6,'%s, ','CO2SYS vs QUODcarb');
+fprintf(fid6,'\n');
 
 %
 % convert all data to -log10(data) and compute the precision of the resulting data
 %
-for i = 1  %:1310
+for i = 1:nD %:1310
 
     % measurements that are independent of (T,P)
-    obs.TC(i)    = p(in(i,5)*1e-6); % p(mol/kg)
-    obs.wTC(i)   = w((in(i,5)*1e-6),(2.01*1e-6)); % TC error std ± 2.01µmol/kg
-    obs.TA(i)    = p(in(i,7)*1e-6); % p(mol/kg)
-    obs.wTA(i)   = w((in(i,7)*1e-6),(1.78*1e-6)); % TA error std ±1.78µmol/kg   
+    obs.TC    = p(in(i,5)*1e-6); % p(mol/kg)
+    obs.wTC   = w((in(i,5)*1e-6),(2.01*1e-6)); % TC error std ± 2.01µmol/kg
+    obs.TA    = p(in(i,7)*1e-6); % p(mol/kg)
+    obs.wTA   = w((in(i,7)*1e-6),(1.78*1e-6)); % TA error std ±1.78µmol/kg   
 %     for j = 1187:1310
 %         wpdic(j) = w(in(i,5),(2.24*1e-6)); % DIC error std ±2.24µmol/kg for UW measurements
 %     end
-    obs.sal(i)   = in(i,3);
-    obs.wsal(i)  = (0.002)^(-2);
+    obs.sal   = in(i,3);
+    obs.wsal  = (0.002)^(-2);
 
     % first (T,P)-dependent measurement
-    obs.m(1).T(i)   = in(i,2); % degC, CTD temp
-    obs.m(1).wT(i)  = (0.02)^(-2); % precision of temp % std ±0.02 degC, (std ±0.0007 degC below 1000m, not included rn)
-    obs.m(1).P(i)   = in(i,1); % dbar
-    obs.m(1).wP(i)  = (0.63)^(-2); % (max) std ±0.63 dbar
+    obs.m(1).T   = in(i,2); % degC, CTD temp
+    obs.m(1).wT  = (0.02)^(-2); % precision of temp % std ±0.02 degC, (std ±0.0007 degC below 1000m, not included rn)
+    obs.m(1).P   = in(i,1); % dbar
+    obs.m(1).wP  = (0.63)^(-2); % (max) std ±0.63 dbar
 
     % second (T,P)-dependent measurement
-    obs.m(2).T(i)    = 25; % degC
-    obs.m(2).wT(i)   = (0.05)^(-2); % from cruise report
-    obs.m(2).P(i)    = 10.1325; % 1atm = 10dbar
-    obs.m(2).wP(i)   = (0.63)^(-2);
-    obs.m(2).ph(i)   = in(i,9); % total scale
-    obs.m(2).wph(i)  = (0.001)^(-2);
-    obs.m(2).co3(i)  = p(in(i,15)*1e-6); % p(mol/kg)
-    obs.m(2).wco3(i) = w(in(i,15)*1e-6,2e-6);  % std ±2µmol/kg
+    obs.m(2).T    = 25; % degC
+    obs.m(2).wT   = (0.05)^(-2); % from cruise report
+    obs.m(2).P    = in(i,1); 
+    obs.m(2).wP   = (0.63)^(-2);
+    obs.m(2).ph   = in(i,9); % total scale
+    obs.m(2).wph  = (0.001)^(-2);
+    obs.m(2).co3  = p(in(i,15)*1e-6); % p(mol/kg)
+    obs.m(2).wco3 = w(in(i,15)*1e-6,2e-6);  % std ±2µmol/kg
 
     % third (T,P)-dependent measurement
-    obs.m(3).T(i)   = 20; %degC
-    obs.m(3).wT(i)  = (0.03)^(-2); % from cruise report
-    obs.m(3).P(i)   = in(i,1); % dbar (ctd pressure for pco2 I think?)
-    obs.m(3).wP(i)  = (0.63)^(-2);
-    obs.m(3).pco2(i)  = p(in(i,12)*1e-6); % p(atm)
-    obs.m(3).wpco2(i) = w(in(i,12),(in(i,12)*0.0021)); % 0.21% relative std error (avg)
+    obs.m(3).T   = 20; %degC
+    obs.m(3).wT  = (0.03)^(-2); % from cruise report
+    obs.m(3).P   = 0; % dbar (surface pressure for pco2)
+    obs.m(3).wP  = (0.63)^(-2);
+    obs.m(3).pco2  = p(in(i,12)*1e-6); % p(atm)
+    obs.m(3).wpco2 = w(in(i,12),(in(i,12)*0.0021)); % 0.21% relative std error (avg)
 
     % fourth (T,P)-dependent measurement
-    obs.m(4).T(i)   = 37; % degC
-    obs.m(4).wT(i) = (0.02)^(-2); % not stated, assumed 0.02
+    obs.m(4).T   = 37; % degC
+    obs.m(4).wT  = (0.02)^(-2); % not stated, assumed 0.02
+    obs.m(4).P   = in(i,1); % dbar (ctd pressure for pco2 I think?)
+    obs.m(4).wP  = (0.63)^(-2);
     % all nutrients measured @ 37degC
-    obs.m(4).TP(i)   = p(in(i,24)*1e-6); % total phosphate, mol/kg
-    obs.m(4).wTP(i)  = w(in(i,24),(in(i,24)*0.001)); % 0.1% meas uncertainty
-    obs.m(4).TSi(i)  = p(in(i,18)*1e-6); % total Si, mol/kg
-    obs.m(4).wTSi(i) = w(in(i,18),(in(i,18)*0.001));
+    obs.m(4).TP   = p(in(i,24)*1e-6); % total phosphate, mol/kg
+    obs.m(4).wTP  = w(in(i,24),(in(i,24)*0.001)); % 0.1% meas uncertainty
+    obs.m(4).TSi  = p(in(i,18)*1e-6); % total Si, mol/kg
+    obs.m(4).wTSi = w(in(i,18),(in(i,18)*0.001));
     % no2 and no3 not included yet
     %obs.m(4).no2  = p(in(i,20)*1e-6); % nitrite NO2^-, molg/kg
     %obs.m(4).wno2 = w(in(i,20),(in(i,20)*0.001));
@@ -65,17 +76,17 @@ for i = 1  %:1310
     %obs.m(4).wno3 = w(in(i,22),(in(i,22)*0.001));   
 
     % zero silicate is very unlikely; reset minimum to 0.1 micromolar
-    if (q(obs.m(4).TSi(i))==0)
-        obs.m(4).TSi(i)  = p(1e-7);
-        obs.m(4).wTSi(i) = w( 1e-7, 1e-7);    
+    if (q(obs.m(4).TSi)==0)
+        obs.m(4).TSi  = p(1e-7);
+        obs.m(4).wTSi = w( 1e-7, 1e-7);    
     end
     % zero po4 is very unlikely; reset minimum to 1 nanomolar
-    if (q(obs.m(4).TP(i))==0)
-        obs.m(4).TP(i) = p(1e-9); %
-        obs.m(4).wTP(i) = w( 1e-9 , 1e-9 );
+    if (q(obs.m(4).TP)==0)
+        obs.m(4).TP  = p(1e-9); %
+        obs.m(4).wTP = w( 1e-9 , 1e-9 );
     end
 
-end
+% end
 
 
                         
@@ -100,49 +111,60 @@ sys = mksysV2(obs,sys);
 %
 % Call QUODcarb for all the data points
 %
-keyboard
-fid2 = fopen('gomecc_TA_TC_v2.csv','w');    PrintCSV(sys,fid2);
-fid3 = fopen('gomecc_TA_ph_v2.csv','w');    PrintCSV(sys,fid3);
-fid4 = fopen('gomecc_TC_ph_v2.csv','w');    PrintCSV(sys,fid4);
-fid5 = fopen('gomecc_TA_TC_ph_v2.csv','w'); PrintCSV(sys,fid5);
 
-for i = 1  %1310
 
-    yobs_backup = yobs;
-    wobs_backup = wobs;
+
+% for i = 1  %1310
+
+    yobs_backup = obs;
 
     % TA TC 
-    [est,obs,iflag] = QUODcarbV2(yobs,sys); 
-    %w = sigy.^(-2);
-    PrintCSV(y,w,yobs_out,wobs_out,sys,iflag,fid2);
-
+    obs.m(1).pH = nan; obs.m(1).wpH = nan;
+    obs.m(2).pco2 = nan; obs.m(2).wpco2 = nan;
+    [est,obs,iflag] = QUODcarbV2(obs,sys); 
+    %keyboard
+    %PrintCSV(est,obs,sys,iflag,fid2);
+    [A] = compare(obs,1,est);
+    writematrix(A,fid6,'Sheet',1,'Range','A1:AV1'); %48
+    keyboard
 
     % TA ph
-    yobs = yobs_backup; wobs = wobs_backup;
-    yobs(sys.iTC) = nan; wobs(sys.iTC) = nan;
-    [y,sigy,yobs_out,wobs_out,iflag] = QUODcarb(yobs,wobs,temp(i),sal(i),pres(i),sys); 
-    w = sigy.^(-2);
-    PrintCSV(y,w,yobs_out,wobs_out,sys,iflag,fid3);
+    obs = obs_backup;
+    obs.TC = nan; obs.wTC = nan;
+    obs.m(2).pco2 = nan; obs.m(2).wpco2 = nan;
+    [est,obs,iflag] = QUODcarbV2(obs,sys);
+    PrintCSV(est,obs,sys,iflag,fid3);
+    [out] = compare(obs,3);
+    A = [];
+    writematrix(A,fid6,'Sheet',2,'Range','A1:BD1');
 
     % TC ph
-    yobs = yobs_backup; wobs = wobs_backup;
-    yobs(sys.iTA) = nan; wobs(sys.iTA) = nan;
-    [y,sigy,yobs_out,wobs_out,iflag] = QUODcarb(yobs,wobs,temp(i),sal(i),pres(i),sys); 
-    w = sigy.^(-2);
-    PrintCSV(y,w,yobs_out,wobs_out,sys,iflag,fid4);
-   
-    % TA TC ph
-    yobs = yobs_backup; wobs = wobs_backup;
-    [y,sigy,yobs_out,wobs_out,iflag] = QUODcarb(yobs,wobs,temp(i),sal(i),pres(i),sys); 
-    w = sigy.^(-2); 
-    PrintCSV(y,w,yobs_out,wobs_out,sys,iflag,fid5);
+    obs = obs_backup;
+    obs.TA = nan; obs.wTA = nan;
+    obs.m(2).pco2 = nan; obs.m(2).wpco2 = nan;
+    [est,obs,iflag] = QUODcarbV2(obs,sys);
+        %w = sigy.^(-2);
+    PrintCSV(est,obs,sys,iflag,fid4);
+    [out] = compare(obs,2);
+    A = [];
+    writematrix(A,fid6,'Sheet',3,'Range','A1:BD1');
 
-    % try with other combos? also co3 and pco2
+    % TA TC ph pCO2
+    obs = obs_backup;
+    [est,obs,iflag] = QUODcarbV2(obs,sys);
+    PrintCSV(est,obs,sys,iflag,fid5);
+    [out] = compare(obs,2);
+    A = [];
+    writematrix(A,fid6,'Sheet',4,'Range','A1:BD1');
+
+    
 end
+
 fclose(fid2);
 fclose(fid3);
 fclose(fid4);
 fclose(fid5);
+fclose(fid6);
 
 
 
