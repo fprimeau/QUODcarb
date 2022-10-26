@@ -19,25 +19,25 @@ function [A] = compare(obs,pair,est)
     q = @(x) 10.^(-x);  % use q, i.e., a backward p
     
     par1type = 1; % alkalinity
-    par1 = q(obs.TA)*1e6; % TA µmol/kg
-    epar1 = ((q(obs.wTA))*1e6)^(-1/2); % error alkalinity
+    par1 = (obs.TA)*1e6; % TA µmol/kg
+    epar1 = (((obs.wTA))*1e6)^(-1/2); % error alkalinity
     par2type = 2; % DIC
-    par2 = q(obs.TC)*1e6; % DIC_in µmol/kg
-    epar2 = ((q(obs.wTC))*1e6)^(-1/2); % error DIC
+    par2 = (obs.TC)*1e6; % DIC_in µmol/kg
+    epar2 = (((obs.wTC))*1e6)^(-1/2); % error DIC
     par3type = 3; % pH
-    par3 = obs.m(1).pH; % pH(total)
-    epar3 = (obs.m(1).wpH)^(-1/2); % error pH
+    par3 = obs.m(2).ph; % pH(total)
+    epar3 = (obs.m(2).wph)^(-1/2); % error pH
     sal = obs.sal; % salinity of sample
     esal = obs.wsal^(-1/2);% salinity error
-    tempin = obs.m(1).T; % temp of sample
-    etemp = obs.m(1).wT^(-1/2); % error temp
-    presin = obs.m(1).P; % pressure of sample (dbars)
-    tempout = obs.m(1).T;
-    presout = obs.m(1).P;
-    sil = q(obs.TSi)*1e6; % total Si of sample
-    esi = (q(obs.wTSi)*1e6)^(-1/2);% error Si
-    po4 = q(obs.TP)*1e6; % phosphate of sample
-    epo4 = (q(obs.wTP)*1e6)^(-1/2);% error PO4
+    tempin = obs.m(2).T; % temp of sample
+    etemp = obs.m(2).wT^(-1/2); % error temp
+    presin = obs.m(2).P; % pressure of sample (dbars)
+    tempout = obs.m(2).T;
+    presout = obs.m(2).P;
+    sil = (obs.m(4).TSi)*1e6; % total Si of sample
+    esi = ((obs.m(4).wTSi)*1e6)^(-1/2);% error Si
+    po4 = (obs.TP)*1e6; % phosphate of sample
+    epo4 = ((obs.wTP)*1e6)^(-1/2);% error PO4
     pHscale = 1; % pH(total scale)
     k1k2c = 4; % Mehrbach refit
     epK = [0.002,0.01,0.02,0.01,0.01,0.02,0.02]; % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02]
@@ -50,7 +50,6 @@ function [A] = compare(obs,pair,est)
     % a = TA, c = DIC, p = pH -> 3 input pairs
     if pair == 1 % TA TC
         OUT = CO2SYS(par1,par2,par1type,par2type,sal,tempin,tempout,presin,presout,sil,po4,pHscale,k1k2c,kso4c);
-        keyboard
         err = errors(par1,par2,par1type,par2type,sal,tempin,tempout,presin,presout,sil,po4,epar1,epar2,esal,etemp,esi,epo4,epK,eBt,r,pHscale,k1k2c,kso4c);
     elseif pair == 2 % TC pH
         OUT = CO2SYS(par2,par3,par2type,par3type,sal,tempin,tempout,presin,presout,sil,po4,pHscale,k1k2c,kso4c);

@@ -113,7 +113,7 @@ function sys = mksysV2(obs,sys)
         if ismember('water',sys.abr)
             % Kw = [h][oh]
             nrk = nrk + 1;
-            water = {'Kw','oh' };
+            % water = {'Kw','oh' };
             i = i + 1;
             m(j).iKw = i;
             i = i + 1;

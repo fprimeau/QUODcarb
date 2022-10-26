@@ -11,23 +11,15 @@ load datag.mat; % data_gomecc
 [in] = datag;
 nD = length(in);
 
-fid2 = fopen('gomecc_TA_TC_v2.csv','w');    %PrintCSV(sys,fid2);
-fid3 = fopen('gomecc_TA_ph_v2.csv','w');    %PrintCSV(sys,fid3);
-fid4 = fopen('gomecc_TC_ph_v2.csv','w');    %PrintCSV(sys,fid4);
-fid5 = fopen('gomecc_Q5_v2.csv','w');       %PrintCSV(sys,fid5);
-fid6 = fopen('compare.csv','w');
-fprintf(fid6,'%s, ','CO2SYS vs QUODcarb');
-fprintf(fid6,'\n');
-
 %
 % convert all data to -log10(data) and compute the precision of the resulting data
 %
-for i = 1:nD %:1310
+for i = 1:nD
 
     % measurements that are independent of (T,P)
-    obs.TC    = p(in(i,5)*1e-6); % p(mol/kg)
+    obs.TC    = (in(i,5)*1e-6); % p(mol/kg)
     obs.wTC   = w((in(i,5)*1e-6),(2.01*1e-6)); % TC error std ± 2.01µmol/kg
-    obs.TA    = p(in(i,7)*1e-6); % p(mol/kg)
+    obs.TA    = (in(i,7)*1e-6); % p(mol/kg)
     obs.wTA   = w((in(i,7)*1e-6),(1.78*1e-6)); % TA error std ±1.78µmol/kg   
 %     for j = 1187:1310
 %         wpdic(j) = w(in(i,5),(2.24*1e-6)); % DIC error std ±2.24µmol/kg for UW measurements
@@ -48,7 +40,7 @@ for i = 1:nD %:1310
     obs.m(2).wP   = (0.63)^(-2);
     obs.m(2).ph   = in(i,9); % total scale
     obs.m(2).wph  = (0.001)^(-2);
-    obs.m(2).co3  = p(in(i,15)*1e-6); % p(mol/kg)
+    obs.m(2).co3  = (in(i,15)*1e-6); % p(mol/kg)
     obs.m(2).wco3 = w(in(i,15)*1e-6,2e-6);  % std ±2µmol/kg
 
     % third (T,P)-dependent measurement
@@ -56,7 +48,7 @@ for i = 1:nD %:1310
     obs.m(3).wT  = (0.03)^(-2); % from cruise report
     obs.m(3).P   = 0; % dbar (surface pressure for pco2)
     obs.m(3).wP  = (0.63)^(-2);
-    obs.m(3).pco2  = p(in(i,12)*1e-6); % p(atm)
+    obs.m(3).pco2  = (in(i,12)*1e-6); % p(atm)
     obs.m(3).wpco2 = w(in(i,12),(in(i,12)*0.0021)); % 0.21% relative std error (avg)
 
     % fourth (T,P)-dependent measurement
@@ -65,9 +57,9 @@ for i = 1:nD %:1310
     obs.m(4).P   = in(i,1); % dbar (ctd pressure for pco2 I think?)
     obs.m(4).wP  = (0.63)^(-2);
     % all nutrients measured @ 37degC
-    obs.m(4).TP   = p(in(i,24)*1e-6); % total phosphate, mol/kg
+    obs.m(4).TP   = (in(i,24)*1e-6); % total phosphate, mol/kg
     obs.m(4).wTP  = w(in(i,24),(in(i,24)*0.001)); % 0.1% meas uncertainty
-    obs.m(4).TSi  = p(in(i,18)*1e-6); % total Si, mol/kg
+    obs.m(4).TSi  = (in(i,18)*1e-6); % total Si, mol/kg
     obs.m(4).wTSi = w(in(i,18),(in(i,18)*0.001));
     % no2 and no3 not included yet
     %obs.m(4).no2  = p(in(i,20)*1e-6); % nitrite NO2^-, molg/kg
@@ -77,86 +69,99 @@ for i = 1:nD %:1310
 
     % zero silicate is very unlikely; reset minimum to 0.1 micromolar
     if (q(obs.m(4).TSi)==0)
-        obs.m(4).TSi  = p(1e-7);
+        obs.m(4).TSi  = (1e-7);
         obs.m(4).wTSi = w( 1e-7, 1e-7);    
     end
     % zero po4 is very unlikely; reset minimum to 1 nanomolar
     if (q(obs.m(4).TP)==0)
-        obs.m(4).TP  = p(1e-9); %
+        obs.m(4).TP  = (1e-9); %
         obs.m(4).wTP = w( 1e-9 , 1e-9 );
     end
 
-% end
+    if i == 1 
 
-
+        % initialize the QUODcarb CO2-system solver
+        %
+        %sys.abr = {'air-sea','carbonate'};
+        %sys.abr = {'air-sea','carbonate','water'};
+        %sys.abr = {'air-sea','carbonate','water','borate'};
+        %sys.abr = {'air-sea','carbonate','water','borate','sulfate'};
+        %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride'};
+        %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate'};
+        sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
+        %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
+        % 'phosphate','silicate','ammonia'};
+        %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
+        % 'phosphate','silicate','ammonia','sulfide'};
                         
-%
-% initialize the QUODcarb CO2-system solver
-%
-%sys.abr = {'air-sea','carbonate'};
-%sys.abr = {'air-sea','carbonate','water'};
-%sys.abr = {'air-sea','carbonate','water','borate'};
-%sys.abr = {'air-sea','carbonate','water','borate','sulfate'};
-%sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride'};
-%sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate'};
-sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
-%sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
-% 'phosphate','silicate','ammonia'};
-%sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
-% 'phosphate','silicate','ammonia','sulfide'};
-sys = mksysV2(obs,sys);
-%PrintTable(sys);
-%n = length(sys.variables);
+        sys = mksysV2(obs,sys);
 
-%
-% Call QUODcarb for all the data points
-%
+        fid2 = fopen('gomecc_TA_TC_v2.csv','w');    %PrintCSV(sys,est,fid2);
+        fid3 = fopen('gomecc_TA_ph_v2.csv','w');    %PrintCSV(sys,est,fid3);
+        fid4 = fopen('gomecc_TC_ph_v2.csv','w');    %PrintCSV(sys,est,fid4);
+        fid5 = fopen('gomecc_Q5_v2.csv','w');       %PrintCSV(sys,est,fid5);
+        fid6 = 'compare.xls'; fopen(fid6);
+        A = zeros(1,48);
+        writematrix(A,fid6);
 
+    end
 
+    %
+    % Call QUODcarb for all the data points
+    %
 
-% for i = 1  %1310
-
-    yobs_backup = obs;
+    obs_backup = obs;
 
     % TA TC 
     obs.m(1).pH = nan; obs.m(1).wpH = nan;
     obs.m(2).pco2 = nan; obs.m(2).wpco2 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys); 
-    %keyboard
-    %PrintCSV(est,obs,sys,iflag,fid2);
-    [A] = compare(obs,1,est);
-    writematrix(A,fid6,'Sheet',1,'Range','A1:AV1'); %48
+    if i == 1
+        % make headers
+        PrintCSVv2(sys,est,fid2);
+    end
+    PrintCSVv2(sys,est,obs,iflag,fid2);
     keyboard
+    [A] = compare(obs,1,est);
+    writematrix(A,fid6,'Sheet',1,'WriteMode','append'); %48
 
     % TA ph
     obs = obs_backup;
     obs.TC = nan; obs.wTC = nan;
     obs.m(2).pco2 = nan; obs.m(2).wpco2 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
-    PrintCSV(est,obs,sys,iflag,fid3);
-    [out] = compare(obs,3);
-    A = [];
-    writematrix(A,fid6,'Sheet',2,'Range','A1:BD1');
+    if i == 1
+        % make headers
+        PrintCSVv2(sys,est,fid3);
+    end
+    PrintCSVv2(sys,est,obs,iflag,fid3);
+    [A] = compare(obs,3,est);
+    writematrix(A,fid6,'Sheet',2,'WriteMode','append');
 
     % TC ph
     obs = obs_backup;
     obs.TA = nan; obs.wTA = nan;
     obs.m(2).pco2 = nan; obs.m(2).wpco2 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
-        %w = sigy.^(-2);
-    PrintCSV(est,obs,sys,iflag,fid4);
-    [out] = compare(obs,2);
-    A = [];
-    writematrix(A,fid6,'Sheet',3,'Range','A1:BD1');
+    if i == 1
+        % make headers
+        PrintCSVv2(sys,est,fid4);
+    end
+    PrintCSVv2(sys,est,obs,iflag,fid4);
+    [A] = compare(obs,2,est);
+    writematrix(A,fid6,'Sheet',3,'WriteMode','append');
 
     % TA TC ph pCO2
     obs = obs_backup;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
-    PrintCSV(est,obs,sys,iflag,fid5);
-    [out] = compare(obs,2);
-    A = [];
-    writematrix(A,fid6,'Sheet',4,'Range','A1:BD1');
-
+    if i == 1
+        % make headers
+        PrintCSVv2(sys,est,fid5);
+    end
+    PrintCSVv2(sys,est,obs,iflag,fid5);
+    [A] = compare(obs,2,est);
+    writematrix(A,fid6,'Sheet',4,'WriteMode','append');
+       
     
 end
 

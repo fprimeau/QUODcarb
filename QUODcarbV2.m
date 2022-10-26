@@ -685,7 +685,7 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
                 wobs(sys.m(i).iK2p) = (0.03).^(-2);  % wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
                 obs.m(i).wK2p = wobs(sys.m(i).iK2p);
             end
-            if (~isgood(obs.m(i).pK2p))
+            if (isgood(obs.m(i).pK2p))
                 yobs(sys.m(i).iK2p) = obs.m(i).pK2p;
             else
                 yobs(sys.m(i).iK2p) = pK2p;
@@ -870,13 +870,14 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
     %
     % populate est
     %
-    ebar = @(j) [ q( z(j) - sigy(j) ), q( z(j) + sigy(j) ) ];
+    % ebar = @(j) [ q( z(j) - sigy(j) ), q( z(j) + sigy(j) ) ];
+    ebar = @(j) (0.5 * ( q( z(j) - sigy(j) ) - q( z(j) + sigy(j) ) ) );
         
     est.sal = z(sys.isal);
     est.esal = sigy(sys.isal);
     est.TC = q(z(sys.iTC));
-    est.TA = q(z(sys.iTA));
     est.eTC = ebar(sys.iTC);
+    est.TA = q(z(sys.iTA));
     est.eTA = ebar(sys.iTA);
     if ismember('borate', sys.abr)
         est.TB = q(z(sys.iTB));
@@ -908,138 +909,119 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
     end
     
     for i = 1:nTP
-        % thermodynamic state
+        % thermodynamic state & errorbar
         est.m(i).T = z(sys.m(i).iT);
-        est.m(i).P = z(sys.m(i).iP);
-        % thermodynamic state errorbar
         est.m(i).eT = sigy(sys.m(i).iT);
+        est.m(i).P = z(sys.m(i).iP);        
         est.m(i).eP = sigy(sys.m(i).iP);
-        % chemical equilibrium
+        % chemical equilibrium & errorbar
         est.m(i).ph    = z(sys.m(i).iph);
-        est.m(i).fco2  = q(z(sys.m(i).ifco2));
-        est.m(i).pco2  = q(z(sys.m(i).ipco2));
-        est.m(i).pco2st = z(sys.m(i).ico2st);
-        est.m(i).phco3  = z(sys.m(i).ihco3);
-        est.m(i).pco3   = z(sys.m(i).ico3);
-        % chemical equilibrium errorbar
         est.m(i).eph    = sigy(sys.m(i).iph);
+        est.m(i).fco2  = q(z(sys.m(i).ifco2));
         est.m(i).efco2  = ebar(sys.m(i).ifco2);
+        est.m(i).pco2  = q(z(sys.m(i).ipco2));
         est.m(i).epco2  = ebar(sys.m(i).ipco2);
+        est.m(i).pco2st = z(sys.m(i).ico2st);
         est.m(i).epco2st = sigy(sys.m(i).ico2st);
+        est.m(i).phco3  = z(sys.m(i).ihco3);
         est.m(i).ephco3  = sigy(sys.m(i).ihco3);
-        est.m(i).epco3   = sigy(sys.m(i).ico3);        
-        % equilibrium pK's
+        est.m(i).pco3   = z(sys.m(i).ico3);
+        est.m(i).epco3   = sigy(sys.m(i).ico3);          
+        % equilibrium pK's & errorbar
         est.m(i).pp2f = z(sys.m(i).ip2f);
-        est.m(i).pK0  = z(sys.m(i).iK0);
-        est.m(i).pK1  = z(sys.m(i).iK1);
-        est.m(i).pK2  = z(sys.m(i).iK2);
-        % pK errorbars
         est.m(i).epp2f = sigy(sys.m(i).ip2f);
+        est.m(i).pK0  = z(sys.m(i).iK0);
         est.m(i).epK0  = sigy(sys.m(i).iK0);
+        est.m(i).pK1  = z(sys.m(i).iK1);
         est.m(i).epK1  = sigy(sys.m(i).iK1);
+        est.m(i).pK2  = z(sys.m(i).iK2);
         est.m(i).epK2  = sigy(sys.m(i).iK2);
         if ismember('borate', sys.abr)
-            %chemical equilibrium
+            %chemical equilibrium & errorbar
             est.m(i).pboh4 = z(sys.m(i).iboh4);
-            est.m(i).pboh3 = z(sys.m(i).iboh3);
-            % chemical equilibrium errorbar
             est.m(i).epboh4 = sigy(sys.m(i).iboh4);
+            est.m(i).pboh3 = z(sys.m(i).iboh3);
             est.m(i).epboh3 = sigy(sys.m(i).iboh3);
-            % equilibrium pK
+            % equilibrium pK & errorbar
             est.m(i).pKb = z(sys.m(i).iKb);
-            % pK errorbar
             est.m(i).epKb = sigy(sys.m(i).iKb);
         end
         if ismember('water', sys.abr)
-            % chemical equilibrium
+            % chemical equilibrium & errorbar
             est.m(i).poh = z(sys.m(i).ioh); 
-            % chemical equilibrium errorbar
             est.m(i).epoh = sigy(sys.m(i).ioh);
-            % equilibrium pK
+            % equilibrium pK & errorbar
             est.m(i).pKw = z(sys.m(i).iKw);
-            % pK errorbar
             est.m(i).epKw = sigy(sys.m(i).iKw); 
         end
         if ismember('sulfate', sys.abr)
-            % chemical equilibrium
+            % chemical equilibrium & errorbar
             est.m(i).phf = z(sys.m(i).iphf);
-            est.m(i).pso4 = z(sys.m(i).iso4);
-            est.m(i).phso4 = z(sys.m(i).ihso4);
-            % chemical equilibrium errorbar
             est.m(i).ephf = sigy(sys.m(i).iphf);
+            est.m(i).pso4 = z(sys.m(i).iso4);
             est.m(i).epso4 = sigy(sys.m(i).iso4);
+            est.m(i).phso4 = z(sys.m(i).ihso4);
             est.m(i).ephso4 = sigy(sys.m(i).ihso4);
-            % equilibrium pK
+            % equilibrium pK & errorbar
             est.m(i).pKs = z(sys.m(i).iKs);
-            % pK errorbar
             est.m(i).epKs = sigy(sys.m(i).iKs);
         end
         if ismember('fluoride', sys.abr)
-            % chemical equilibrium
+            % chemical equilibrium & errorbar
             est.m(i).pF = z(sys.m(i).iF);
-            est.m(i).pHF = z(sys.m(i).iHF);
-            % chemical equilibrium errorbar
             est.m(i).epF = sigy(sys.m(i).iF);
+            est.m(i).pHF = z(sys.m(i).iHF);
             est.m(i).epHF = sigy(sys.m(i).iHF);
-            % equilibrium pK
+            % equilibrium pK & errorbar
             est.m(i).pKf = z(sys.m(i).iKf);
-            % pK errorbar
             est.m(i).epKf = sigy(sys.m(i).iKf);
         end
         if ismember('phosphate', sys.abr)
-            % chemical equilibrium
+            % chemical equilibrium & errorbar
             est.m(i).ppo4   = z(sys.m(i).ipo4);
-            est.m(i).phpo4  = z(sys.m(i).ihpo4);
-            est.m(i).ph2po4 = z(sys.m(i).ih2po4);
-            est.m(i).ph3po4 = z(sys.m(i).ih3po4);
-            % chemical equilibrium errorbar
             est.m(i).eppo4   = sigy(sys.m(i).ipo4);
+            est.m(i).phpo4  = z(sys.m(i).ihpo4);
             est.m(i).ephpo4  = sigy(sys.m(i).ihpo4);
+            est.m(i).ph2po4 = z(sys.m(i).ih2po4);
             est.m(i).eph2po4 = sigy(sys.m(i).ih2po4);
+            est.m(i).ph3po4 = z(sys.m(i).ih3po4);
             est.m(i).eph3po4 = sigy(sys.m(i).ih3po4);
-            % equilibrium pK
+            % equilibrium pK & errorbar
             est.m(i).pK1p = z(sys.m(i).iK1p);
-            est.m(i).pK2p = z(sys.m(i).iK2p);
-            est.m(i).pK3p = z(sys.m(i).iK3p);
-            % pK errorbar
             est.m(i).epK1p = sigy(sys.m(i).iK1p);
+            est.m(i).pK2p = z(sys.m(i).iK2p);
             est.m(i).epK2p = sigy(sys.m(i).iK2p);
+            est.m(i).pK3p = z(sys.m(i).iK3p);
             est.m(i).epK3p = sigy(sys.m(i).iK3p);
         end
         if ismember('silicate', sys.abr)
-            % chemical equilibrium
+            % chemical equilibrium & errorbar
             est.m(i).psioh4 = z(sys.m(i).isioh4);
-            est.m(i).ppsiooh3 = z(sys.m(i).isiooh3);
-            % chemical equilibrium errorbar
             est.m(i).epsioh4 = sigy(sys.m(i).isioh4);
+            est.m(i).psiooh3 = z(sys.m(i).isiooh3);
             est.m(i).epsiooh3 = sigy(sys.m(i).isiooh3);
-            % equilibrium pK
+            % equilibrium pK & errorbar
             est.m(i).pKsi = z(sys.m(i).iKsi);
-            % pK errorbar
             est.m(i).epKsi = sigy(sys.m(i).iKsi);
         end
         if ismember('ammonia', sys.abr)
-            % chemical equilibrium
+            % chemical equilibrium & errorbar
             est.m(i).pnh3 = z(sys.m(i).inh3);
-            est.m(i).pnh4 = z(sys.m(i).inh4);
-            % chemical equilibrium errorbar
             est.m(i).epnh3 = sigy(sys.m(i).inh3);
+            est.m(i).pnh4 = z(sys.m(i).inh4);
             est.m(i).epnh4= sigy(sys.m(i).inh4);
-            % equilibrium pK
+            % equilibrium pK & errorbar
             est.m(i).pKnh4 = z(sys.m(i).iKnh4);
-            % pK errorbar
             est.m(i).epKnh4 = sigy(sys.m(i).iKnh4);
         end
         if ismember('sulfide', sys.abr)
-            % chemical equilibrium
+            % chemical equilibrium & errorbar
             est.m(i).phs = z(sys.m(i).ihs);
-            est.m(i).ph2s = z(sys.m(i).ih2s);
-            % chemical equilibrium errorbar
             est.m(i).ephs = sigy(sys.m(i).ihs);
+            est.m(i).ph2s = z(sys.m(i).ih2s);
             est.m(i).eph2s = sigy(sys.m(i).ih2s);
-            % equilibrium pK
+            % equilibrium pK & errorbar
             est.m(i).pKh2s = z(sys.m(i).ipKh2s);
-            % pK errorbar
             est.m(i).epKh2s = sigy(sys.m(i).iKh2s);
         end
     end
