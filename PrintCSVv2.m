@@ -13,7 +13,9 @@ function out = PrintCSVv2(varargin)
         fprintf(fid,'%s, ','iflag');
 
         fn = fieldnames(est);
-        for i = 1:2:(length(fn)-1) 
+        fnl = length(fn)-1;
+
+        for i = 1:2:fnl
             fprintf(fid,'obs_%s, ',fn{i} );
             fprintf(fid,'obs_%s, ',fn{i+1} ); % e
             fprintf(fid,'est_%s, ',fn{i} );
@@ -34,38 +36,170 @@ function out = PrintCSVv2(varargin)
         fprintf(fid,'\n');
         fprintf(fid,'%s, ','0=good');
         
-        for i = 1:(length(fn)-1)
-            if ( ( i == 1 ) || (i == 2 ) )
+        for i = 1:fnl
+            if ( ( i == 1 ) || ( i == 2 ) )
                 fprintf(fid,'%s, ', '(PSU)');
                 fprintf(fid,'%s, ', '(PSU)');
             else
-                fprintf(fid,'%s, ', '(mol/kg)');
-                fprintf(fid,'%s, ', '(mol/kg)');
+                fprintf(fid,'%s, ', '(umol/kg)');
+                fprintf(fid,'%s, ', '(umol/kg)');
             end
         end
         for j = 1:nTP
-            for i = 1:(length(fnm))
-                %fnj = fieldnames(est.m(j));
-                if ( (i == 1) || (i == 3) ) % T & eT
+            fnm = fieldnames(est.m(j));
+            for i = 1:length(fnm)
+                if ( (strcmp(fnm(i),'T')) ) 
+                    % T & eT
                     fprintf(fid, '%s, ', 'deg C');
                     fprintf(fid, '%s, ', 'deg C');
                     fprintf(fid, '%s, ', 'deg C');
                     fprintf(fid, '%s, ', 'deg C');
-                elseif ( (i == 2) || (i == 4) ) % P & eP
+                elseif ( (strcmp(fnm(i),'P'))  ) 
+                    % P & eP
                     fprintf(fid, '%s, ', 'dbar');
                     fprintf(fid, '%s, ', 'dbar');
                     fprintf(fid, '%s, ', 'dbar');
                     fprintf(fid, '%s, ', 'dbar');
-                elseif ( (i == 6) || (i == 7) || ... % fco2 & pco2
-                         (i == 12) || (i == 13) )  % efco2 & epco2
+                elseif ( (strcmp(fnm(i),'fco2')) || ...
+                        (strcmp(fnm(i),'pco2'))  )
+                    %fco2 & efco2 , pco2 & epco2
                     fprintf(fid, '%s, ', '(uatm)');
                     fprintf(fid, '%s, ', '(uatm)');
                     fprintf(fid, '%s, ', '(uatm)');
                     fprintf(fid, '%s, ', '(uatm)');
-                else
-                    fprintf(fid, '%s, ', '(unitless)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'hco3')) || ...
+                        (strcmp(fnm(i),'co3')) )
+                    % hco3 % ehco3 , co3 & eco3
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnm(i),'ph')) || ...
+                        (strcmp(fnm(i),'pco2st')) || ...
+                        (strcmp(fnm(i),'pp2f')) || ...
+                        (strcmp(fnm(i),'pK0')) || ...
+                        (strcmp(fnm(i),'pK1')) || ...
+                        (strcmp(fnm(i),'pK2')) )
+                    % pH , pco2st , pp2f , pK0 , pK1 , pK2
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
                     fprintf(fid, '%s, ', '  ');
-                    fprintf(fid, '%s, ', '  '); 
+                    fprintf(fid, '%s, ', '(p units)'); 
+                    fprintf(fid, '%s, ', '  ');
+                elseif ( (strcmp(fnm(i),'boh4')) || ...
+                        (strcmp(fnm(i),'boh3')) ) 
+                        % boh4 & eboh4 , boh3 & eboh3
+                        fprintf(fid, '%s, ', '(umol/kg)');
+                        fprintf(fid, '%s, ', '(umol/kg)');
+                        fprintf(fid, '%s, ', '(umol/kg)');
+                        fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnm(i),'pKb')) )
+                    % pKb & epKb
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+
+                elseif ( (strcmp(fnm(i),'oh')) )
+                    % oh & eoh
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnm(i),'pKw')) )
+                    % pKw & epKw
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+
+                elseif ( (strcmp(fnm(i),'so4')) || ...
+                        (strcmp(fnm(i),'hso4')) )
+                    % so4 & eso4 , hso4 % ehso4
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnm(i),'phf')) || ...
+                        (strcmp(fnm(i),'pKs'))  )
+                    % phf & ephf , pKs & epKs
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+
+                elseif ( (strcmp(fnm(i),'F')) || ...
+                        (strcmp(fnm(i),'HF'))  )
+                    % F & eF , HF & eHF
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnm(i),'pKf')) )
+                    % pKf & epKf
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+
+                elseif ( (strcmp(fnm(i),'po4')) || ...
+                        (strcmp(fnm(i),'hpo4')) || ...
+                        (strcmp(fnm(i),'h2po4')) || ...
+                        (strcmp(fnm(i),'h3po4')) )
+                    % po4 & epo4 , hpo4 % ehpo4 , h2po4 & eh2po4 , h3po4 & eh3po4
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnm(i),'pK1p')) || ...
+                        (strcmp(fnm(i),'pK2p')) || ...
+                        (strcmp(fnm(i),'pK3p')) )
+                    % pK1p , pK2p , pK3p
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+
+                elseif ( (strcmp(fnm(i),'sioh4')) || ...
+                        (strcmp(fnm(i),'siooh3')) )
+                    % sioh4 & esioh4 , siooh3 & esiooh3
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnm(i),'pKsi'))  )
+                    % pKsi & epKsi
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+
+
+                elseif ( (strcmp(fnm(i),'nh3')) || ...
+                        (strcmp(fnm(i),'nh4')) )
+                    % nh3 & enh3 , nh4 & enh4
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnm(i),'pKnh4')) )
+                    % pKnh4 & epKnh4
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+
+                elseif ( (strcmp(fnm(i),'hs')) || ...
+                        (strcmp(fnm(i),'h2s')) )
+                    % hs & ehs , h2s & eh2s
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnm(i),'pKh2s')) )
+                    % pKh2s & epKh2s
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                 end
             end
@@ -89,40 +223,40 @@ function out = PrintCSVv2(varargin)
         
         % salinity
         fprintf(fid,'%.4g, ', obs.sal); 
-        fprintf(fid,'%.4g, ', obs.wsal);        
+        fprintf(fid,'%.4g, ', obs.esal);        
         fprintf(fid,'%.4g, ', est.sal);
         fprintf(fid,'%.4g, ', est.esal);
 
         % TC (DIC)
         fprintf(fid,'%.4g, ', obs.TC); 
-        fprintf(fid,'%.4g, ', obs.wTC);
+        fprintf(fid,'%.4g, ', obs.eTC);
         fprintf(fid,'%.4g, ', est.TC);
         fprintf(fid,'%.4g, ', est.eTC); 
         
         % TA
         fprintf(fid,'%.4g, ', obs.TA);
-        fprintf(fid,'%.4g, ', obs.wTA);
+        fprintf(fid,'%.4g, ', obs.eTA);
         fprintf(fid,'%.4g, ', est.TA);
         fprintf(fid,'%.4g, ', est.eTA);
         
         if ismember('borate',sys.abr)
             % Kb = [h][boh4]/[boh3]    
             fprintf(fid,'%f, ', obs.TB);
-            fprintf(fid,'%f, ', obs.wTB);
+            fprintf(fid,'%f, ', obs.eTB);
             fprintf(fid,'%f, ', est.TB);
             fprintf(fid,'%f, ', est.eTB);            
         end
         if ismember('sulfate',sys.abr)
             % Ks  = [hf][so4]/[hso4]   
             fprintf(fid,'%f, ', obs.TS);
-            fprintf(fid,'%f, ', obs.wTS);
+            fprintf(fid,'%f, ', obs.eTS);
             fprintf(fid,'%f, ', est.TS);
             fprintf(fid,'%f, ', est.eTS);
         end
         if ismember('fluoride',sys.abr)
             % Kf = [h][F]/[HF]    
             fprintf(fid,'%f, ', obs.TF);
-            fprintf(fid,'%f, ', obs.wTF);
+            fprintf(fid,'%f, ', obs.eTF);
             fprintf(fid,'%f, ', est.TF);
             fprintf(fid,'%f, ', est.eTF);
         end
@@ -131,248 +265,249 @@ function out = PrintCSVv2(varargin)
             % K2p = [h][hpo4]/[h2po4]
             % K3p = [h][po4]/[hpo4]            
             fprintf(fid,'%f, ', obs.TP);
-            fprintf(fid,'%f, ', obs.wTP);
+            fprintf(fid,'%f, ', obs.eTP);
             fprintf(fid,'%f, ', est.TP);
             fprintf(fid,'%f, ', est.eTP);
         end
         if ismember('silicate',sys.abr)
             % KSi = [h][siooh3]/[sioh4]    
             fprintf(fid,'%f, ', obs.TSi);
-            fprintf(fid,'%f, ', obs.wTSi);
+            fprintf(fid,'%f, ', obs.eTSi);
             fprintf(fid,'%f, ', est.TSi);
             fprintf(fid,'%f, ', est.eTSi);
         end
         if ismember('ammonia',sys.abr)
             % Knh4 = [h][nh3]/[nh4]
             fprintf(fid,'%f, ', obs.TNH3);
-            fprintf(fid,'%f, ', obs.wTNH3);
+            fprintf(fid,'%f, ', obs.eTNH3);
             fprintf(fid,'%f, ', est.TNH3);
             fprintf(fid,'%f, ', est.eTNH3);
         end
         if ismember('sulfide',sys.abr)
             % Kh2s = [h][hs]/[h2s]
             fprintf(fid,'%f, ', obs.TH2S);
-            fprintf(fid,'%f, ', obs.wTH2S);
+            fprintf(fid,'%f, ', obs.eTH2S);
             fprintf(fid,'%f, ', est.TH2S);
             fprintf(fid,'%f, ', est.eTH2S);
         end
         for j = 1:nTP
             % Temp
             fprintf(fid,'%f, ', obs.m(j).T); 
-            fprintf(fid,'%f, ', obs.m(j).wT);
+            fprintf(fid,'%f, ', obs.m(j).eT);
             fprintf(fid,'%f, ', est.m(j).T); 
             fprintf(fid,'%f, ', est.m(j).eT);
             % pres
             fprintf(fid,'%f, ', obs.m(j).P); 
-            fprintf(fid,'%f, ', obs.m(j).wP);
+            fprintf(fid,'%f, ', obs.m(j).eP);
             fprintf(fid,'%f, ', est.m(j).P); 
             fprintf(fid,'%f, ', est.m(j).eP);
             % pH
             fprintf(fid,'%f, ', obs.m(j).ph); 
-            fprintf(fid,'%f, ', obs.m(j).wph);
+            fprintf(fid,'%f, ', obs.m(j).eph);
             fprintf(fid,'%f, ', est.m(j).ph); 
             fprintf(fid,'%f, ', est.m(j).eph);
             % fco2
             fprintf(fid,'%f, ', obs.m(j).fco2); 
-            fprintf(fid,'%f, ', obs.m(j).wpco2);
+            fprintf(fid,'%f, ', obs.m(j).efco2);
             fprintf(fid,'%f, ', est.m(j).fco2); 
             fprintf(fid,'%f, ', est.m(j).efco2);
             % pco2
             fprintf(fid,'%f, ', obs.m(j).pco2); 
-            fprintf(fid,'%f, ', obs.m(j).wp2f);
+            fprintf(fid,'%f, ', obs.m(j).epco2);
             fprintf(fid,'%f, ', est.m(j).pco2); 
             fprintf(fid,'%f, ', est.m(j).epco2);
             % co2* (co2st)
             fprintf(fid,'%f, ', obs.m(j).co2st); 
-            fprintf(fid,'%f, ', obs.m(j).wco2st);
+            fprintf(fid,'%f, ', obs.m(j).eco2st);
             fprintf(fid,'%f, ', est.m(j).pco2st); 
             fprintf(fid,'%f, ', est.m(j).epco2st);
             % hco3
             fprintf(fid,'%f, ', obs.m(j).hco3); 
-            fprintf(fid,'%f, ', obs.m(j).whco3);
-            fprintf(fid,'%f, ', est.m(j).phco3); 
-            fprintf(fid,'%f, ', est.m(j).ephco3);
+            fprintf(fid,'%f, ', obs.m(j).ehco3);
+            fprintf(fid,'%f, ', est.m(j).hco3); 
+            fprintf(fid,'%f, ', est.m(j).ehco3);
             % co3
             fprintf(fid,'%f, ', obs.m(j).co3); 
-            fprintf(fid,'%f, ', obs.m(j).wco3);
-            fprintf(fid,'%f, ', est.m(j).pco3); 
-            fprintf(fid,'%f, ', est.m(j).epco3);
+            fprintf(fid,'%f, ', obs.m(j).eco3);
+            fprintf(fid,'%f, ', est.m(j).co3); 
+            fprintf(fid,'%f, ', est.m(j).eco3);
             % p2f
             fprintf(fid,'%f, ', obs.m(j).pp2f); 
-            fprintf(fid,'%f, ', obs.m(j).wp2f);
+            fprintf(fid,'%f, ', obs.m(j).epp2f);
             fprintf(fid,'%f, ', est.m(j).pp2f); 
             fprintf(fid,'%f, ', est.m(j).epp2f);
             % K0
             fprintf(fid,'%f, ', obs.m(j).pK0); 
-            fprintf(fid,'%f, ', obs.m(j).wK0);
+            fprintf(fid,'%f, ', obs.m(j).epK0);
             fprintf(fid,'%f, ', est.m(j).pK0); 
             fprintf(fid,'%f, ', est.m(j).epK0);
             % K1
             fprintf(fid,'%f, ', obs.m(j).pK1); 
-            fprintf(fid,'%f, ', obs.m(j).wK1);
+            fprintf(fid,'%f, ', obs.m(j).epK1);
             fprintf(fid,'%f, ', est.m(j).pK1); 
             fprintf(fid,'%f, ', est.m(j).epK1);
             % K2
             fprintf(fid,'%f, ', obs.m(j).pK2); 
-            fprintf(fid,'%f, ', obs.m(j).wK2);
+            fprintf(fid,'%f, ', obs.m(j).epK2);
             fprintf(fid,'%f, ', est.m(j).pK2); 
             fprintf(fid,'%f, ', est.m(j).epK2);                        
             if ismember('borate',sys.abr)
                 % boh4
                 fprintf(fid,'%f, ', obs.m(j).boh4); 
-                fprintf(fid,'%f, ', obs.m(j).wboh4);
-                fprintf(fid,'%f, ', est.m(j).pboh4); 
-                fprintf(fid,'%f, ', est.m(j).epboh4);
+                fprintf(fid,'%f, ', obs.m(j).eboh4);
+                fprintf(fid,'%f, ', est.m(j).boh4); 
+                fprintf(fid,'%f, ', est.m(j).eboh4);
                 % boh3
                 fprintf(fid,'%f, ', obs.m(j).boh3); 
-                fprintf(fid,'%f, ', obs.m(j).wboh3);
-                fprintf(fid,'%f, ', est.m(j).pboh3); 
-                fprintf(fid,'%f, ', est.m(j).epboh3);
+                fprintf(fid,'%f, ', obs.m(j).eboh3);
+                fprintf(fid,'%f, ', est.m(j).boh3); 
+                fprintf(fid,'%f, ', est.m(j).eboh3);
                 % Kb = [h][boh4]/[boh3]
                 fprintf(fid,'%f, ', obs.m(j).pKb); 
-                fprintf(fid,'%f, ', obs.m(j).wKb);
+                fprintf(fid,'%f, ', obs.m(j).epKb);
                 fprintf(fid,'%f, ', est.m(j).pKb); 
                 fprintf(fid,'%f, ', est.m(j).epKb);              
             end
             if ismember('water',sys.abr)
                 % oh
                 fprintf(fid,'%f, ', obs.m(j).oh); 
-                fprintf(fid,'%f, ', obs.m(j).woh);
-                fprintf(fid,'%f, ', est.m(j).poh); 
-                fprintf(fid,'%f, ', est.m(j).epoh);
+                fprintf(fid,'%f, ', obs.m(j).eoh);
+                fprintf(fid,'%f, ', est.m(j).oh); 
+                fprintf(fid,'%f, ', est.m(j).eoh);
                 % Kw = [h][oh]
                 fprintf(fid,'%f, ', obs.m(j).pKw); 
-                fprintf(fid,'%f, ', obs.m(j).wKw);
+                fprintf(fid,'%f, ', obs.m(j).epKw);
                 fprintf(fid,'%f, ', est.m(j).pKw); 
                 fprintf(fid,'%f, ', est.m(j).epKw);               
             end
             if ismember('sulfate',sys.abr)
                 % hf (Hfree)
                 fprintf(fid,'%f, ', obs.m(j).phf); 
-                fprintf(fid,'%f, ', obs.m(j).wphf);
+                fprintf(fid,'%f, ', obs.m(j).ephf);
                 fprintf(fid,'%f, ', est.m(j).phf); 
                 fprintf(fid,'%f, ', est.m(j).ephf);
                 % so4
                 fprintf(fid,'%f, ', obs.m(j).so4); 
-                fprintf(fid,'%f, ', obs.m(j).wso4);
-                fprintf(fid,'%f, ', est.m(j).pso4); 
-                fprintf(fid,'%f, ', est.m(j).epso4);
+                fprintf(fid,'%f, ', obs.m(j).eso4);
+                fprintf(fid,'%f, ', est.m(j).so4); 
+                fprintf(fid,'%f, ', est.m(j).eso4);
                 % hso4
                 fprintf(fid,'%f, ', obs.m(j).hso4); 
-                fprintf(fid,'%f, ', obs.m(j).whso4);
-                fprintf(fid,'%f, ', est.m(j).phso4); 
-                fprintf(fid,'%f, ', est.m(j).ephso4);
+                fprintf(fid,'%f, ', obs.m(j).ehso4);
+                fprintf(fid,'%f, ', est.m(j).hso4); 
+                fprintf(fid,'%f, ', est.m(j).ehso4);
                 % Ks  = [hf][so4]/[hso4]
                 fprintf(fid,'%f, ', obs.m(j).pKs); 
-                fprintf(fid,'%f, ', obs.m(j).wKs);
+                fprintf(fid,'%f, ', obs.m(j).epKs);
                 fprintf(fid,'%f, ', est.m(j).pKs); 
                 fprintf(fid,'%f, ', est.m(j).epKs);                                               
             end
             if ismember('fluoride',sys.abr)
                 % [F]
                 fprintf(fid,'%f, ', obs.m(j).F); 
-                fprintf(fid,'%f, ', obs.m(j).wF);
-                fprintf(fid,'%f, ', est.m(j).pF); 
-                fprintf(fid,'%f, ', est.m(j).epF);                
+                fprintf(fid,'%f, ', obs.m(j).eF);
+                fprintf(fid,'%f, ', est.m(j).F); 
+                fprintf(fid,'%f, ', est.m(j).eF);                
                 % [HF] hydrogen fluoride
                 fprintf(fid,'%f, ', obs.m(j).HF); 
-                fprintf(fid,'%f, ', obs.m(j).wHF);
-                fprintf(fid,'%f, ', est.m(j).pHF); 
-                fprintf(fid,'%f, ', est.m(j).epHF);                
+                fprintf(fid,'%f, ', obs.m(j).eHF);
+                fprintf(fid,'%f, ', est.m(j).HF); 
+                fprintf(fid,'%f, ', est.m(j).eHF);                
                 % Kf = [h][F]/[HF]
                 fprintf(fid,'%f, ', obs.m(j).pKf); 
-                fprintf(fid,'%f, ', obs.m(j).wKf);
+                fprintf(fid,'%f, ', obs.m(j).epKf);
                 fprintf(fid,'%f, ', est.m(j).pKf); 
                 fprintf(fid,'%f, ', est.m(j).epKf);                
             end
             if ismember('phosphate',sys.abr)
                 % po4
                 fprintf(fid,'%f, ', obs.m(j).po4); 
-                fprintf(fid,'%f, ', obs.m(j).wpo4);
-                fprintf(fid,'%f, ', est.m(j).ppo4); 
-                fprintf(fid,'%f, ', est.m(j).eppo4);                
+                fprintf(fid,'%f, ', obs.m(j).epo4);
+                fprintf(fid,'%f, ', est.m(j).po4); 
+                fprintf(fid,'%f, ', est.m(j).epo4);                
                 % hpo4
                 fprintf(fid,'%f, ', obs.m(j).hpo4); 
-                fprintf(fid,'%f, ', obs.m(j).whpo4);
-                fprintf(fid,'%f, ', est.m(j).phpo4); 
-                fprintf(fid,'%f, ', est.m(j).ephpo4);                
+                fprintf(fid,'%f, ', obs.m(j).ehpo4);
+                fprintf(fid,'%f, ', est.m(j).hpo4); 
+                fprintf(fid,'%f, ', est.m(j).ehpo4);                
                 % h2po4
                 fprintf(fid,'%f, ', obs.m(j).h2po4); 
-                fprintf(fid,'%f, ', obs.m(j).wh2po4);
-                fprintf(fid,'%f, ', est.m(j).ph2po4); 
-                fprintf(fid,'%f, ', est.m(j).eph2po4);                
+                fprintf(fid,'%f, ', obs.m(j).eh2po4);
+                fprintf(fid,'%f, ', est.m(j).h2po4); 
+                fprintf(fid,'%f, ', est.m(j).eh2po4);                
                 % h3po4
                 fprintf(fid,'%f, ', obs.m(j).h3po4); 
-                fprintf(fid,'%f, ', obs.m(j).wh3po4);
-                fprintf(fid,'%f, ', est.m(j).ph3po4); 
-                fprintf(fid,'%f, ', est.m(j).eph3po4);                
+                fprintf(fid,'%f, ', obs.m(j).eh3po4);
+                fprintf(fid,'%f, ', est.m(j).h3po4); 
+                fprintf(fid,'%f, ', est.m(j).eh3po4);                
                 % K1p = [h][h2po4]/[h3po4]
                 fprintf(fid,'%f, ', obs.m(j).pK1p); 
-                fprintf(fid,'%f, ', obs.m(j).wK1p);
+                fprintf(fid,'%f, ', obs.m(j).epK1p);
                 fprintf(fid,'%f, ', est.m(j).pK1p); 
                 fprintf(fid,'%f, ', est.m(j).epK1p);                
                 % K2p = [h][hpo4]/[h2po4]
                 fprintf(fid,'%f, ', obs.m(j).pK2p); 
-                fprintf(fid,'%f, ', obs.m(j).wK2p);
+                fprintf(fid,'%f, ', obs.m(j).epK2p);
                 fprintf(fid,'%f, ', est.m(j).pK2p); 
                 fprintf(fid,'%f, ', est.m(j).epK2p);                
                 % K3p = [h][po4]/[hpo4]
                 fprintf(fid,'%f, ', obs.m(j).pK3p); 
-                fprintf(fid,'%f, ', obs.m(j).wK3p);
+                fprintf(fid,'%f, ', obs.m(j).epK3p);
                 fprintf(fid,'%f, ', est.m(j).pK3p); 
                 fprintf(fid,'%f, ', est.m(j).epK3p);                                              
             end
             if ismember('silicate',sys.abr)
                 % sioh4
                 fprintf(fid,'%f, ', obs.m(j).sioh4); 
-                fprintf(fid,'%f, ', obs.m(j).wsioh4);
-                fprintf(fid,'%f, ', est.m(j).psioh4); 
-                fprintf(fid,'%f, ', est.m(j).epsioh4);                
+                fprintf(fid,'%f, ', obs.m(j).esioh4);
+                fprintf(fid,'%f, ', est.m(j).sioh4); 
+                fprintf(fid,'%f, ', est.m(j).esioh4);                
                 % siooh3
                 fprintf(fid,'%f, ', obs.m(j).siooh3); 
-                fprintf(fid,'%f, ', obs.m(j).wsiooh3);
-                fprintf(fid,'%f, ', est.m(j).psiooh3); 
-                fprintf(fid,'%f, ', est.m(j).epsiooh3);                
+                fprintf(fid,'%f, ', obs.m(j).esiooh3);
+                fprintf(fid,'%f, ', est.m(j).siooh3); 
+                fprintf(fid,'%f, ', est.m(j).esiooh3);                
                 % KSi = [h][siooh3]/[sioh4]
                 fprintf(fid,'%f, ', obs.m(j).pKsi); 
-                fprintf(fid,'%f, ', obs.m(j).wKsi); 
+                fprintf(fid,'%f, ', obs.m(j).epKsi); 
                 fprintf(fid,'%f, ', est.m(j).pKsi); 
                 fprintf(fid,'%f, ', est.m(j).epKsi);                              
             end
             if ismember('ammonia',sys.abr)
                 % nh3
                 fprintf(fid,'%f, ', obs.m(j).nh3); 
-                fprintf(fid,'%f, ', obs.m(j).wnh3);
-                fprintf(fid,'%f, ', est.m(j).pnh3); 
-                fprintf(fid,'%f, ', est.m(j).epnh3);                
+                fprintf(fid,'%f, ', obs.m(j).enh3);
+                fprintf(fid,'%f, ', est.m(j).nh3); 
+                fprintf(fid,'%f, ', est.m(j).enh3);                
                 % nh4
                 fprintf(fid,'%f, ', obs.m(j).nh4); 
-                fprintf(fid,'%f, ', obs.m(j).wnh4);
-                fprintf(fid,'%f, ', est.m(j).pnh4); 
-                fprintf(fid,'%f, ', est.m(j).epnh4);                
+                fprintf(fid,'%f, ', obs.m(j).enh4);
+                fprintf(fid,'%f, ', est.m(j).nh4); 
+                fprintf(fid,'%f, ', est.m(j).enh4);                
                 % Knh4 = [h][nh3]/[nh4]
                 fprintf(fid,'%f, ', obs.m(j).Knh4); 
-                fprintf(fid,'%f, ', obs.m(j).wKnh4);
+                fprintf(fid,'%f, ', obs.m(j).epKnh4);
                 fprintf(fid,'%f, ', est.m(j).pKnh4); 
                 fprintf(fid,'%f, ', est.m(j).epKnh4);                
             end
             if ismember('sulfide',sys.abr)                
                 % hs
                 fprintf(fid,'%f, ', obs.m(j).hs); 
-                fprintf(fid,'%f, ', obs.m(j).whs);
-                fprintf(fid,'%f, ', est.m(j).phs); 
-                fprintf(fid,'%f, ', est.m(j).ephs);                
+                fprintf(fid,'%f, ', obs.m(j).ehs);
+                fprintf(fid,'%f, ', est.m(j).hs); 
+                fprintf(fid,'%f, ', est.m(j).ehs);                
                 % h2s
                 fprintf(fid,'%f, ', obs.m(j).h2s); 
-                fprintf(fid,'%f, ', obs.m(j).wh2s);
-                fprintf(fid,'%f, ', est.m(j).ph2s); 
-                fprintf(fid,'%f, ', est.m(j).eph2s);                
+                fprintf(fid,'%f, ', obs.m(j).eh2s);
+                fprintf(fid,'%f, ', est.m(j).h2s); 
+                fprintf(fid,'%f, ', est.m(j).eh2s);                
                 % Kh2s = [h][hs]/[h2s]
                 fprintf(fid,'%f, ', obs.m(j).Kh2s); 
-                fprintf(fid,'%f, ', obs.m(j).wKh2s);
+                fprintf(fid,'%f, ', obs.m(j).epKh2s);
                 fprintf(fid,'%f, ', est.m(j).pKh2s); 
                 fprintf(fid,'%f, ', est.m(j).epKh2s);                
             end
+            fprintf(fid,'%s, ', '  ');
         end
         
         %p = sys.p; % -log10(x)
@@ -439,7 +574,7 @@ function out = PrintCSVv2(varargin)
 %         end
         
         fprintf(fid,'\n');
-%         out = [];
+        out = [];
     end
 end
 
