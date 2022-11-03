@@ -10,15 +10,219 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
 %   obs  := co2-system measured quantities with precisions 
 %   sys  := struct with stuff for co2-system solver (initialized using mksys.m)
 
+    nv = size(sys.K,2);
+
+    [obs,yobs,wobs] = parse_input(obs,sys);
+
+    gun = @(z) grad_limpco2(z,yobs,wobs,sys);
+    z0 = init(yobs,sys);
+    tol = 1e-7;
+    %keyboard
+    [z,J,iflag] = newtn(z0,gun,tol);
+    if (iflag ~=0)
+        fprintf('Newton''s method iflag = %i\n',iflag);
+    end
+    % posterior uncertainty
+    warning('off');
+    C = inv(J);
+    warning('on');
+    C = C(1:nv,1:nv);
+    y = z(1:nv);
+    sigy = sqrt(diag(C));
+    %
+    % populate est
+    [est] = parse_output(z,sigy,obs,sys);
+
+end
+
+function [g,H] = grad_limpco2(z,y,w,sys)
+    I = eye(length(z));
+    H = zeros(length(z),length(z));
+    im = sqrt(-1);
+    %test_g = zeros(length(z),1);
+    for k = 1:length(z)
+        [f,g] = limpco2( z + im * eps^3 * I(:,k), y, w, sys);
+        %   test_g(k) = imag(f)/eps^3;
+        H(k,:) = imag( g(:) ) / eps^3 ;
+    end
+    g = real( g(:) );
+    % [ g, test_g ]
+    %keyboard
+end
+
+function [f,g] = limpco2(z,y,w,sys)
+% [f,g] = limpco2(z,y,w,tc,s,P)
+%
+% Negative log probability for the co2 system  a.k.a. log improbability i.e., limp!
+%
+% INPUT:
+%
+%   z  := system state including equilibrium constants and lagrange multipliers
+%   y  := measured components, non-measured components set to NaN
+%   w  := measurement precisions, same size and order as y, non-measured components set to anything, they are ignored
+% gpK  := first order derivatives of pK wrt T,S,P
+% ggpK := second order derivatives of pK wrt T,S,P
+
+% OUTPUT:
+%
+%   f := limp
+%   g := grad f w.r.t. x
+%   h := hessian of f w.r.t. x
+  
+    p = sys.p;
+    q = sys.q;
+    M = sys.M;
+    K = sys.K;
+    nv = size(M,2);
+    nlam = size(M,1)+size(K,1);
+    nTP = length(sys.m);
+    if (ismember('sulfate',sys.abr)) % MF doesn't understand why this is here
+        nlam = nlam+nTP; % one extra lagrange multiplier for each (T,P)-dependent free to total ph conversions
+    end
+    x   =  z(1:nv);      % measureable variables
+    lam =  z(nv+1:end);  % Lagrange multipliers 
+    
+    % Make a vector of measured quantities    
+    i = find(~isnan(y));
+    y = y(i);
+    
+    % Make a precision matrix
+    W = diag(w(i));
+    
+    % Build a matrix that Picks out the measured components of x
+    I = eye(nv); % for chain rule
+    
+    PP = I(i,:); % picking/pick out the measured ones
+    e = PP*x - y;
+    
+    nrk = size(K,1);
+    zpK = zeros(nrk,1);
+    zgpK = zeros(nrk,nv);
+    f2t = [];
+    for i = 1:nTP
+        [pK, gpK] = local_pK( x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
+        iTSP = [ sys.m(i).iT, sys.isal, sys.m(i).iP];
+        if (ismember('carbonate',sys.abr))
+            zpK(sys.m(i).kK0)          = pK(1); 
+            zgpK(sys.m(i).kK0, iTSP )  = gpK(1,:); % ∂T, ∂S, ∂P
+        
+            zpK(sys.m(i).kK1)          = pK(2);  
+            zgpK(sys.m(i).kK1, iTSP )  = gpK(2,:); % ∂T, ∂S, ∂P       
+        
+            zpK(sys.m(i).kK2)          = pK(3); 
+            zgpK(sys.m(i).kK2, iTSP )  = gpK(3,:); % ∂T, ∂S, ∂P  
+        
+            zpK(sys.m(i).kp2f)         = pK(14); 
+            zgpK(sys.m(i).kp2f, iTSP ) = gpK(14,:); % ∂T, ∂S, ∂P 
+        end
+    
+        if (ismember('borate',sys.abr))
+            zpK(sys.m(i).kKb)          = pK(4); 
+            zgpK(sys.m(i).kKb, iTSP ) = gpK(4,:); % ∂T, ∂S, ∂P
+        end
+
+        if (ismember('water',sys.abr))
+            zpK(sys.m(i).kKw)          = pK(5); 
+            zgpK(sys.m(i).kKw, iTSP )  = gpK(5,:); % ∂T, ∂S, ∂P  
+        end
+
+        if (ismember('sulfate',sys.abr))
+            zpK(sys.m(i).kKs)          = pK(6); 
+            zgpK(sys.m(i).kKs, iTSP )  = gpK(6,:); % ∂T, ∂S, ∂P  
+            f2t = [f2t;sys.m(i).f2t(x)];
+        end
+        
+        if (ismember('fluoride',sys.abr))
+            zpK(sys.m(i).kKf)          = pK(7); 
+            zgpK(sys.m(i).kKf, iTSP )  = gpK(7,:); % ∂T, ∂S, ∂P
+        end
+        
+        if (ismember('phosphate',sys.abr))
+            zpK(sys.m(i).kK1p)         = pK(8); 
+            zgpK(sys.m(i).kK1p, iTSP ) = gpK(8,:); % ∂T, ∂S, ∂P 
+            
+            zpK(sys.m(i).kK2p)         = pK(9); 
+            zgpK(sys.m(i).kK2p,iTSP )  = gpK(9,:); % ∂T, ∂S, ∂P 
+            
+            zpK(sys.m(i).kK3p)         = pK(10); 
+            zgpK(sys.m(i).kK3p, iTSP ) = gpK(10,:); % ∂T, ∂S, ∂P 
+        end
+
+        if (ismember('silicate',sys.abr))
+            zpK(sys.m(i).kKsi)         = pK(11); 
+            zgpK(sys.m(i).kKsi, iTSP ) = gpK(11,:); % ∂T, ∂S, ∂P 
+        end
+
+        if (ismember('ammonia',sys.abr))
+            zpK(sys.m(i).kKnh4)         = pK(12); 
+            zgpK(sys.m(i).kKnh4, iTSP ) = gpK(12,:); % ∂T, ∂S, ∂P  
+        end
+
+        if (ismember('sulfide',sys.abr))
+            zpK(sys.m(i).kKh2s)         = pK(13); 
+            zgpK(sys.m(i).kKh2s, iTSP ) = gpK(13,:); % ∂T, ∂S, ∂P 
+        end
+    end
+    
+    % constraint equations
+    if (ismember('sulfate',sys.abr))  
+        c = [  M * q( x ); ... 
+               (-K * x) + zpK;...
+               f2t ] ; 
+    else
+        c = [  M * q( x ); ...
+               (-K * x) + zpK  ] ; 
+    end
+
+    f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers
+        
+    % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
+    if ( nargout > 1 ) % compute the gradient
+        if (ismember('sulfate',sys.abr))
+            gf2t = zeros(nTP,nv);
+            for i = 1:nTP
+                gf2t(i,[ sys.m(i).iph, sys.m(i).iKs, sys.iTS, sys.m(i).iphf ] ) = sys.m(i).gf2t(x);
+            end
+            dcdx = [ M * diag( sys.dqdx( x ) ); ...
+                     (-K + zgpK) ;...
+                     gf2t ]; % constraint eqns wrt -log10(concentrations)
+        else
+            dcdx = [ M * diag( sys.dqdx( x ) ); ...
+                     (-K + zgpK) ]; % c'
+        end    
+        g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
+    end
+    %     
+    if ( nargout > 2 ) % compute the Hessian
+        ddq =  diag( sys.d2qdx2( x ) ); % q"
+        [nr,nc] = size(M);
+        gg = zeros(nc,1);
+        for row = (1:nr)
+            gg = gg + lam(row)*diag(M(row,:))*ddq;
+        end
+        for row = (nr+1):(nr+nrk)
+            gg = gg + lam(row)*(-zggpK((row-nr),:,:)); % ggpK
+        end
+        if (ismember('hf',sys.variables))
+            dhfdx2 = zeros(nc,nc);
+            ii = [sys.iKs,sys.iTS];
+            dhfdx2(ii,ii) = sys.ggf2t(x);
+            gg = gg + lam(nr+1)*dhfdx2;
+        end
+        H = [  PP.'*W*PP + gg , dcdx.'  ; ...
+               dcdx         , zeros(nlam)  ];
+    end
+end
+
+function [obs,yobs,wobs] = parse_input(obs,sys)
     isgood = @(thing) (~isempty(thing) & ~sum(isnan(thing)));
     p = sys.p;
     q = sys.q;
     w = @(x,e) p(1+e./x).^(-2); % convert x+/-e into precision for p(x)
-    
+
     nv = size(sys.K,2);
     yobs = nan(nv,1);
     wobs = nan(nv,1);
-    nTP = length(obs.m);
 
     % make sure all the required fields in the obs struct exist
     if (~isfield(obs, 'sal'))
@@ -26,11 +230,12 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
     else
         yobs(sys.isal) = obs.sal;
     end
-    if (~isfield(obs, 'esal'));
-        obs.esal = w(obs.sal,0.002); % std = 0.002 PSU
+    if (~isfield(obs, 'esal'))
+        obs.esal = 0.002; % std = 0.002 PSU
+        wobs(sys.isal) = (obs.esal)^(-2);
         fprintf('Warning: Assuming salinity uncertainty is 0.002 PSU');
     else
-        wobs(sys.isal) = w(obs.sal,obs.esal); % std e -> w
+        wobs(sys.isal) = (obs.esal)^(-2); % std e -> w
     end
     if (~isfield(obs,'TC'))
         obs.TC = [];
@@ -123,17 +328,22 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
             obs.m(1).pKb = [];
         end
         if (~isfield(obs,'TB'))
-            % Culkin, F., in Chemical Oceanography,
-            % ed. Riley and Skirrow, 1965: ( copied from Orr's code )
-            fprintf('Warning: Assuming TB = 0.0004106 * sal / 35  mol/kg-SW.\n');
-            obs.TB = (0.0004106 * obs.sal / 35) * (1e6) ; % convt to µmol/kg
-            yobs(sys.iTB) = p(obs.TB);
+            % Uppstrom, L., Deep-Sea Research 21:161-162, 1974
+            % ( copied from Orr's code )
+            fprintf('Warning: Assuming TB = 0.0004157 * sal / 35  mol/kg-SW.\n');
+            % TB = ( 0.000232/ 10.811) * (sal/1.80655)
+            obs.TB = (0.0004157 * obs.sal / 35) * (1e6) ; % convt to µmol/kg
+            yobs(sys.iTB) = p(obs.TB*1e-6);
         else
             yobs(sys.iTB) = p(obs.TB*1e-6); % convt µmol/kg to mol/kg
         end
         if (~isfield(obs, 'eTB'))
-            obs.eTB = w((obs.TB),(( 35 / 0.0004106 ) * obs.esal)*(1e6) ) ;
-            wobs(sys.iTB) = obs.eTB;
+            % std 5e-6 on avg 2.32e-4
+            pTBu = p( ( (2.32e-4 + 5e-6)/10.811) * obs.sal/1.80655 );
+            pTBl = p( ( (2.32e-4 - 5e-6)/10.811) * obs.sal/1.80655 );
+            epTB = (pTBu - pTBl) /2 ;
+            obs.eTB = q(epTB) * 1e6 ;
+            wobs(sys.iTB) = (epTB)^(-2);
         else
             wobs(sys.iTB) = w(obs.TB,obs.eTB);
         end
@@ -177,14 +387,18 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
             % Morris, A. W., and Riley, J. P., Deep-Sea Research 13:699-705, 1966:
             % copied from Orr's code
             fprintf('Warning: Assuming TS = ( 0.14 / 96.062 ) * ( sal / 1.80655 ) mol/kg-SW.\n'); 
-            obs.TS = ( 0.14 / 96.062 ) * ( obs.sal / 1.80655 )*(1e6); % convt to µmol/kg
+            obs.TS = ( 0.14 / 96.062 ) * ( obs.sal / 1.80655 ); % mol/kg
             yobs(sys.iTS) = p(obs.TS);
         else
-            yobs(sys.iTS) = p(obs.TS*1e-6); % convt µmol/kg to mol/kg
+            yobs(sys.iTS) = p(obs.TS); % convt µmol/kg to mol/kg
         end
         if (~isfield(obs, 'eTS'))
-            obs.eTS = w(obs.TS,( ( 0.14 / 96.062 ) / 1.80655 ) * obs.esal*1e6);
-            wobs(sys.iTS) = obs.eTS;
+            % 0.16% coefficient of variation on 0.1400 average ratio
+            pTSu = p( ( (0.14+(0.14*1.6e-3))/96.062 ) * obs.sal/ 1.80655 );
+            pTSl = p( ( (0.14-(0.14*1.6e-3))/96.062 ) * obs.sal/ 1.80655 );
+            epTS = (pTSu - pTSl) / 2;
+            obs.eTS = q(epTS) ;
+            wobs(sys.iTS) = (epTS)^(-2);
         else
             wobs(sys.iTS) = w(obs.TS,obs.eTS);
         end
@@ -220,13 +434,17 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
             % this is .000068.*Sali./35. = .00000195.*Sali
             fprintf('Warning: Assuming TF = ( 0.000067 / 18.998 ) * ( sal / 1.80655 ). mol/kg-SW. \n');
             obs.TF = ( 0.000067 / 18.998 ) * ( obs.sal / 1.80655 )*1e6; % convt to µmol/kg-SW
-            yobs(sys.iTF) = p(obs.TF);
+            yobs(sys.iTF) = p(obs.TF*1e-6);
         else
             yobs(sys.iTF) = p(obs.TF*1e-6); % convt µmol/kg to mol/kg
         end
         if (~isfield(obs, 'eTF'))
-            obs.eTF = w(obs.TF,( ( 0.000067 / 18.998 ) / 1.80655 ) * obs.esal*1e6);
-            wobs(sys.iTF) = obs.eTF;
+            % 6.7 ± 0.1 e-5
+            pTFu = p( ( (6.7e-5 + 0.1e-5)/18.998) * obs.sal/1.80655 );
+            pTFl = p( ( (6.7e-5 - 0.1e-5)/18.998) * obs.sal/1.80655 );
+            epTF = (pTFu - pTFl) / 2;
+            obs.eTF = q(epTF)*1e6;
+            wobs(sys.iTF) = (epTF)^(-2);
         else
             wobs(sys.iTF) = w(obs.TF,obs.eTF);
         end
@@ -409,8 +627,6 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
     end
         
     nTP = length(obs.m);
-    yobs(sys.iTC) = obs.TC;
-    yobs(sys.iTA) = obs.TA;
     
     for i = 1:nTP % loop over all the pressure and temperature sensitive components
         yobs(sys.m(i).iT) = obs.m(i).T;
@@ -431,10 +647,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
         %
         if (ismember('carbonate',sys.abr))
             if (isgood(obs.m(i).epK0))   
-                wobs(sys.m(i).iK0) = obs.m(i).epK0;
+                wobs(sys.m(i).iK0) = (obs.m(i).epK0)^(-2);
             else
-                wobs(sys.m(i).iK0) = (0.002)^(-2);
-                obs.m(i).epK0 = wobs(sys.m(i).iK0);
+                obs.m(i).epK0 = 0.002;
+                wobs(sys.m(i).iK0) = (obs.m(i).epK0)^(-2);
             end
             if (isgood(obs.m(i).pK0))
                 yobs(sys.m(i).iK0) = obs.m(i).pK0;
@@ -444,10 +660,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
             end
 
             if (isgood(obs.m(i).epK1))
-                wobs(sys.m(i).iK1) = obs.m(i).epK1;
+                wobs(sys.m(i).iK1) = (obs.m(i).epK1)^(-2);
             else
-                wobs(sys.m(i).iK1) = (0.01).^(-2);  % wK1 = 1/(1 + (0.01/pKsys(2)))^2 ;
-                obs.m(i).epK1 = wobs(sys.m(i).iK1);
+                obs.m(i).epK1 = 0.01;
+                wobs(sys.m(i).iK1) = (obs.m(i).epK1)^(-2);  % wK1 = 1/(1 + (0.01/pKsys(2)))^2 ;
             end
             if (isgood(obs.m(i).pK1))
                 yobs(sys.m(i).iK1) = obs.m(i).pK1;
@@ -457,10 +673,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
             end            
             
             if (isgood(obs.m(i).epK2))
-                wobs(sys.m(i).iK2) = obs.m(i).epK2;
+                wobs(sys.m(i).iK2) = (obs.m(i).epK2)^(-2);
             else
-                wobs(sys.m(i).iK2) = (0.02).^(-2);  % wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
-                obs.m(i).epK2 = wobs(sys.m(i).iK2);
+                obs.m(i).epK2 = 0.02;
+                wobs(sys.m(i).iK2) = (obs.m(i).epK2)^(-2);  % wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
             end
             
             if (isgood(obs.m(i).pK2))
@@ -471,10 +687,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
             end
             
             if (isgood(obs.m(i).epp2f))
-                wobs(sys.m(i).ip2f) = obs.m(i).epp2f;
+                wobs(sys.m(i).ip2f) = (obs.m(i).epp2f)^(-2);
             else
-                wobs(sys.m(i).ip2f) = (0.001).^(-2);
-                obs.m(i).epp2f = wobs(sys.m(i).ip2f);
+                obs.m(i).epp2f = 0.001;
+                wobs(sys.m(i).ip2f) = (obs.m(i).epp2f)^(-2);
             end
             
             if (isgood(obs.m(i).pp2f))
@@ -533,13 +749,13 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
                 obs.m(i).efco2 = nan;
             end
             if (isgood(obs.m(i).ph))
-                yobs(sys.m(i).iph) = obs.m(i).ph;
+                yobs(sys.m(i).iph) = obs.m(i).ph; % ph scale?
             else
                 yobs(sys.m(i).iph) = nan;
                 obs.m(i).ph = nan;
             end
             if (isgood(obs.m(i).eph))
-                wobs(sys.m(i).iph) = (obs.m(i).eph)^(-2);
+                wobs(sys.m(i).iph) = (obs.m(i).eph).^(-2);
             else
                 wobs(sys.m(i).iph) = nan;
                 obs.m(i).eph = nan;
@@ -548,15 +764,15 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
         
         if (ismember('borate',sys.abr))
             if (isgood(obs.m(i).epKb))
-                wobs(sys.m(i).iKb) = obs.m(i).epKb;
+                wobs(sys.m(i).iKb) = (obs.m(i).epKb).^(-2);
             else
-                wobs(sys.m(i).iKb) = (0.01).^(-2);  % wKb = 1/(1 + (0.01/pKsys(4)))^2 ;
-                obs.m(i).epKb = wobs(sys.m(i).iKb);
+                obs.m(i).epKb = 0.01;
+                wobs(sys.m(i).iKb) = (obs.m(i).epKb).^(-2);  % wKb = 1/(1 + (0.01/pKsys(4)))^2 ;
             end
             if (isgood(obs.m(i).pKb))
                 yobs(sys.m(i).iKb) = obs.m(i).pKb;
             else
-                yobs(sys.m(i).iKb) = pKb;
+                yobs(sys.m(i).iKb) = pKb; % from local_pK
                 obs.m(i).pKb = pKb;
             end
             if (isgood(obs.m(i).boh3))
@@ -587,13 +803,13 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
         
         if (ismember('water',sys.abr))
             if (isgood(obs.m(i).epKw))
-                wobs(sys.m(i).iKw) = obs.m(i).epKw;
+                wobs(sys.m(i).iKw) = (obs.m(i).epKw).^(-2);
             else
-                wobs(sys.m(i).iKw) = (0.01).^(-2);  % wKw = 1/(1 + (0.01/pKsys(5)))^2 ;
-                obs.m(i).epKw = wobs(sys.m(i).iKw);
+                obs.m(i).epKw = 0.01;
+                wobs(sys.m(i).iKw) = (obs.m(i).epKw).^(-2);  % wKw = 1/(1 + (0.01/pKsys(5)))^2 ;
             end
             if (isgood(obs.m(i).pKw))
-                wobs(sys.m(i).iKw) = obs.m(i).pKw;
+                yobs(sys.m(i).iKw) = obs.m(i).pKw;
             else
                 yobs(sys.m(i).iKw) = pKw;
                 obs.m(i).pKw = pKw;
@@ -615,10 +831,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
         
         if (ismember('sulfate',sys.abr))
             if (isgood(obs.m(i).epKs))
-                wobs(sys.m(i).iKs) = obs.m(i).epKs;
+                wobs(sys.m(i).iKs) = (obs.m(i).epKs).^(-2);
             else
-                wobs(sys.m(i).iKs) = (0.0021).^(-2); % wKs = 1/(1 + (0.0021/pKsys(6)))^2 ;
-                obs.m(i).epKs = wobs(sys.m(i).iKs);
+                obs.m(i).epKs = 0.0021;
+                wobs(sys.m(i).iKs) = (obs.m(i).epKs).^(-2); % wKs = 1/(1 + (0.0021/pKsys(6)))^2 ;
             end
             if (isgood(obs.m(i).pKs))
                 yobs(sys.m(i).iKs) = obs.m(i).pKs;
@@ -667,10 +883,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
         
         if (ismember('fluoride',sys.abr))
             if (isgood(obs.m(i).epKf))
-                wobs(sys.m(i).iKf) = obs.m(i).epKf;
+                wobs(sys.m(i).iKf) = (obs.m(i).epKf).^(-2);
             else
-                wobs(sys.m(i).iKf) = (0.02).^(-2);   % wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
-                obs.m(i).epKf = wobs(sys.m(i).iKf);
+                obs.m(i).epKf = 0.02;
+                wobs(sys.m(i).iKf) = (obs.m(i).epKf).^(-2);   % wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
             end
             if (isgood(obs.m(i).pKf))
                 yobs(sys.m(i).iKf) = obs.m(i).pKf;
@@ -706,10 +922,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
         
         if (ismember('phosphate',sys.abr))
             if (isgood(obs.m(i).epK1p))
-                wobs(sys.m(i).iK1p) = obs.m(i).epK1p;
+                wobs(sys.m(i).iK1p) = (obs.m(i).epK1p).^(-2);
             else
-                wobs(sys.m(i).iK1p) = (0.09).^(-2);  % wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
-                obs.m(i).epK1p = wobs(sys.m(i).iK1p);
+                obs.m(i).epK1p = 0.09;
+                wobs(sys.m(i).iK1p) = (obs.m(i).epK1p).^(-2);  % wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
             end
             if (isgood(obs.m(i).pK1p))
                 yobs(sys.m(i).iK1p) = obs.m(i).pK1p;
@@ -718,10 +934,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
                 obs.m(i).pK1p = pK1p;
             end
             if (isgood(obs.m(i).epK2p))
-                wobs(sys.m(i).iK2p) = obs.m(i).epK2p;
+                wobs(sys.m(i).iK2p) = (obs.m(i).epK2p).^(-2);
             else
-                wobs(sys.m(i).iK2p) = (0.03).^(-2);  % wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
-                obs.m(i).epK2p = wobs(sys.m(i).iK2p);
+                obs.m(i).epK2p = 0.03;
+                wobs(sys.m(i).iK2p) = (obs.m(i).epK2p).^(-2);  % wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
             end
             if (isgood(obs.m(i).pK2p))
                 yobs(sys.m(i).iK2p) = obs.m(i).pK2p;
@@ -730,10 +946,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
                 obs.m(i).pK2p = pK2p;
             end
             if (isgood(obs.m(i).epK3p))
-                wobs(sys.m(i).iK3p) = obs.m(i).epK3p;
+                wobs(sys.m(i).iK3p) = (obs.m(i).epK3p).^(-2);
             else
-                wobs(sys.m(i).iK3p) = (0.02).^(-2);  % wK3p = 1/(1 + (0.02/pKsys(10)))^2 ;
-                obs.m(i).epK3p = wobs(sys.m(i).iK3p);
+                obs.m(i).epK3p = 0.02;
+                wobs(sys.m(i).iK3p) = (obs.m(i).epK3p).^(-2);  % wK3p = 1/(1 + (0.02/pKsys(10)))^2 ;
             end
             if (isgood(obs.m(i).pK3p))
                 yobs(sys.m(i).iK3p) = obs.m(i).pK3p;
@@ -794,10 +1010,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
 
         if (ismember('silicate',sys.abr))
             if (isgood(obs.m(i).epKsi))
-                wobs(sys.m(i).iKsi) = obs.m(i).epKsi;
+                wobs(sys.m(i).iKsi) = (obs.m(i).epKsi).^(-2);
             else
-                wobs(sys.m(i).iKsi) = (0.02).^(-2);  % wKSi = 1/(1 + (0.02/pKsys(11)))^2 ;
-                obs.m(i).epKsi = wobs(sys.m(i).iKsi);
+                obs.m(i).epKsi = 0.02;
+                wobs(sys.m(i).iKsi) = (obs.m(i).epKsi).^(-2);  % wKSi = 1/(1 + (0.02/pKsys(11)))^2 ;
             end
             if (isgood(obs.m(i).pKsi))
                 yobs(sys.m(i).iKsi) = obs.m(i).pKsi;
@@ -834,10 +1050,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
 
         if (ismember('ammonia',sys.abr))
             if (isgood(obs.m(i).epKnh4))
-                wobs(sys.m(i).iKnh4) = obs.m(i).epKnh4;
+                wobs(sys.m(i).iKnh4) = (obs.m(i).epKnh4).^(-2);
             else
-                wobs(sys.m(i).iKnh4) = (0.00017).^(-2);  % wKnh4 = 1/(1 + (0.00017/pKsys(11)))^2 ;
-                obs.m(i).epKnh4 = wobs(sys.m(i).iKnh4);
+                obs.m(i).epKnh4 = 0.00017;
+                wobs(sys.m(i).iKnh4) = (obs.m(i).epKnh4).^(-2);  % wKnh4 = 1/(1 + (0.00017/pKsys(11)))^2 ;
             end
             if (isgood(obs.m(i).pKnh4))
                 yobs(sys.m(i).iKnh4) = obs.m(i).pKnh4;
@@ -873,10 +1089,10 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
 
         if (ismember('sulfide',sys.abr))
             if (isgood(obs.m(i).epKh2s))
-                wobs(sys.m(i).iKh2s) = obs.m(i).epKh2s;
+                wobs(sys.m(i).iKh2s) = (obs.m(i).epKh2s).^(-2);
             else
-                wobs(sys.m(i).iKh2s) = (0.033).^(-2);  % wKh2s = 1/(1 + (0.033/pKsys(11)))^2 ;
-                obs.m(i).epKh2s = wobs(sys.m(i).iKh2s);
+                obs.m(i).epKh2s = 0.033;
+                wobs(sys.m(i).iKh2s) = (obs.m(i).epKh2s).^(-2);  % wKh2s = 1/(1 + (0.033/pKsys(11)))^2 ;
             end
             if (isgood(obs.m(i).pKh2s))
                 yobs(sys.m(i).iKh2s) = obs.m(i).pKh2s;
@@ -910,33 +1126,25 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
             end
         end
     end
-    gun = @(z) grad_limpco2(z,yobs,wobs,sys);
-    z0 = init(yobs,sys);
-    tol = 1e-7;
-    %keyboard
-    [z,J,iflag] = newtn(z0,gun,tol);
-    if (iflag ~=0)
-        fprintf('Newton''s method iflag = %i\n',iflag);
-    end
-    % posterior uncertainty
-    warning('off');
-    C = inv(J);
-    warning('on');
-    C = C(1:nv,1:nv);
-    y = z(1:nv);
-    sigy = sqrt(diag(C));
-    %
+end
+
+
+
+function [est] = parse_output(z,sigy,obs,sys)
     % populate est
     %
+    p = sys.p;
+    q = sys.q;
     % ebar = @(j) [ q( z(j) - sigy(j) ), q( z(j) + sigy(j) ) ];
     ebar = @(j) (0.5 * ( q( z(j) - sigy(j) ) - q( z(j) + sigy(j) ) ) );
         
     est.sal = z(sys.isal);
     est.esal = sigy(sys.isal);
-    est.TC = q(z(sys.iTC));
-    est.eTC = ebar(sys.iTC);
-    est.TA = q(z(sys.iTA));
-    est.eTA = ebar(sys.iTA);
+    est.TC = q(z(sys.iTC))*1e6;
+    est.eTC = ebar(sys.iTC)*1e6;
+    est.TA = q(z(sys.iTA))*1e6;
+    est.eTA = ebar(sys.iTA)*1e6;
+    
     if ismember('borate', sys.abr)
         est.TB = q(z(sys.iTB))*1e6; % convt mol/kg to µmol/kg
         est.eTB = ebar(sys.iTB)*1e6;
@@ -966,6 +1174,7 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
         est.eTH2S = ebar(sys.iTH2S)*1e6;
     end
     
+    nTP = length(obs.m);
     for i = 1:nTP
         % thermodynamic state & errorbar
         est.m(i).T  = z(sys.m(i).iT);
@@ -1084,186 +1293,6 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
         end
     end
 end
-
-function [g,H] = grad_limpco2(z,y,w,sys)
-    I = eye(length(z));
-    H = zeros(length(z),length(z));
-    im = sqrt(-1);
-    %test_g = zeros(length(z),1);
-    for k = 1:length(z)
-        [f,g] = limpco2( z + im * eps^3 * I(:,k), y, w, sys);
-        %   test_g(k) = imag(f)/eps^3;
-        H(k,:) = imag( g(:) ) / eps^3 ;
-    end
-    g = real( g(:) );
-    % [ g, test_g ]
-    %keyboard
-end
-
-function [f,g] = limpco2(z,y,w,sys)
-% [f,g] = limpco2(z,y,w,tc,s,P)
-%
-% Negative log probability for the co2 system  a.k.a. log improbability i.e., limp!
-%
-% INPUT:
-%
-%   z  := system state including equilibrium constants and lagrange multipliers
-%   y  := measured components, non-measured components set to NaN
-%   w  := measurement precisions, same size and order as y, non-measured components set to anything, they are ignored
-% gpK  := first order derivatives of pK wrt T,S,P
-% ggpK := second order derivatives of pK wrt T,S,P
-
-% OUTPUT:
-%
-%   f := limp
-%   g := grad f w.r.t. x
-%   h := hessian of f w.r.t. x
-  
-    p = sys.p;
-    q = sys.q;
-    M = sys.M;
-    K = sys.K;
-    nv = size(M,2);
-    nlam = size(M,1)+size(K,1);
-    nTP = length(sys.m);
-    if (ismember('sulfate',sys.abr)) % MF doesn't understand why this is here
-        nlam = nlam+nTP; % one extra lagrange multiplier for each (T,P)-dependent free to total ph conversions
-    end
-    x   =  z(1:nv);      % measureable variables
-    lam =  z(nv+1:end);  % Lagrange multipliers 
-    
-    % Make a vector of measured quantities    
-    i = find(~isnan(y));
-    y = y(i);
-    
-    % Make a precision matrix
-    W = diag(w(i));
-    
-    % Build a matrix that Picks out the measured components of x
-    I = eye(nv); % for chain rule
-    
-    PP = I(i,:); % picking/pick out the measured ones
-    e = PP*x - y;
-    
-    nrk = size(K,1);
-    zpK = zeros(nrk,1);
-    zgpK = zeros(nrk,nv);
-    f2t = [];
-    for i = 1:nTP
-        [pK, gpK] = local_pK( x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
-        iTSP = [ sys.m(i).iT, sys.isal, sys.m(i).iP];
-        if (ismember('carbonate',sys.abr))
-            zpK(sys.m(i).kK0)          = pK(1); 
-            zgpK(sys.m(i).kK0, iTSP )  = gpK(1,:); % ∂T, ∂S, ∂P
-        
-            zpK(sys.m(i).kK1)          = pK(2);  
-            zgpK(sys.m(i).kK1, iTSP )  = gpK(2,:); % ∂T, ∂S, ∂P       
-        
-            zpK(sys.m(i).kK2)          = pK(3); 
-            zgpK(sys.m(i).kK2, iTSP )  = gpK(3,:); % ∂T, ∂S, ∂P  
-        
-            zpK(sys.m(i).kp2f)         = pK(14); 
-            zgpK(sys.m(i).kp2f, iTSP ) = gpK(14,:); % ∂T, ∂S, ∂P 
-        end
-    
-        if (ismember('borate',sys.abr))
-            zpK(sys.m(i).kKb)          = pK(4); 
-            zgpK(sys.m(i).kKb, iTSP ) = gpK(4,:); % ∂T, ∂S, ∂P
-        end
-
-        if (ismember('water',sys.abr))
-            zpK(sys.m(i).kKw)          = pK(5); 
-            zgpK(sys.m(i).kKw, iTSP )  = gpK(5,:); % ∂T, ∂S, ∂P  
-        end
-
-        if (ismember('sulfate',sys.abr))
-            zpK(sys.m(i).kKs)          = pK(6); 
-            zgpK(sys.m(i).kKs, iTSP )  = gpK(6,:); % ∂T, ∂S, ∂P  
-            f2t = [f2t;sys.m(i).f2t(x)];
-        end
-        
-        if (ismember('fluoride',sys.abr))
-            zpK(sys.m(i).kKf)          = pK(7); 
-            zgpK(sys.m(i).kKf, iTSP )  = gpK(7,:); % ∂T, ∂S, ∂P
-        end
-        
-        if (ismember('phosphate',sys.abr))
-            zpK(sys.m(i).kK1p)         = pK(8); 
-            zgpK(sys.m(i).kK1p, iTSP ) = gpK(8,:); % ∂T, ∂S, ∂P 
-            
-            zpK(sys.m(i).kK2p)         = pK(9); 
-            zgpK(sys.m(i).kK2p,iTSP )  = gpK(9,:); % ∂T, ∂S, ∂P 
-            
-            zpK(sys.m(i).kK3p)         = pK(10); 
-            zgpK(sys.m(i).kK3p, iTSP ) = gpK(10,:); % ∂T, ∂S, ∂P 
-        end
-
-        if (ismember('silicate',sys.abr))
-            zpK(sys.m(i).kKsi)         = pK(11); 
-            zgpK(sys.m(i).kKsi, iTSP ) = gpK(11,:); % ∂T, ∂S, ∂P 
-        end
-
-        if (ismember('ammonia',sys.abr))
-            zpK(sys.m(i).kKnh4)         = pK(12); 
-            zgpK(sys.m(i).kKnh4, iTSP ) = gpK(12,:); % ∂T, ∂S, ∂P  
-        end
-
-        if (ismember('sulfide',sys.abr))
-            zpK(sys.m(i).kKh2s)         = pK(13); 
-            zgpK(sys.m(i).kKh2s, iTSP ) = gpK(13,:); % ∂T, ∂S, ∂P 
-        end
-    end
-    
-    % constraint equations
-    if (ismember('sulfate',sys.abr))  
-        c = [  M * q( x ); ... 
-               (-K * x) + zpK;...
-               f2t ] ; 
-    else
-        c = [  M * q( x ); ...
-               (-K * x) + zpK  ] ; 
-    end
-
-    f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers
-        
-    % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
-    if ( nargout > 1 ) % compute the gradient
-        if (ismember('sulfate',sys.abr))
-            gf2t = zeros(nTP,nv);
-            for i = 1:nTP
-                gf2t(i,[ sys.m(i).iph, sys.m(i).iKs, sys.iTS, sys.m(i).iphf ] ) = sys.m(i).gf2t(x);
-            end
-            dcdx = [ M * diag( sys.dqdx( x ) ); ...
-                     (-K + zgpK) ;...
-                     gf2t ]; % constraint eqns wrt -log10(concentrations)
-        else
-            dcdx = [ M * diag( sys.dqdx( x ) ); ...
-                     (-K + zgpK) ]; % c'
-        end    
-        g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
-    end
-    %     
-    if ( nargout > 2 ) % compute the Hessian
-        ddq =  diag( sys.d2qdx2( x ) ); % q"
-        [nr,nc] = size(M);
-        gg = zeros(nc,1);
-        for row = (1:nr)
-            gg = gg + lam(row)*diag(M(row,:))*ddq;
-        end
-        for row = (nr+1):(nr+nrk)
-            gg = gg + lam(row)*(-zggpK((row-nr),:,:)); % ggpK
-        end
-        if (ismember('hf',sys.variables))
-            dhfdx2 = zeros(nc,nc);
-            ii = [sys.iKs,sys.iTS];
-            dhfdx2(ii,ii) = sys.ggf2t(x);
-            gg = gg + lam(nr+1)*dhfdx2;
-        end
-        H = [  PP.'*W*PP + gg , dcdx.'  ; ...
-               dcdx         , zeros(nlam)  ];
-    end
-end
-
 
 
 

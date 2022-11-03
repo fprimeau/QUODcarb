@@ -19,11 +19,11 @@ for i = 1:nD
     % measurements that are independent of (T,P)
     obs.TC    = in(i,5); % (µmol/kg)
     obs.eTC   = 2.01 ; % TC error std ± 2.01µmol/kg
+    if i >= 1187
+         obs.eTC = 2.24 ; % DIC error std ±2.24µmol/kg for UW measurements
+    end
     obs.TA    = in(i,7); % (µmol/kg)
     obs.eTA   = 1.78 ; % TA error std ±1.78µmol/kg   
-%     for j = 1187:1310
-%         wpdic(j) = w(in(i,5),(2.24*1e-6)); % DIC error std ±2.24µmol/kg for UW measurements
-%     end
     obs.sal   = in(i,3);
     obs.esal  = 0.002 ;
 
@@ -96,14 +96,14 @@ for i = 1:nD
                         
         sys = mksysV2(obs,sys);
 
-        fid2 = fopen('gomecc_TA_TC_v2.csv','w');
-        fid3 = fopen('gomecc_TA_ph_v2.csv','w');
-        fid4 = fopen('gomecc_TC_ph_v2.csv','w');
-        fid5 = fopen('gomecc_Q5_v2.csv','w');
-        fid6 = fopen('compare_TA_TC.csv','w');
-        fid7 = fopen('compare_TA_ph.csv','w');
-        fid8 = fopen('compare_TC_ph.csv','w');
-        fid9 = fopen('compare_Q5_cp.csv','w');
+        fid2 = fopen('gomecc_TA_TC_v3.csv','w');
+        fid3 = fopen('gomecc_TA_ph_v3.csv','w');
+        fid4 = fopen('gomecc_TC_ph_v3.csv','w');
+        fid5 = fopen('gomecc_Q5_v3.csv','w');
+        fid6 = fopen('compare_TA_TC_v3.csv','w');
+        fid7 = fopen('compare_TA_ph_v3.csv','w');
+        fid8 = fopen('compare_TC_ph_v3.csv','w');
+        fid9 = fopen('compare_Q5_cp_v3.csv','w');
 % 
         fprintf(fid6,'%s, %s, %s, %s, %s ', 'cTA', 'eTA', 'qTA', 'eTA' );
         fprintf(fid6,'%s, %s, %s, %s, %s ', 'cTC', 'eTC', 'qTC', 'eTC' );
@@ -183,10 +183,10 @@ for i = 1:nD
         PrintCSVv2(sys,est,fid2);
     end
     PrintCSVv2(sys,est,obs,iflag,fid2);
-%     keyboard
-    [A] = compare(obs,1,est,fid6);
-    %writematrix(A,fid6,'Sheet',1,'WriteMode','append'); %48
     %keyboard
+    [A] = compare(obs,1,est,fid6);
+    %keyboard
+
     % TA ph
     obs = obs_backup;
     obs.TC = nan; obs.wTC = nan;
@@ -224,7 +224,7 @@ for i = 1:nD
     [A] = compare(obs,2,est,fid9);
     %writematrix(A,fid6,'Sheet',4,'WriteMode','append');
        
-    %keyboard
+    keyboard
 end
 
 fclose(fid2);

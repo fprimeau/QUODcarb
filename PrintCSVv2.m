@@ -111,7 +111,6 @@ function out = PrintCSVv2(varargin)
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-
                 elseif ( (strcmp(fnm(i),'so4')) || ...
                         (strcmp(fnm(i),'hso4')) )
                     % so4 & eso4 , hso4 % ehso4
@@ -126,7 +125,6 @@ function out = PrintCSVv2(varargin)
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-
                 elseif ( (strcmp(fnm(i),'F')) || ...
                         (strcmp(fnm(i),'HF'))  )
                     % F & eF , HF & eHF
@@ -140,7 +138,6 @@ function out = PrintCSVv2(varargin)
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-
                 elseif ( (strcmp(fnm(i),'po4')) || ...
                         (strcmp(fnm(i),'hpo4')) || ...
                         (strcmp(fnm(i),'h2po4')) || ...
@@ -158,7 +155,6 @@ function out = PrintCSVv2(varargin)
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-
                 elseif ( (strcmp(fnm(i),'sioh4')) || ...
                         (strcmp(fnm(i),'siooh3')) )
                     % sioh4 & esioh4 , siooh3 & esiooh3
@@ -172,8 +168,6 @@ function out = PrintCSVv2(varargin)
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-
-
                 elseif ( (strcmp(fnm(i),'nh3')) || ...
                         (strcmp(fnm(i),'nh4')) )
                     % nh3 & enh3 , nh4 & enh4
@@ -187,7 +181,6 @@ function out = PrintCSVv2(varargin)
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-
                 elseif ( (strcmp(fnm(i),'hs')) || ...
                         (strcmp(fnm(i),'h2s')) )
                     % hs & ehs , h2s & eh2s
