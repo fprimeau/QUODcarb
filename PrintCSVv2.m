@@ -40,6 +40,9 @@ function out = PrintCSVv2(varargin)
             if ( ( i == 1 ) || ( i == 2 ) )
                 fprintf(fid,'%s, ', '(PSU)');
                 fprintf(fid,'%s, ', '(PSU)');
+            elseif ( (i == 9 ) || ( i == 10 ))
+                fprintf(fid,'%s, ', '(mol/kg)');
+                fprintf(fid,'%s, ', '(mol/kg)');
             else
                 fprintf(fid,'%s, ', '(umol/kg)');
                 fprintf(fid,'%s, ', '(umol/kg)');
@@ -500,7 +503,6 @@ function out = PrintCSVv2(varargin)
                 fprintf(fid,'%f, ', est.m(j).pKh2s); 
                 fprintf(fid,'%f, ', est.m(j).epKh2s);                
             end
-            fprintf(fid,'%s, ', '  ');
         end
         
         %p = sys.p; % -log10(x)

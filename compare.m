@@ -52,7 +52,8 @@ function [A] = compare(obs,pair,est,fid)
     out.TC = OUT(2);
     out.eTC = err(2);
     out.ph = OUT(37); % total scale
-    out.eph = (p(err(10)*1e-9)); % was nano units
+    out.eh = (err(10)*1e-9); % was nano units
+    out.eph = (out.eh/(10^(-out.ph)))*(1/log(10)); % dph = (-1/ln(10))*(dH/H) from 'errors' 
     out.pco2 = OUT(19);
     out.epco2 = err(11);
     out.pK0 = p(OUT(66));

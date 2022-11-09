@@ -214,7 +214,7 @@ function sys = mksysV2(obs,sys)
         row = row + 1;
         m(j).kK0 = row;
         K(row, m(j).iK0) = 1; 
-        % K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pfco2 = 0
+        % K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pco2st = 0
         row = row + 1;
         K(row,[ m(j).iK1, m(j).iph, m(j).ihco3, m(j).ico2st]) = [-1, 1, 1, -1];
         row = row + 1;

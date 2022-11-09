@@ -8,16 +8,16 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
 %          1 after reaching maximum number of iterations without convergging
 % INPUT:
 %   obs  := co2-system measured quantities with precisions 
-%   sys  := struct with stuff for co2-system solver (initialized using mksys.m)
+%   sys  := struct with indexing for co2-system solver (initialized using mksys.m)
 
     nv = size(sys.K,2);
-
+    % populate obs, yobs, wobs
     [obs,yobs,wobs] = parse_input(obs,sys);
 
     gun = @(z) grad_limpco2(z,yobs,wobs,sys);
     z0 = init(yobs,sys);
     tol = 1e-7;
-    %keyboard
+    
     [z,J,iflag] = newtn(z0,gun,tol);
     if (iflag ~=0)
         fprintf('Newton''s method iflag = %i\n',iflag);
@@ -29,11 +29,13 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
     C = C(1:nv,1:nv);
     y = z(1:nv);
     sigy = sqrt(diag(C));
-    %
+    
     % populate est
     [est] = parse_output(z,sigy,obs,sys);
 
 end
+
+% -----------------------------------------------------------------------------
 
 function [g,H] = grad_limpco2(z,y,w,sys)
     I = eye(length(z));
@@ -49,6 +51,8 @@ function [g,H] = grad_limpco2(z,y,w,sys)
     % [ g, test_g ]
     %keyboard
 end
+
+% ---------------------------------------------------------------------------------
 
 function [f,g] = limpco2(z,y,w,sys)
 % [f,g] = limpco2(z,y,w,tc,s,P)
@@ -76,14 +80,14 @@ function [f,g] = limpco2(z,y,w,sys)
     nv = size(M,2);
     nlam = size(M,1)+size(K,1);
     nTP = length(sys.m);
-    if (ismember('sulfate',sys.abr)) % MF doesn't understand why this is here
+    if (ismember('sulfate',sys.abr)) 
         nlam = nlam+nTP; % one extra lagrange multiplier for each (T,P)-dependent free to total ph conversions
     end
     x   =  z(1:nv);      % measureable variables
     lam =  z(nv+1:end);  % Lagrange multipliers 
     
     % Make a vector of measured quantities    
-    i = find(~isnan(y));
+    i = find(~isnan(w)); % was 'y', changed to w because MF put some defintions into obs w/o precisions
     y = y(i);
     
     % Make a precision matrix
@@ -214,7 +218,10 @@ function [f,g] = limpco2(z,y,w,sys)
     end
 end
 
+% -----------------------------------------------------------------------------------
+
 function [obs,yobs,wobs] = parse_input(obs,sys)
+
     isgood = @(thing) (~isempty(thing) & ~sum(isnan(thing)));
     p = sys.p;
     q = sys.q;
@@ -295,6 +302,12 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
     if (~isfield(obs.m(1),'fco2'))
         obs.m(1).fco2 = [];
     end
+    if (~isfield(obs.m(1),'epco2'))
+        obs.m(1).epco2 = [];
+    end
+    if (~isfield(obs.m(1),'pco2'))
+        obs.m(1).pco2 = [];
+    end
     if (~isfield(obs.m(1),'eco2st'))
         obs.m(1).eco2st = [];
     end
@@ -339,11 +352,11 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         end
         if (~isfield(obs, 'eTB'))
             % std 5e-6 on avg 2.32e-4
-            pTBu = p( ( (2.32e-4 + 5e-6)/10.811) * obs.sal/1.80655 );
-            pTBl = p( ( (2.32e-4 - 5e-6)/10.811) * obs.sal/1.80655 );
-            epTB = (pTBu - pTBl) /2 ;
-            obs.eTB = q(epTB) * 1e6 ;
-            wobs(sys.iTB) = (epTB)^(-2);
+            TBu = ( ( (2.32e-4 + 5e-6)/10.811) * obs.sal/1.80655 );
+            TBl = ( ( (2.32e-4 - 5e-6)/10.811) * obs.sal/1.80655 );
+            eTB = (TBu - TBl) /2 ;
+            obs.eTB = (eTB) * 1e6 ; % µmol/kg
+            wobs(sys.iTB) = w(obs.TB,obs.eTB);
         else
             wobs(sys.iTB) = w(obs.TB,obs.eTB);
         end
@@ -393,12 +406,12 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             yobs(sys.iTS) = p(obs.TS); % convt µmol/kg to mol/kg
         end
         if (~isfield(obs, 'eTS'))
-            % 0.16% coefficient of variation on 0.1400 average ratio
-            pTSu = p( ( (0.14+(0.14*1.6e-3))/96.062 ) * obs.sal/ 1.80655 );
-            pTSl = p( ( (0.14-(0.14*1.6e-3))/96.062 ) * obs.sal/ 1.80655 );
-            epTS = (pTSu - pTSl) / 2;
-            obs.eTS = q(epTS) ;
-            wobs(sys.iTS) = (epTS)^(-2);
+            % 0.14000 ± 0.00023 
+            TSu = ( ( (0.14+0.00023)/96.062 ) * obs.sal/ 1.80655 );
+            TSl = ( ( (0.14-0.00023)/96.062 ) * obs.sal/ 1.80655 );
+            eTS = (TSu - TSl) / 2;
+            obs.eTS = (eTS) ;
+            wobs(sys.iTS) = w(obs.TS,obs.eTS);
         else
             wobs(sys.iTS) = w(obs.TS,obs.eTS);
         end
@@ -440,11 +453,11 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         end
         if (~isfield(obs, 'eTF'))
             % 6.7 ± 0.1 e-5
-            pTFu = p( ( (6.7e-5 + 0.1e-5)/18.998) * obs.sal/1.80655 );
-            pTFl = p( ( (6.7e-5 - 0.1e-5)/18.998) * obs.sal/1.80655 );
-            epTF = (pTFu - pTFl) / 2;
-            obs.eTF = q(epTF)*1e6;
-            wobs(sys.iTF) = (epTF)^(-2);
+            TFu = ( ( (6.7e-5 + 0.1e-5)/18.998) * obs.sal/1.80655 );
+            TFl = ( ( (6.7e-5 - 0.1e-5)/18.998) * obs.sal/1.80655 );
+            eTF = (TFu - TFl) / 2;
+            obs.eTF = (eTF)*1e6;
+            wobs(sys.iTF) = w(obs.TF,obs.eTF);
         else
             wobs(sys.iTF) = w(obs.TF,obs.eTF);
         end
@@ -641,6 +654,9 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
         pKh2s = pK(13); pp2f = pK(14);        
         
+        obs.m(i).hf = 1.2948 - 0.002036.*(obs.m(i).T+273.15) + ...
+                (0.0004607 - (0.000001475*(obs.m(i).T+273.15))) * ...
+                    (obs.sal).^2 ; % copied from CO2SYS, Takahashi et al (1982)
         %
         % add "observations" for the equilibrium constants 
         % and transfer from obs struct to yobs and wobs vectors
@@ -736,20 +752,50 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
                 wobs(sys.m(i).ico3) = nan;
                 obs.m(i).eco3 = nan;
             end
+            %
+            if (isgood(obs.m(i).pco2))
+                yobs(sys.m(i).ipco2) = p(obs.m(i).pco2*1e-6); % convt µatm to atm
+                yobs(sys.m(i).ifco2) = yobs(sys.m(i).ipco2) + yobs(sys.m(i).ip2f) ; % get fco2 from pco2
+            else
+                yobs(sys.m(i).ipco2) = nan;
+                obs.m(i).pco2 = nan;
+            end
+            if (isgood(obs.m(i).epco2))
+                wobs(sys.m(i).ipco2) = w(obs.m(i).pco2,obs.m(i).epco2);
+                wobs(sys.m(i).ifco2) = w(q(yobs(sys.m(i).ifco2)) , ...
+                        (q(yobs(sys.m(i).ip2f))*(obs.m(i).epco2*1e-6))); % fco2 error using p2f
+            else
+                wobs(sys.m(i).ipco2) = nan;
+                obs.m(i).epco2 = nan;
+            end
             if (isgood(obs.m(i).fco2))
-                yobs(sys.m(i).ifco3) = p(obs.m(i).fco2*1e-6); % convt µatm to atm
+                yobs(sys.m(i).ifco2) = p(obs.m(i).fco2*1e-6); % convt µatm to atm
+                if (~isgood(obs.m(i).pco2)) % p(fco2) = p(pco2) + p(p2f)
+                    yobs(sys.m(i).ipco2) = yobs(sys.m(i).ifco2) - yobs(sys.m(i).ip2f) ; % get pco2 from fco2
+                end
+            elseif (isgood(yobs(sys.m(i).ifco2)))
+                yobs(sys.m(i).ifco2) = yobs(sys.m(i).ifco2);
             else
                 yobs(sys.m(i).ifco2) = nan;
                 obs.m(i).fco2 = nan;
             end
             if (isgood(obs.m(i).efco2))
                 wobs(sys.m(i).ifco2) = w(obs.m(i).fco2,obs.m(i).efco2);
+            elseif (isgood(wobs(sys.m(i).ifco2)))
+                wobs(sys.m(i).ifco2) = wobs(sys.m(i).ifco2);
             else
                 wobs(sys.m(i).ifco2) = nan;
                 obs.m(i).efco2 = nan;
-            end
+            end %
             if (isgood(obs.m(i).ph))
-                yobs(sys.m(i).iph) = obs.m(i).ph; % ph scale?
+                if (isfield('phscale',obs.m(i)))
+                    pHall = phscales(obs.m(i).ph,obs.m(i).phscale, ...
+                        obs.TS, q(pKs), obs.TF, q(pKf), obs.m(i).hf);
+                    yobs(sys.m(i).iph) = pHall(1); % use total scale
+                elseif (~isfield('phscale',obs.m(i)))
+                    fprintf('Warning: Must input pH scale.\n');
+                    % why is this showing up every time?
+                end
             else
                 yobs(sys.m(i).iph) = nan;
                 obs.m(i).ph = nan;
@@ -869,7 +915,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             if (isgood(obs.m(i).phf))
                 yobs(sys.m(i).iphf) = obs.m(i).phf; % hydrogen free
             else
-                yobs(sys.m(i).iphf) = nan;
+                yobs(sys.m(i).iphf) = p(obs.m(i).hf); % from CO2SYS
                 obs.m(i).phf = nan;
             end
             if (isgood(obs.m(i).ephf))
@@ -1128,7 +1174,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
     end
 end
 
-
+% --------------------------------------------------------------------------------
 
 function [est] = parse_output(z,sigy,obs,sys)
     % populate est
@@ -1150,8 +1196,8 @@ function [est] = parse_output(z,sigy,obs,sys)
         est.eTB = ebar(sys.iTB)*1e6;
     end
     if ismember('sulfate', sys.abr)
-        est.TS = q(z(sys.iTS))*1e6; % convt mol/kg to µmol/kg
-        est.eTS = ebar(sys.iTS)*1e6;
+        est.TS = q(z(sys.iTS)); % no convertion on TS
+        est.eTS = ebar(sys.iTS);
     end
     if ismember('fluoride', sys.abr)
         est.TF = q(z(sys.iTF))*1e6; % convt mol/kg to µmol/kg
@@ -1186,14 +1232,14 @@ function [est] = parse_output(z,sigy,obs,sys)
         est.m(i).eph     = sigy(sys.m(i).iph);
         est.m(i).fco2    = q(z(sys.m(i).ifco2))*1e6; % convt atm to µatm
         est.m(i).efco2   = ebar(sys.m(i).ifco2)*1e6;
-        est.m(i).pco2    = q(z(sys.m(i).ipco2))*1e6;% convt atm to µatm
+        est.m(i).pco2    = q(z(sys.m(i).ipco2))*1e6; % convt atm to µatm
         est.m(i).epco2   = ebar(sys.m(i).ipco2)*1e6;
         est.m(i).pco2st  = z(sys.m(i).ico2st);
         est.m(i).epco2st = sigy(sys.m(i).ico2st);
         est.m(i).hco3   = q(z(sys.m(i).ihco3))*1e6;
         est.m(i).ehco3  = ebar(sys.m(i).ihco3)*1e6;
         est.m(i).co3    = q(z(sys.m(i).ico3))*1e6;
-        est.m(i).eco3   = ebar(sys.m(i).ico3)*1e6;          
+        est.m(i).eco3   = ebar(sys.m(i).ico3)*1e6;
         % equilibrium pK's & errorbar
         est.m(i).pp2f  = z(sys.m(i).ip2f);
         est.m(i).epp2f = sigy(sys.m(i).ip2f);
@@ -1294,7 +1340,38 @@ function [est] = parse_output(z,sigy,obs,sys)
     end
 end
 
+% ---------------------------------------------------------------------------------
 
+function pHall = phscales(phin,scalein,TS,Ks,TF,Kf,Hf)
+    % convert input pH to all scales
+    
+    % input TS, Ks, TF, Kf
+    free2tot = (1 + TS./Ks);
+    sws2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
+    % 1 = total scale, 2 = sea water scale, 3 = free scale, 4 = NBS
+    if scalein == 1
+        % total scale
+        factor = 0;
+    elseif scalein == 2
+        % seawater scale
+        factor = -log(sws2tot)./log(0.1);
+    elseif scalein == 3
+        factor = -log(free2tot)./log(0.1);
+    elseif scalein == 4
+        factor = -log(sws2tot)./log(0.1) + log(Hf)./log(0.1);
+    else
+        fprintf('Warning: Incorrect pH scale factor used.\n');
+    end
+    pHtot = phin - factor;
+    pHnbs = pHtot - log(sws2tot)./log(0.1) + log(Hf)/log(0.1);
+    pHfree = pHtot - log(free2tot)./log(0.1);
+    pHsws = pHtot - log(sws2tot)./log(0.1);
+
+    pHall = [pHtot, pHsws, pHfree, pHnbs];
+
+end
+
+% ----------------------------------------------------------------------------------
 
 function z0 = init(yobs,sys);
     q = sys.q;
