@@ -1356,16 +1356,18 @@ function pHall = phscales(phin,scalein,TS,Ks,TF,Kf,Hf)
         % seawater scale
         factor = -log(sws2tot)./log(0.1);
     elseif scalein == 3
+        % free scale
         factor = -log(free2tot)./log(0.1);
     elseif scalein == 4
+        % NBS
         factor = -log(sws2tot)./log(0.1) + log(Hf)./log(0.1);
-    else
+    elseif scalein < 1 || scalein > 4
         fprintf('Warning: Incorrect pH scale factor used.\n');
     end
-    pHtot = phin - factor;
-    pHnbs = pHtot - log(sws2tot)./log(0.1) + log(Hf)/log(0.1);
+    pHtot  = phin - factor;
+    pHnbs  = pHtot - log(sws2tot)./log(0.1) + log(Hf)/log(0.1);
     pHfree = pHtot - log(free2tot)./log(0.1);
-    pHsws = pHtot - log(sws2tot)./log(0.1);
+    pHsws  = pHtot - log(sws2tot)./log(0.1);
 
     pHall = [pHtot, pHsws, pHfree, pHnbs];
 
