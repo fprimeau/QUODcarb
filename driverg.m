@@ -26,6 +26,11 @@ for i = 1:nD
     obs.eTA   = 1.78 ; % TA error std ±1.78µmol/kg   
     obs.sal   = in(i,3);
     obs.esal  = 0.002 ;
+    % all nutrients measured @ 37degC, doesn't matter?
+    obs.TP   = in(i,24); % total phosphate, µmol/kg
+    obs.eTP  = in(i,24)*0.001; % 0.1% meas uncertainty
+    obs.TSi  = in(i,18); % total Si, µmol/kg
+    obs.eTSi = in(i,18)*0.001;
 
     % first (T,P)-dependent measurement
     obs.m(1).T   = in(i,2); % degC, CTD temp
@@ -40,7 +45,7 @@ for i = 1:nD
     obs.m(2).eP   = 0.63 ;
     obs.m(2).ph   = in(i,9); % total scale
     obs.m(2).eph  = 0.001 ;
-    obs.m(2).phscale = 3 ; % 1 = tot, 2 = sws, 3 = free, 4 = NBS
+    obs.m(2).phscale = 1 ; % 1 = tot, 2 = sws, 3 = free, 4 = NBS
     obs.m(2).co3  = in(i,15); % (µmol/kg)
     obs.m(2).eco3 = 2.0 ;  % std ±2µmol/kg
 
@@ -57,11 +62,7 @@ for i = 1:nD
     obs.m(4).eT  = 0.02 ; % not stated, assumed 0.02
     obs.m(4).P   = in(i,1); % dbar (ctd pressure for pco2 I think?)
     obs.m(4).eP  = 0.63 ;
-    % all nutrients measured @ 37degC
-    obs.m(4).TP   = in(i,24); % total phosphate, µmol/kg
-    obs.m(4).eTP  = in(i,24)*0.001; % 0.1% meas uncertainty
-    obs.m(4).TSi  = in(i,18); % total Si, µmol/kg
-    obs.m(4).eTSi = in(i,18)*0.001;
+    
     % no2 and no3 not included yet
     %obs.m(4).no2  = p(in(i,20)*1e-6); % nitrite NO2^-, molg/kg
     %obs.m(4).wno2 = w(in(i,20),(in(i,20)*0.001));
@@ -69,14 +70,14 @@ for i = 1:nD
     %obs.m(4).wno3 = w(in(i,22),(in(i,22)*0.001));   
 
     % zero silicate is very unlikely; reset minimum to 1 nanomolar
-    if (q(obs.m(4).TSi)==0)
-        obs.m(4).TSi  = 1e-3 ; % µmol/kg-SW
-        obs.m(4).eTSi = 1e-3;    
+    if (q(obs.TSi)==0)
+        obs.TSi  = 1e-3 ; % µmol/kg-SW
+        obs.eTSi = 1e-3;    
     end
     % zero po4 is very unlikely; reset minimum to 1 nanomolar
-    if (q(obs.m(4).TP)==0)
-        obs.m(4).TP  = 1e-3 ; % µmol/kg-SW
-        obs.m(4).eTP = 1e-3 ; % µmol/kg
+    if (q(obs.TP)==0)
+        obs.TP  = 1e-3 ; % µmol/kg-SW
+        obs.eTP = 1e-3 ; % µmol/kg
     end
 
     if i == 1 
