@@ -13,7 +13,7 @@ function [est,obs,iflag] = QUODcarbV2(obs,sys)
     nv = size(sys.K,2);
     % populate obs, yobs, wobs
     [obs,yobs,wobs] = parse_input(obs,sys);
-
+    %keyboard
     gun = @(z) grad_limpco2(z,yobs,wobs,sys);
     z0 = init(yobs,sys);
     tol = 1e-7;
@@ -85,17 +85,17 @@ function [f,g] = limpco2(z,y,w,sys)
     end
     x   =  z(1:nv);      % measureable variables
     lam =  z(nv+1:end);  % Lagrange multipliers 
-    
+    %keyboard
     % Make a vector of measured quantities    
     i = find(~isnan(w)); % was 'y', changed to w because MF put some defintions into obs w/o precisions
     y = y(i);
-    
+    %keyboard
     % Make a precision matrix
     W = diag(w(i));
     
     % Build a matrix that Picks out the measured components of x
     I = eye(nv); % for chain rule
-    
+    %keyboard
     PP = I(i,:); % picking/pick out the measured ones
     e = PP*x - y;
     
@@ -755,26 +755,26 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             %
             if (isgood(obs.m(i).pco2))
                 yobs(sys.m(i).ipco2) = p(obs.m(i).pco2*1e-6); % convt µatm to atm
-                yobs(sys.m(i).ifco2) = yobs(sys.m(i).ipco2) + yobs(sys.m(i).ip2f) ; % get fco2 from pco2
+                %yobs(sys.m(i).ifco2) = yobs(sys.m(i).ipco2) + yobs(sys.m(i).ip2f) ; % get fco2 from pco2
             else
                 yobs(sys.m(i).ipco2) = nan;
                 obs.m(i).pco2 = nan;
             end
             if (isgood(obs.m(i).epco2))
                 wobs(sys.m(i).ipco2) = w(obs.m(i).pco2,obs.m(i).epco2);
-                wobs(sys.m(i).ifco2) = w(q(yobs(sys.m(i).ifco2)) , ...
-                        (q(yobs(sys.m(i).ip2f))*(obs.m(i).epco2*1e-6))); % fco2 error using p2f
+               % wobs(sys.m(i).ifco2) = w(q(yobs(sys.m(i).ifco2)) , ...
+                %        (q(yobs(sys.m(i).ip2f))*(obs.m(i).epco2*1e-6))); % fco2 error using p2f
             else
                 wobs(sys.m(i).ipco2) = nan;
                 obs.m(i).epco2 = nan;
             end
             if (isgood(obs.m(i).fco2))
                 yobs(sys.m(i).ifco2) = p(obs.m(i).fco2*1e-6); % convt µatm to atm
-                if (~isgood(obs.m(i).pco2)) % p(fco2) = p(pco2) + p(p2f)
-                    yobs(sys.m(i).ipco2) = yobs(sys.m(i).ifco2) - yobs(sys.m(i).ip2f) ; % get pco2 from fco2
-                end
-            elseif (isgood(yobs(sys.m(i).ifco2)))
-                yobs(sys.m(i).ifco2) = yobs(sys.m(i).ifco2);
+                %if (~isgood(obs.m(i).pco2)) % p(fco2) = p(pco2) + p(p2f)
+               %     yobs(sys.m(i).ipco2) = yobs(sys.m(i).ifco2) - yobs(sys.m(i).ip2f) ; % get pco2 from fco2
+               % end
+            %elseif (isgood(yobs(sys.m(i).ifco2)))
+            %    yobs(sys.m(i).ifco2) = yobs(sys.m(i).ifco2);
             else
                 yobs(sys.m(i).ifco2) = nan;
                 obs.m(i).fco2 = nan;
@@ -788,14 +788,15 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
                 obs.m(i).efco2 = nan;
             end %
             if (isgood(obs.m(i).ph))
-                if (isfield('phscale',obs.m(i)))
-                    pHall = phscales(obs.m(i).ph,obs.m(i).phscale, ...
-                        obs.TS, q(pKs), obs.TF, q(pKf), obs.m(i).hf);
-                    yobs(sys.m(i).iph) = pHall(1); % use total scale
-                elseif (~isfield('phscale',obs.m(i)))
-                    fprintf('Warning: Must input pH scale.\n');
+                yobs(sys.m(i).iph) = obs.m(i).ph;
+                %if (isfield('phscale',obs.m(i)))
+                    %pHall = phscales(obs.m(i).ph,obs.m(i).phscale, ...
+                    %    obs.TS, q(pKs), obs.TF, q(pKf), obs.m(i).hf);
+                    %yobs(sys.m(i).iph) = pHall(1); % use total scale
+                %elseif (~isfield('phscale',obs.m(i)))
+                %    fprintf('Warning: Must input pH scale.\n');
                     % why is this showing up every time?
-                end
+                %end
             else
                 yobs(sys.m(i).iph) = nan;
                 obs.m(i).ph = nan;
