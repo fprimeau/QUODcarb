@@ -58,10 +58,10 @@ for i = 1:nD
     obs.m(3).epco2 = in(i,12)*0.0021; % 0.21% relative std error (avg)
 
     % fourth (T,P)-dependent measurement
-    obs.m(4).T   = 37 ; % degC
-    obs.m(4).eT  = 0.02 ; % not stated, assumed 0.02
-    obs.m(4).P   = in(i,1); % dbar (ctd pressure for pco2 I think?)
-    obs.m(4).eP  = 0.63 ;
+    %obs.m(4).T   = 37 ; % degC
+    %obs.m(4).eT  = 0.02 ; % not stated, assumed 0.02
+    %obs.m(4).P   = in(i,1); % dbar (ctd pressure for pco2 I think?)
+    %obs.m(4).eP  = 0.63 ;
     
     % no2 and no3 not included yet
     %obs.m(4).no2  = p(in(i,20)*1e-6); % nitrite NO2^-, molg/kg
@@ -200,23 +200,25 @@ for i = 1:nD
     obs_backup = obs;
 
     % TA TC (Q2)
-    obs.m(1).pH = nan; obs.m(1).epH = nan;
+    obs.m(2).ph = nan; obs.m(2).eph = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys); 
+    [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est02(i) = est;
     if i == 1
         % make headers
         PrintCSVv2(sys,est,fid2);
     end
     PrintCSVv2(sys,est,obs,iflag,fid2);
     [A] = compare(obs,1,est,fid6);
-    keyboard
+   
     % TA ph (Q2)
     obs = obs_backup;
     obs.TC = nan; obs.eTC = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est03(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid3);
     end
@@ -229,30 +231,32 @@ for i = 1:nD
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est04(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid4);
     end
     PrintCSVv2(sys,est,obs,iflag,fid4);
     [A] = compare(obs,2,est,fid8);
-
+    
     % ph pco2 (Q2)
     obs = obs_backup;
     obs.TA = nan; obs.eTA = nan;
     obs.TC = nan; obs.eTC = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est10(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid10);
     end
     PrintCSVv2(sys,est,obs,iflag,fid10);
     
-    keyboard
     % pco2 co3 (Q2)
     obs = obs_backup;
     obs.TA = nan; obs.eTA = nan;
     obs.TC = nan; obs.eTC = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est11(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid11);
     end
@@ -264,6 +268,7 @@ for i = 1:nD
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est12(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid12);
     end
@@ -275,6 +280,7 @@ for i = 1:nD
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est13(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid13);
     end
@@ -286,6 +292,7 @@ for i = 1:nD
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est14(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid14);
     end
@@ -297,6 +304,7 @@ for i = 1:nD
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est15(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid15);
     end
@@ -308,6 +316,7 @@ for i = 1:nD
     obs.TC = nan; obs.eTC = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est16(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid16);
     end
@@ -318,6 +327,7 @@ for i = 1:nD
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est20(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid20);
     end
@@ -328,6 +338,7 @@ for i = 1:nD
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est21(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid21);
     end
@@ -338,6 +349,7 @@ for i = 1:nD
     obs.m(3).pco2 = nan; obs.m(2).epco2 = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est22(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid22);
     end
@@ -348,6 +360,7 @@ for i = 1:nD
     obs.TA = nan; obs.eTA = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est23(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid23);
     end
@@ -358,6 +371,7 @@ for i = 1:nD
     obs.TA = nan; obs.eTA = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est24(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid24);
     end
@@ -368,6 +382,7 @@ for i = 1:nD
     obs.TA = nan; obs.eTA = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est25(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid25);
     end
@@ -378,6 +393,7 @@ for i = 1:nD
     obs.TC = nan; obs.eTC = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est26(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid26);
     end
@@ -388,6 +404,7 @@ for i = 1:nD
     obs.TC = nan; obs.eTC = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est27(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid27);
     end
@@ -398,6 +415,7 @@ for i = 1:nD
     obs.TC = nan; obs.eTC = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est28(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid28);
     end
@@ -408,6 +426,7 @@ for i = 1:nD
     obs.TA = nan; obs.eTA = nan;
     obs.TC = nan; obs.eTC = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est29(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid29);
     end
@@ -417,6 +436,7 @@ for i = 1:nD
     obs = obs_backup;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est30(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid30);
     end
@@ -426,6 +446,7 @@ for i = 1:nD
     obs = obs_backup;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est31(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid31);
     end
@@ -435,6 +456,7 @@ for i = 1:nD
     obs = obs_backup;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est32(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid32);
     end
@@ -444,6 +466,7 @@ for i = 1:nD
     obs = obs_backup;
     obs.TA = nan; obs.eTA = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est33(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid33);
     end
@@ -453,6 +476,7 @@ for i = 1:nD
     obs = obs_backup;
     obs.TC = nan; obs.eTC = nan;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est34(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid34);
     end
@@ -461,14 +485,14 @@ for i = 1:nD
     % TA TC ph pCO2 co3 (Q5)
     obs = obs_backup;
     [est,obs,iflag] = QUODcarbV2(obs,sys);
+    est05(i) = est;
     if i == 1
         PrintCSVv2(sys,est,fid5);
     end
     PrintCSVv2(sys,est,obs,iflag,fid5);
-    [A] = compare(obs,2,est,fid9);
+    [A] = compare(obs,2,est,fid5);
        
-    
-    keyboard
+    fprintf('i = %i ', i , '\n' )
 end
 
 fclose(fid2);

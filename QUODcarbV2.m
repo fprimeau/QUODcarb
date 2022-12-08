@@ -327,10 +327,10 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         obs.m(1).co3 = [];
     end
     if (~isfield(obs.m(1),'eph'))
-        obs.m(1).ph = [];
+        obs.m(1).eph = [];
     end
     if (~isfield(obs.m(1),'ph'))
-        obs.m(1).eph = [];
+        obs.m(1).ph = [];
     end
 
     if (ismember('borate',sys.abr))
@@ -343,7 +343,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         if (~isfield(obs,'TB'))
             % Uppstrom, L., Deep-Sea Research 21:161-162, 1974
             % ( copied from Orr's code )
-            fprintf('Warning: Assuming TB = 0.0004157 * sal / 35  mol/kg-SW.\n');
+            %fprintf('Warning: Assuming TB = 0.0004157 * sal / 35  mol/kg-SW.\n');
             % TB = ( 0.000232/ 10.811) * (sal/1.80655)
             obs.TB = (0.0004157 * obs.sal / 35) * (1e6) ; % convt to µmol/kg
             yobs(sys.iTB) = p(obs.TB*1e-6);
@@ -399,7 +399,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         if (~isfield(obs, 'TS'))
             % Morris, A. W., and Riley, J. P., Deep-Sea Research 13:699-705, 1966:
             % copied from Orr's code
-            fprintf('Warning: Assuming TS = ( 0.14 / 96.062 ) * ( sal / 1.80655 ) mol/kg-SW.\n'); 
+            %fprintf('Warning: Assuming TS = ( 0.14 / 96.062 ) * ( sal / 1.80655 ) mol/kg-SW.\n'); 
             obs.TS = ( 0.14 / 96.062 ) * ( obs.sal / 1.80655 ); % mol/kg
             yobs(sys.iTS) = p(obs.TS);
         else
@@ -445,7 +445,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         if (~isfield(obs, 'TF'))
             % Riley, J. P., Deep-Sea Research 12:219-220, 1965:
             % this is .000068.*Sali./35. = .00000195.*Sali
-            fprintf('Warning: Assuming TF = ( 0.000067 / 18.998 ) * ( sal / 1.80655 ). mol/kg-SW. \n');
+            %fprintf('Warning: Assuming TF = ( 0.000067 / 18.998 ) * ( sal / 1.80655 ). mol/kg-SW. \n');
             obs.TF = ( 0.000067 / 18.998 ) * ( obs.sal / 1.80655 )*1e6; % convt to µmol/kg-SW
             yobs(sys.iTF) = p(obs.TF*1e-6);
         else
@@ -495,14 +495,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             obs.m(1).pK3p = [];
         end
         if (~isfield(obs, 'TP'))
-            fprintf('Warning: Assuming TP = 1e-3 µmol/kg-SW.\n');
+            %fprintf('Warning: Assuming TP = 1e-3 µmol/kg-SW.\n');
             obs.TP = 1e-3; % µmol/kg
             yobs(sys.iTP) = p(obs.TP*1e-6); % convt µmol/kg to mol/kg
         else
             yobs(sys.iTP) = p(obs.TP*1e-6); % convt µmol/kg to mol/kg 
         end
         if (~isfield(obs, 'eTP'))
-            fprintf('Warning: Setting eTP = 1e-3 µmol/kg-SW.\n')
+            %fprintf('Warning: Setting eTP = 1e-3 µmol/kg-SW.\n')
             obs.eTP = 1e-3; % µmol/kg
             wobs(sys.iTP) = w(obs.TP,obs.eTP);
         else
@@ -542,14 +542,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             obs.m(1).pKsi = [];
         end
         if (~isfield(obs, 'TSi'))
-            fprintf('Warning: Assuming TSi = 1e-3  µmol/kg-SW.\n');
+            %fprintf('Warning: Assuming TSi = 1e-3  µmol/kg-SW.\n');
             obs.TSi = 1e-3; % µmol/kg
             yobs(sys.iTSi) = p(obs.TSi*1e-6); % convt µmol/kg to mol/kg
         else
             yobs(sys.iTSi) = p(obs.TSi*1e-6);
         end
         if (~isfield(obs, 'eTSi'))
-            fprintf('Warning: Assuming eTSi = 1e-3  µmol/kg-SW.\n');
+            %fprintf('Warning: Assuming eTSi = 1e-3  µmol/kg-SW.\n');
             obs.eTSi = 1e-3; % µmol/kg
             wobs(sys.iTSi) = w(obs.TSi,obs.eTSi);
         else
@@ -577,14 +577,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             obs.m(1).pKnh4 = [];
         end
         if (~isfield(obs, 'TNH3'))
-            fprintf('Warning: Assuming TNH3 = 1e-3  µmol/kg-SW.\n');
+            %fprintf('Warning: Assuming TNH3 = 1e-3  µmol/kg-SW.\n');
             obs.TNH3 = 1e-3; % µmol/kg
             yobs(sys.iTNH3) = p(obs.TNH3*1e-6); % convt µmol/kg to mol/kg
         else
             yobs(sys.iTNH3) = p(obs.TNH3*1e-6);
         end
         if (~isfield(obs, 'epTNH3'))
-            fprintf('Warning: Assuming eTNH3 = 1e-3  µmol/kg-SW.\n');
+            %fprintf('Warning: Assuming eTNH3 = 1e-3  µmol/kg-SW.\n');
             obs.epTNH3 = 1e-3; % µmol/kg
             wobs(sys.iTNH3) = w(obs.TNH3,obs.epTNH3);
         else
@@ -612,14 +612,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             obs.m(1).pKh2s = [];
         end
         if (~isfield(obs, 'TH2S'))
-            fprintf('Warning: Assuming TH2S = 1e-3  µmol/kg-SW.\n');
+            %fprintf('Warning: Assuming TH2S = 1e-3  µmol/kg-SW.\n');
             obs.TH2S = 1e-3; % µmol/kg
             yobs(sys.iTH2S) = p(obs.TH2S*1e-6); % convt µmol/kg to mol/kg
         else
             yobs(sys.iTH2S) = p(obs.TH2S*1e-6);
         end
         if (~isfield(obs, 'eTH2S'))
-            fprintf('Warning: Assuming eTH2S = 1e-3  µmol/kg-SW.\n');
+            %fprintf('Warning: Assuming eTH2S = 1e-3  µmol/kg-SW.\n');
             obs.eTH2S = 1e-3; % µmol/kg
             wobs(sys.iTH2S) = w(obs.TH2S,obs.eTH2S);
         else
@@ -788,15 +788,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
                 obs.m(i).efco2 = nan;
             end %
             if (isgood(obs.m(i).ph))
-                yobs(sys.m(i).iph) = obs.m(i).ph;
-                %if (isfield('phscale',obs.m(i)))
-                    %pHall = phscales(obs.m(i).ph,obs.m(i).phscale, ...
-                    %    obs.TS, q(pKs), obs.TF, q(pKf), obs.m(i).hf);
-                    %yobs(sys.m(i).iph) = pHall(1); % use total scale
-                %elseif (~isfield('phscale',obs.m(i)))
-                %    fprintf('Warning: Must input pH scale.\n');
-                    % why is this showing up every time?
-                %end
+                %yobs(sys.m(i).iph) = obs.m(i).ph;
+                if ( (obs.m(i).phscale >= 1) && (obs.m(i).phscale <= 4) )
+                    pHall = phscales(obs.m(i).ph,obs.m(i).phscale, ...
+                        obs.TS, q(pKs), obs.TF, q(pKf), obs.m(i).hf);
+                    yobs(sys.m(i).iph) = pHall(1); % use total scale
+                else 
+                    fprintf('Warning: Must input correct pH scale.\n');
+                end
             else
                 yobs(sys.m(i).iph) = nan;
                 obs.m(i).ph = nan;
@@ -808,7 +807,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
                 obs.m(i).eph = nan;
             end        
         end
-        
         if (ismember('borate',sys.abr))
             if (isgood(obs.m(i).epKb))
                 wobs(sys.m(i).iKb) = (obs.m(i).epKb).^(-2);

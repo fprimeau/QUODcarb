@@ -12,13 +12,13 @@ function [A] = compare(obs,pair,est,fid)
     par2 = obs.TC; % DIC_in µmol/kg
     epar2 = obs.eTC; % error DIC
     par3type = 3; % pH
-    par3 = obs.m(2).ph; % pH(total)
+    par3 = obs.m(2).ph; % pH(total) 
     epar3 = obs.m(2).eph; % error pH
     sal = obs.sal; % salinity of sample
     esal = obs.esal;% salinity error
-    tempin = obs.m(2).T; % temp of sample
-    etemp = obs.m(2).eT; % error temp
-    presin = obs.m(2).P; % pressure of sample (dbars)
+    tempin = obs.m(2).T;%obs.m(2).T; % temp of sample
+    etemp = obs.m(2).eT;%obs.m(2).eT; % error temp
+    presin = obs.m(2).P;%obs.m(2).P; % pressure of sample (dbars)
     tempout = obs.m(2).T;
     presout = obs.m(2).P;
     sil = obs.TSi; % total Si of sample
@@ -53,7 +53,7 @@ function [A] = compare(obs,pair,est,fid)
     out.eTC = err(2);
     out.ph = OUT(37); % total scale
     out.eh = (err(10)*1e-9); % was nano units
-    out.eph = (out.eh/(10^(-out.ph)))*(1/log(10)); % dph = (-1/ln(10))*(dH/H) from 'errors' 
+    out.eph = (out.eh/(10^(-out.ph)))*(1/log(10)); % dph = (-1/ln(10))*(dH/H) from Orr's 'errors' 
     out.pco2 = OUT(19);
     out.epco2 = err(11);
     out.pK0 = p(OUT(66));
@@ -78,7 +78,7 @@ function [A] = compare(obs,pair,est,fid)
          out.TC, out.eTC, est.TC, est.eTC, ...
          out.ph, out.eph, est.m(2).ph, est.m(2).eph, ...
          out.pco2, out.epco2, est.m(2).pco2, est.m(2).epco2, ...
-         out.pK0, out.epK0, est.m(2).pK0, est.m(2).epK0, ...
+         out.pK0, out.epK0, est.m(2).pK0, est.m(2).epK0, ... % 2
          out.pK1, out.epK1, est.m(2).pK1, est.m(2).epK1, ...
          out.pK2, out.epK2, est.m(2).pK2, est.m(2).epK2, ...
          out.pKw, out.epKw, est.m(2).pKw, est.m(2).epKw, ...
