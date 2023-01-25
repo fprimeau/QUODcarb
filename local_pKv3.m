@@ -9,7 +9,7 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
 %   P  = pressure (dbar)
 
 % OUTPUT:
-%    pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f];
+%    pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pK1p;pK2p;pK3p;pKsi;pKnh4;pKh2s;pp2f;pKar;pKca];
 %   gpK  = [pK_T, pK_S, pK_P]; first derivatives (gradient of pK)
 
     TK   = T + 273.15; % convert to Kelvin
@@ -62,6 +62,8 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
     [pK2     , gpK2     ] = calc_pK2(obs,T,S,Pbar,pfH,gpfH,pSWS2tot,gpSWS2tot);
     [pKnh4   , gpKnh4   ] = calc_pKnh4(T,S,Pbar);
     [pKh2s   , gpKh2s   ] = calc_pKh2s(T,S,Pbar);
+    [pKar    , gpKar    ] = calc_pKar(obs,T,S,Pbar,pfH,gpfH);
+    [pKca    , gpKca    ] = calc_pKca(obs,T,S,Pbar,pfH,gpfH); %??
 
     % convert from SWS to pH total scale ----------------------------------
     pK1  = pK1  + pSWS2tot;  gpK1  = gpK1  + gpSWS2tot;
@@ -71,6 +73,8 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
     pK2p = pK2p + pSWS2tot;  gpK2p = gpK2p + gpSWS2tot;
     pK3p = pK3p + pSWS2tot;  gpK3p = gpK3p + gpSWS2tot;
     pKsi = pKsi + pSWS2tot;  gpKsi = gpKsi + gpSWS2tot;
+    pKar = pKar + pSWS2tot;  gpKar = gpKar + gpSWS2tot;
+    pKca = pKca + pSWS2tot;  gpKca = gpKca + gpSWS2tot;
 
     % convert from Free to pH total scale ---------------------------------
     pKs = pKs + pFREE2tot; gpKs = gpKs + gpFREE2tot;
@@ -80,9 +84,11 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
     % output
     %
     pK = [pK0;    pK1;  pK2;  pKb;  pKw;  pKs;  pKf;  pK1p;  pK2p; ...
-          pK3p;  pKsi;  pKnh4;  pKh2s;  pp2f];
+          pK3p;  pKsi;  pKnh4;  pKh2s;  pp2f; pKar; pKca];
     gpK = [gpK0; gpK1; gpK2; gpKb; gpKw; gpKs; gpKf; gpK1p; gpK2p; ...
-           gpK3p; gpKsi; gpKnh4; gpKh2s; gpp2f];
+           gpK3p; gpKsi; gpKnh4; gpKh2s; gpp2f; gpKar; gpKca];
+    
+
     
     %
     % subfunctions
@@ -371,9 +377,7 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
         % so that the routines work ok. (From Orr's code)
             pK1p = p(0.02);
             pK1p_T = 0; 
-            pK1p_S = 0;
-            pK1p_P = 0;
-        
+            pK1p_S = 0;        
         else
         % calculate K1p (Yao and Millero 1995)-----------------------------       
             a1 = [ -4576.752;    115.54;  -18.453 ];
@@ -993,6 +997,119 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
         gpKh2s = [pKh2s_T, pKh2s_S, pKh2s_P];
     end
     
+    function [pKar, gpKar] = calc_pKar(obs,T,S,Pbar,pfH,gpfH)
+    % Aragonite solubility, added by Sharp et al 2021
+        TK = T + 273.15;
+        Rgas = 83.14462618; % RgasConstant, ml bar-1 K-1 mol-1, DOEv2
+        RT   = Rgas * TK;
+        RT_T = Rgas;
+
+        if obs.cK1K2 == 6 || obs.cK1K2 == 7
+        % calculate Kar-Aragonite (Berner, 1976) --------------------------
+            a = 0.0000001; b = -34.452;      c = -39.866; 
+            d = 110.21;    g = 0.0000075752;
+
+            Kar = 1.45 .* a .* ( b + c .* S^(1/3) + d .* log10(S) ...
+                    + g .* (TK.^2) ) ;
+            Kar_T = 1.45 .* a .* 2 .* g .* TK ; 
+            Kar_S = 1.45 .* a .* ( (1/3) .* c .* S ^ (-2/3) + ...
+                    d ./ (S .* log(10)) ) ;
+
+            pKar = p(Kar) - pfH ; % 'p' it and convert to SWS pH scale            
+            pKar_T = dpdx(Kar) .* Kar_T - gpfH(1) ; 
+            pKar_S = dpdx(Kar) .* Kar_S - gpfH(2) ;
+
+            % pressure correction
+            pKar = pKar - ((33.3 - 0.22 .* T) .* Pbar ./ RT ) ./ LOG10 ; % T = tempC
+            pKar_T = pKar_T - (Pbar .* Rgas .* ...
+                    (59.8730 .* T - 9155.988) ./ (RT)^2 ) ./ LOG10;
+            pKar_P = - ((33.3 - 0.22 .* T) ./ RT ) ./ LOG10;
+
+        else
+        % calculate Kar-Aragonite (Mucci, 1983) ---------------------------
+            a1 = [ -171.945; -0.077993; 2903.293; 71.595] ;
+            a2 = [-0.068393; 0.0017276;   88.135;   0.0 ] ;
+            b = -0.10018; c = 0.0059415;
+
+            f  = @(T,a) a(1) + a(2) .* T + a(3) ./ T + a(4) .* log10(T) ;
+            df = @(T,a)      a(2) - a(3)./ (T.^2) + a(4) ./ (T .* log(10)); 
+
+            log10Kar = f(TK,a1) + f(TK,a2) .* sqrt(S) + ...
+                        b .* S + c .* S ^(3/2) ;
+            pKar = -log10Kar ; % pK = -log10(K);
+            pKar = pKar - pfH ; % convert from NBS to SWS pH scale
+
+            pKar_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) ) - gpfH(1);
+            pKar_S = - ( 0.5 .* f(TK,a2) ./ sqrt(S) + ...
+                        b + (3/2) .* c .* sqrt(S) ) - gpfH(2);
+
+            % pressure correction
+            d1 = [(-48.76 + 2.8); 0.5304; 0.0 ] ;
+            d2 = [-11.76; 0.3692] ;
+
+            pKar = pKar + ppfac(T,Pbar,d1,d2);
+            pKar_T = pKar_T + ppfac_T(T,Pbar,d1,d2);
+            pKar_P = ppfac_P(T,Pbar,d1,d2);
+        end
+        gpKar = [pKar_T; pKar_S; pKar_P];
+    end
+
+    function [pKca, gpKca] = calc_pKca(obs,T,S,Pbar,pfH,gpfH)
+    % Calcite solubility, added to CO2SYSv3 by Sharp et al 2021
+        TK = T + 273.15;
+        Rgas = 83.14462618; % RgasConstant, ml bar-1 K-1 mol-1, DOEv2
+        RT   = Rgas * TK;
+        RT_T = Rgas;
+
+        if obs.cK1K2 == 6 || obs.cK1K2 == 7
+        % calculate Kca-Calcite (Berner, 1976) ----------------------------
+            a = 0.0000001; b = -34.452;      c = -39.866; 
+            d = 110.21;    g = 0.0000075752;
+
+            Kca = a .* ( b + c .* S^(1/3) + d .* log10(S) ...
+                    + g .* (TK.^2) ) ;
+            Kca_T = a .* 2 .* g .* TK ; 
+            Kca_S = a .* ( (1/3) .* c .* S ^ (-2/3) + ...
+                    d ./ (S .* log(10)) ) ;
+
+            pKca = p(Kca) - pfH ; % 'p' it and convert to SWS pH scale            
+            pKca_T = dpdx(Kca) .* Kca_T - gpfH(1) ; 
+            pKca_S = dpdx(Kca) .* Kca_S - gpfH(2) ;
+
+            % pressure correction
+            pKca = pKca - ((36 - 0.2 .* T) .* Pbar ./ RT ) ./ LOG10 ; % T = tempC
+            pKca_T = pKca_T - (Pbar .* Rgas .* ...
+                    (54.43 .* T - 9888.03) ./ (RT)^2 ) ./ LOG10;
+            pKca_P = - ((36 - 0.2 .* T) ./ RT ) ./ LOG10;
+
+        else
+        % calculate Kca-Calcite (Mucci, 1983) -----------------------------
+            a1 = [-171.9065; -0.077993; 2839.319; 71.595] ;
+            a2 = [ -0.77712; 0.0028426;   178.34;   0.0 ] ;
+            b = -0.07711; c = 0.0041249;
+
+            f  = @(T,a) a(1) + a(2) .* T + a(3) ./ T + a(4) .* log10(T) ;
+            df = @(T,a)      a(2) - a(3)./ (T.^2) + a(4) ./ (T .* log(10)); 
+
+            log10Kca = f(TK,a1) + f(TK,a2) .* sqrt(S) + ...
+                        b .* S + c .* S ^(3/2) ;
+            pKca = -log10Kca ; % pK = -log10(K);
+            pKca = pKca - pfH ; % convert from NBS to SWS pH scale
+
+            pKca_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) ) - gpfH(1);
+            pKca_S = - ( 0.5 .* f(TK,a2) ./ sqrt(S) + ...
+                        b + (3/2) .* c .* sqrt(S) ) - gpfH(2);
+
+            % pressure correction
+            d1 = [-48.76; 0.5304; 0.0 ] ;
+            d2 = [-11.76; 0.3692] ;
+
+            pKca = pKca + ppfac(T,Pbar,d1,d2);
+            pKca_T = pKca_T + ppfac_T(T,Pbar,d1,d2);
+            pKca_P = ppfac_P(T,Pbar,d1,d2);
+        end
+        gpKca = [pKca_T; pKca_S; pKca_P];
+    end
     
     function [pSWS2tot,gpSWS2tot,pFREE2tot,gpFREE2tot] = calc_pSWS2tot(S,pKs,gpKs,pKf,gpKf)
     % pH scale conversion factors (not pressure corrected)----------- 

@@ -77,7 +77,13 @@ function sys = mksysV3(obs,sys)
     if ismember('sulfide',sys.abr)
         % Kh2s = [h][hs]/[h2s]
         i = i + 1;
-        iTH2S = i; sys.iTH2S = sys.iTH2S;
+        iTH2S = i; sys.iTH2S = iTH2S;
+    end
+    if ismember('solubility',sys.abr)
+        % Kar = [co3][ca]/OmegaAr
+        % Kca = [co3][ca]/OmegaCa
+        i = i + 1;
+        iTCal = i; sys.iTCal = iTCal ;
     end
     for j = 1:nTP
         if (isgood(obs.m(j).T) && isgood(obs.m(j).P))
@@ -203,6 +209,22 @@ function sys = mksysV3(obs,sys)
             i = i + 1;
             m(j).ih2s = i;
         end
+        if ismember('solubility',sys.abr)
+            % Kar = [co3][ca]/OmegaAr
+            % Kca = [co3][ca]/OmegaCa
+            nrk = nrk + 1;
+            i = i + 1;
+            m(j).iKar = i;
+            i = i + 1;
+            m(j).ica = i;
+            i = i + 1;
+            m(j).iOmegaAr = i;
+            nrk = nrk + 1;
+            i = i + 1;
+            m(j).iKca = i;
+            i = i + 1;
+            m(j).iOmegaCa = i;
+        end
     end
     %
     %
@@ -310,30 +332,47 @@ function sys = mksysV3(obs,sys)
             m(j).kKh2s = row;
             K(row, m(j).iKh2s) = 1; % Kh2s
         end
+        if ismember('solubility',sys.abr)
+            % Kar = [co3][ca]/OmegaAr ==> -pKar + pco3 + pca - pOmegaAr = 0
+            row = row + 1;
+            K(row,[ m(j).iKar, m(j).ico3, m(j).ica, m(j).iOmegaAr]) = [-1, 1, 1, -1];
+            row = row + 1;
+            m(j).kKar = row;
+            K(row, m(j).iKar) = 1; 
+            % Kca = [co3][ca]/OmegaCa ==> -pKca + pco3 + pca - pOmegaCa = 0
+            row = row + 1;
+            K(row, [ m(j).iKca, m(j).ico3, m(j).ica, m(j).iOmegaCa]) = [-1, 1, 1, -1];
+            row = row + 1;
+            m(j).kKca = row;
+            K(row, m(j).iKca) = 1;
+        end
     end
     % "mass" conservation" equations
     nr = 2; %TC and TA from the carbonate system
-    if (ismember('borate',sys.abr));
+    if (ismember('borate',sys.abr))
         nr = nr + 1;
     end
-    if (ismember('sulfate',sys.abr));
+    if (ismember('sulfate',sys.abr))
         nr = nr + 1; % add an extra equation relating [H]F to [H]
     end
-    if (ismember('fluoride',sys.abr));
+    if (ismember('fluoride',sys.abr))
         nr = nr + 1;
     end
-    if (ismember('phosphate',sys.abr));
+    if (ismember('phosphate',sys.abr))
         nr = nr + 1;
     end
-    if (ismember('silicate',sys.abr));
+    if (ismember('silicate',sys.abr))
         nr = nr + 1;
     end
-    if (ismember('ammonia',sys.abr));
+    if (ismember('ammonia',sys.abr))
         nr = nr + 1;
     end
-    if (ismember('sulfide',sys.abr));
+    if (ismember('sulfide',sys.abr))
         nr = nr + 1;
     end    
+    if (ismember('solubility',sys.abr))
+        nr = nr + 1;
+    end
     M = sparse(nTP*nr,nv);
     row = 0;
     for j = 1:nTP
@@ -357,7 +396,7 @@ function sys = mksysV3(obs,sys)
             m(j).jTB = row;
         end
         % Total sulfate
-        if (ismember('sulfate',sys.abr))
+        if (ismember('sulfate',sys.abr)) % S
             row = row + 1;
             M(row, [ iTS, m(j).ihso4, m(j).iso4 ])   =  [1, -1, -1];
             M(row_alk,[ m(j).iphf, m(j).ihso4 ])   =  [1, 1]; 
@@ -401,11 +440,16 @@ function sys = mksysV3(obs,sys)
             M(row_alk,m(j).inh3) = -1; 
             m(j).jTNH3 = row;
         end
-        if (ismember('sulfide',sys.abr))
+        if (ismember('sulfide',sys.abr)) % H2S
             row = row+1;
             M(row,[ iTH2S, m(j).ih2s, m(j).ihs ]) = [1, -1, -1];
             M(row_alk,m(j).ihs) = -1; 
             m(j).jTH2S = row;
+        end
+        if (ismember('solubility',sys.abr)) % total Calcium
+            row = ro1 + 1;
+            M(row, [ iTCal, m(j).ica]) = [1, -1];
+            m(j).jTCal = row;
         end
     end
     sys.M = M;

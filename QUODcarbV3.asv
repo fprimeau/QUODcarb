@@ -17,7 +17,7 @@ function [est,obs,iflag] = QUODcarbV3(obs,sys)
     % populate obs, yobs, wobs
     [obs,yobs,wobs] = parse_input(obs,sys);
     %keyboard
-    gun = @(z) grad_limpco2(z,yobs,wobs,sys);
+    gun = @(z) grad_limpco2(obs,z,yobs,wobs,sys);
     z0 = init(yobs,sys);
     tol = 1e-7;
     
@@ -40,13 +40,13 @@ end
 
 % -----------------------------------------------------------------------------
 
-function [g,H] = grad_limpco2(z,y,w,sys)
+function [g,H] = grad_limpco2(obs,z,y,w,sys)
     I = eye(length(z));
     H = zeros(length(z),length(z));
     im = sqrt(-1);
     %test_g = zeros(length(z),1);
     for k = 1:length(z)
-        [f,g] = limpco2( z + im * eps^3 * I(:,k), y, w, sys);
+        [f,g] = limpco2(obs, z + im * eps^3 * I(:,k), y, w, sys);
         %   test_g(k) = imag(f)/eps^3;
         H(k,:) = imag( g(:) ) / eps^3 ;
     end
@@ -57,7 +57,7 @@ end
 
 % ---------------------------------------------------------------------------------
 
-function [f,g] = limpco2(z,y,w,sys)
+function [f,g] = limpco2(obs,z,y,w,sys)
 % [f,g] = limpco2(z,y,w,tc,s,P)
 %
 % Negative log probability for the co2 system  a.k.a. log improbability i.e., limp!
@@ -107,7 +107,7 @@ function [f,g] = limpco2(z,y,w,sys)
     zgpK = zeros(nrk,nv);
     f2t = [];
     for i = 1:nTP
-        [pK, gpK] = local_pKv3( x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
+        [pK, gpK] = local_pKv3(obs, x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
         iTSP = [ sys.m(i).iT, sys.isal, sys.m(i).iP];
         if (ismember('carbonate',sys.abr))
             zpK(sys.m(i).kK0)          = pK(1); 
@@ -168,6 +168,13 @@ function [f,g] = limpco2(z,y,w,sys)
         if (ismember('sulfide',sys.abr))
             zpK(sys.m(i).kKh2s)         = pK(13); 
             zgpK(sys.m(i).kKh2s, iTSP ) = gpK(13,:); % ∂T, ∂S, ∂P 
+        end
+
+        if (ismember('solubility',sys.abr))
+            zpK(sys.m(i).kKar)         = pK(15);
+            zgpK(sys.m(i).kKar, iTSP ) = gpK(15,:); % ∂T, ∂S, ∂P 
+            zpK(sys.m(i).kKca)         = pK(16);
+            zgpK(sys.m(i).kKca, iTSP ) = gpK(16,:); % ∂T, ∂S, ∂P  
         end
     end
     
@@ -432,7 +439,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             obs.TS = ( 0.14 / 96.062 ) * ( obs.sal / 1.80655 ); % mol/kg
             yobs(sys.iTS) = p(obs.TS);
         else
-            yobs(sys.iTS) = p(obs.TS); % convt µmol/kg to mol/kg
+            yobs(sys.iTS) = p(obs.TS); 
         end
         if (~isfield(obs, 'eTS'))
             % 0.14000 ± 0.00023 
@@ -667,6 +674,59 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             obs.m(1).eh2s = [];
         end
     end
+
+    if (ismember('solubility',sys.abr))
+        if (~isfield(obs.m(1), 'epKca')) 
+            obs.m(1).epKca = [];
+        end
+        if (~isfield(obs.m(1), 'pKca'))
+            obs.m(1).pKca = [];
+        end
+        if (~isfield(obs, 'TCal'))
+            if obs.cK1K2 == 6 || obs.cK1K2 == 7
+            % Calculate Ca for GEOSECS, Riley and Skirrow 1965
+                obs.TCal = (0.01026 .* obs.sal ./ 35) .* (1e6) ; % convt to umol/kg 
+                yobs(sys.iTCal) = p(obs.TCal.*1e-6); % convt µmol/kg to mol/kg
+            else
+            % Calculate Ca, Riley and Tongdui 1967
+                % this is 0.010285.*obs.sal./35;
+                obs.TCal = (0.02128./40.087.*(obs.sal./1.80655)).*(1e6) ; % convt to umol/kg
+                yobs(sys.iTCal) = p(obs.TCal.*1e-6); % convert back to mol/kg
+            end
+        else
+            yobs(sys.iTCal) = p(obs.TCal*1e-6); % assume user input of umol/kg
+        end
+        if (~isfield(obs, 'eTCal'))
+            obs.eTCal = (6e-5) .* (1e6); % µmol/kg, from Riley and Tongdui 1967
+            wobs(sys.iTCal) = w(obs.TCal,obs.eTCal);
+        else
+            wobs(sys.iTCal) = w(obs.TCal,obs.eTCal);
+        end
+        if (~isfield(obs.m(1), 'ca'))
+            obs.m(1).ca = [];
+        end
+        if (~isfield(obs.m(1), 'eca'))
+            obs.m(1).eca = [];
+        end
+        if (~isfield(obs.m(1), 'OmegaAr'))
+            obs.m(1).OmegaAr = [];
+        end
+        if (~isfield(obs.m(1), 'eOmegaAr'))
+            obs.m(1).eOmegaAr = [];
+        end
+        if (~isfield(obs.m(1), 'pKca'))
+            obs.m(1).pKca = [];
+        end
+        if (~isfield(obs.m(1), 'epKca'))
+            obs.m(1).epKca = [];
+        end
+        if (~isfield(obs.m(1), 'OmegaCa'))
+            obs.m(1).OmegaCa = [];
+        end
+        if (~isfield(obs.m(1), 'eOmegaCa'))
+            obs.m(1).eOmegaCa = [];
+        end
+    end
         
     nTP = length(obs.m);
     
@@ -681,7 +741,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         pK0   = pK(1);  pK1  = pK(2);  pK2   = pK(3);  pKb   = pK(4);  
         pKw   = pK(5);  pKs  = pK(6);  pKf   = pK(7);  pK1p  = pK(8);  
         pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
-        pKh2s = pK(13); pp2f = pK(14);        
+        pKh2s = pK(13); pp2f = pK(14); pKar  = pK(15); pKca  = pK(16);     
         
         % calculate Hydrogen free (hf)
         % (copied from CO2SYS)
@@ -1202,6 +1262,73 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
                 obs.m(i).ehs = nan;
             end
         end
+
+        if (ismember('solubility',sys.abr))
+            if (isgood(obs.m(i).epKar))
+                wobs(sys.m(i).iKar) = (obs.m(i).epKar).^(-2);
+            else
+                % pKa std = 0.03 (Mucci 1983)
+                % std for Sal part = 0.009 (as given in CO2SYSv3)
+                obs.m(i).epKar = 0.039;
+                wobs(sys.m(i).iKar) = (obs.m(i).epKar).^(-2); 
+            end
+            if (isgood(obs.m(i).pKar))
+                yobs(sys.m(i).iKar) = obs.m(i).pKar;
+            else
+                yobs(sys.m(i).iKar) = pKar;
+                obs.m(i).pKar = pKar;
+            end
+            if (isgood(obs.m(i).ca))
+                yobs(sys.m(i).ica) = p(obs.m(i).ca*1e-6); % convt µmol/kg to mol/kg
+            else
+                yobs(sys.m(i).ica) = nan;
+                obs.m(i).ca = nan;
+            end
+            if (isgood(obs.m(i).eca))
+                wobs(sys.m(i).ica) = w(obs.m(i).ca,obs.m(i).eca);
+            else
+                wobs(sys.m(i).ica) = nan;
+                obs.m(i).eca = nan;
+            end
+            if (isgood(obs.m(i).OmegaAr))
+                yobs(sys.m(i).iOmegaAr) = p(obs.m(i).OmegaAr); % Omega is dimensionless
+            else
+                yobs(sys.m(i).iOmegaAr) = nan;
+                obs.m(i).OmegaAr = nan;
+            end
+            if (isgood(obs.m(i).eOmegaAr))
+                wobs(sys.m(i).iOmegaAr) = w(obs.m(i).OmegaAr,obs.m(i).eOmegaAr);
+            else
+                wobs(sys.m(i).iOmegaAr) = nan;
+                obs.m(i).eOmegaAr = nan;
+            end
+            if (isgood(obs.m(i).epKca))
+                wobs(sys.m(i).iKca) = (obs.m(i).epKca).^(-2);
+            else
+                % pKca std = 0.03 (Mucci 1983)
+                % std for Sal part = 0.01 (as given in CO2SYSv3)
+                obs.m(i).epKca = 0.04;
+                wobs(sys.m(i).iKca) = (obs.m(i).epKca).^(-2); 
+            end
+            if (isgood(obs.m(i).pKca))
+                yobs(sys.m(i).iKca) = obs.m(i).pKca;
+            else
+                yobs(sys.m(i).iKca) = pKca;
+                obs.m(i).pKca = pKca;
+            end
+            if (isgood(obs.m(i).OmegCa))
+                yobs(sys.m(i).iOmegaCa) = p(obs.m(i).OmegaCa); % Omega is dimensionless
+            else
+                yobs(sys.m(i).iOmegaCa) = nan;
+                obs.m(i).OmegaCa = nan;
+            end
+            if (isgood(obs.m(i).eOmegaCa))
+                wobs(sys.m(i).iOmegaCa) = w(obs.m(i).OmegaCa,obs.m(i).eOmegaCa);
+            else
+                wobs(sys.m(i).iOmegaCa) = nan;
+                obs.m(i).eOmegaCa = nan;
+            end
+        end
     end
 end
 
@@ -1249,6 +1376,10 @@ function [est] = parse_output(z,sigy,obs,sys)
     if ismember('sulfide', sys.abr)
         est.TH2S = q(z(sys.iTH2S))*1e6; % convt mol/kg to µmol/kg
         est.eTH2S = ebar(sys.iTH2S)*1e6;
+    end
+    if ismember('solubility', sys.abr)
+        est.TCal = q(z(sys.iTCal))*1e6;
+        est.eTCal = ebar(sys.iTCal)*1e6;
     end
     
     nTP = length(obs.m);
@@ -1367,6 +1498,20 @@ function [est] = parse_output(z,sigy,obs,sys)
             % equilibrium pK & errorbar
             est.m(i).pKh2s  = z(sys.m(i).ipKh2s);
             est.m(i).epKh2s = sigy(sys.m(i).iKh2s);
+        end
+        if ismember('solubility',sys/abr)
+            % chemical equilibrium & errorbar
+            est.m(i).ca   = q(z(sys.m(i).ica))*1e6;
+            est.m(i).eca  = ebar(sys.m(i).ica)*1e6;
+            est.m(i).OmegaAr  = q(z(sys.m(i).iOmegaAr)); % unitless
+            est.m(i).eOmegaAr = ebar(sys.m(i).iOmegaAr);
+            est.m(i).OmegaCa  = q(z(sys.m(i).iOmegaCa));
+            est.m(i).OmegaCa  = ebar(sys.m(i).iOmegaCa);
+            % equilibrium pK & errorbar
+            est.m(i).pKar  = z(sys.m(i).iKar);
+            est.m(i).epKar = sigy(sys.m(i).iKar);
+            est.m(i).pKca  = z(sys.m(i).iKca);
+            est.m(i).epKca = sigy(sys.m(i).iKca);
         end
     end
 end
@@ -1514,6 +1659,17 @@ function z0 = init(yobs,sys);
         end
         if (ismember('sulfide',sys.abr))
             error('Need to implement initialization for sulfide');
+        end
+        if (ismember('solubility',sys.abr))
+            % error('Need to implement initialization for TCal');
+            Kar = q(y0(sys.m(i).iKar));
+            TCal = q(yobs(sys.iTCal));
+            OmegaAr = co3 * TCal / Kar;
+            Kca = q(y0(sys.m(i).iKca));
+            OmegaCa = co3 * TCal / Kca ;
+            y0(sys.iTCal) = p(TCal);
+            y0(sys.m(i).iOmegaAr) = p(OmegaAr);
+            y0(sys.m(i).iOmegaCa) = p(OmegaCa);
         end
     end
     % add the Lagrange multipliers

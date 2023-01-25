@@ -103,7 +103,7 @@ for i = 1:nD
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
         % 'phosphate','silicate','ammonia'};
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
-        % 'phosphate','silicate','ammonia','sulfide'};
+        % 'phosphate','silicate','ammonia','sulfide','solubility'};
                         
         sys = mksysV3(obs,sys);
 
