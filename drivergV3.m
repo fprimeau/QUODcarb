@@ -1,3 +1,6 @@
+% drivergV3
+% implementing CO2SYS v3 changes
+
 % driver for GOMECC data
 
 % take GOMECC data and put into QUODcarbV2
@@ -15,6 +18,12 @@ nD = length(in);
 % convert all data to -log10(data) and compute the precision of the resulting data
 %
 for i = 1:nD
+
+    % choose equilibrium constant formulation
+    obs.cK1K2 = 4; % 'choose' K1K2
+    obs.cKSO4 = 1; % 'choose' KSO4
+    obs.cKF   = 1; % 'choose' KF
+    obs.cTB   = 1; % 'choose' TB
 
     % measurements that are independent of (T,P)
     obs.TC    = in(i,5); % (µmol/kg)
@@ -90,13 +99,13 @@ for i = 1:nD
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate'};
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride'};
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate'};
-        sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
+        %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
         % 'phosphate','silicate','ammonia'};
-        %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
-        % 'phosphate','silicate','ammonia','sulfide'};
+        sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
+         'phosphate','silicate','ammonia','sulfide','solubility'};
                         
-        sys = mksysV2(obs,sys);
+        sys = mksysV3(obs,sys);
 
         fid2 = fopen('gomecc_TA_TC_v3.csv','w');
         fid6 = fopen('compare_TA_TC_v3.csv','w');
@@ -109,31 +118,6 @@ for i = 1:nD
 
         fid5 = fopen('gomecc_Q5_v3.csv','w');
         fid9 = fopen('compare_Q5_cp_v3.csv','w');
-
-        fid10 = fopen('gomecc_pH_pco2.csv','w');
-        fid11 = fopen('gomecc_pco2_co3.csv','w');
-        fid12 = fopen('gomecc_TC_co3.csv','w');
-        fid13 = fopen('gomecc_TC_pco2.csv','w');
-        fid14 = fopen('gomecc_TA_pco2.csv','w');
-        fid15 = fopen('gomecc_TA_co3.csv','w');
-        fid16 = fopen('gomecc_pH_co3.csv','w');
-
-        fid20 = fopen('gomecc_TC_TA_pH.csv','w');
-        fid21 = fopen('gomecc_TC_TA_pco2.csv','w');
-        fid22 = fopen('gomecc_TC_TA_co3.csv','w');
-        fid23 = fopen('gomecc_TC_pH_pco2.csv','w');
-        fid24 = fopen('gomecc_TC_pH_co3.csv','w');
-        fid25 = fopen('gomecc_TC_pco2_co3.csv','w');
-        fid26 = fopen('gomecc_TA_pH_pco2.csv','w');
-        fid27 = fopen('gomecc_TA_pH_co3.csv','w');
-        fid28 = fopen('gomecc_TA_pco2_co3.csv','w');
-        fid29 = fopen('gomecc_pH_pco2_co3.csv','w');
-
-        fid30 = fopen('gomecc_TCTApHpco2.csv','w');
-        fid31 = fopen('gomecc_TCTApHco3.csv','w');
-        fid32 = fopen('gomecc_TCTApco2co3.csv','w');
-        fid33 = fopen('gomecc_TCpHpco2co3.csv','w');
-        fid34 = fopen('gomecc_TApHpco2co3.csv','w');
  
         fprintf(fid6,'%s, %s, %s, %s, %s ', 'cTA', 'eTA', 'qTA', 'eTA' );
         fprintf(fid6,'%s, %s, %s, %s, %s ', 'cTC', 'eTC', 'qTC', 'eTC' );
@@ -203,13 +187,13 @@ for i = 1:nD
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est02(i) = est;
+    [est,obs,iflag] = QUODcarbV3(obs,sys);
+    %est02(i) = est;
     if i == 1
         % make headers
-        PrintCSVv2(sys,est,fid2);
+        PrintCSVv3(sys,est,fid2);
     end
-    PrintCSVv2(sys,est,obs,iflag,fid2);
+    PrintCSVv3(sys,est,obs,iflag,fid2);
     [A] = compare(obs,1,est,fid6);
    
     % TA ph (Q2)
@@ -217,12 +201,12 @@ for i = 1:nD
     obs.TC = nan; obs.eTC = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est03(i) = est;
+    [est,obs,iflag] = QUODcarbV3(obs,sys);
+    %est03(i) = est;
     if i == 1
-        PrintCSVv2(sys,est,fid3);
+        PrintCSVv3(sys,est,fid3);
     end
-    PrintCSVv2(sys,est,obs,iflag,fid3);
+    PrintCSVv3(sys,est,obs,iflag,fid3);
     [A] = compare(obs,3,est,fid7);
     
     % TC ph (Q2)
@@ -230,269 +214,26 @@ for i = 1:nD
     obs.TA = nan; obs.eTA = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est04(i) = est;
+    [est,obs,iflag] = QUODcarbV3(obs,sys);
+    %est04(i) = est;
     if i == 1
-        PrintCSVv2(sys,est,fid4);
+        PrintCSVv3(sys,est,fid4);
     end
-    PrintCSVv2(sys,est,obs,iflag,fid4);
+    PrintCSVv3(sys,est,obs,iflag,fid4);
     [A] = compare(obs,2,est,fid8);
     
-    % ph pco2 (Q2)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    obs.TC = nan; obs.eTC = nan;
-    obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est10(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid10);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid10);
     
-    % pco2 co3 (Q2)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    obs.TC = nan; obs.eTC = nan;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est11(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid11);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid11);
-
-    % TC co3 (Q2)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est12(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid12);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid12);
-
-    % TC pco2 (Q2)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est13(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid13);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid13);
-
-    % TA pco2 (Q2)
-    obs = obs_backup;
-    obs.TC = nan; obs.eTC = nan;
-    obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est14(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid14);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid14);
-
-    % TA co3 (Q2)
-    obs = obs_backup;
-    obs.TC = nan; obs.eTC = nan;
-    obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est15(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid15);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid15);
-
-    % pH co3 (Q2)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    obs.TC = nan; obs.eTC = nan;
-    obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est16(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid16);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid16);
-
-    % TC TA pH (Q3)
-    obs = obs_backup;
-    obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est20(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid20);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid20);
-
-    % TC TA pco2 (Q3)
-    obs = obs_backup;
-    obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est21(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid21);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid21);
-
-    % TC TA co3 (Q3)
-    obs = obs_backup;
-    obs.m(3).pco2 = nan; obs.m(2).epco2 = nan;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est22(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid22);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid22);
-
-    % TC pH pco2 (Q3)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est23(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid23);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid23);
-
-    % TC pH co3 (Q3)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est24(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid24);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid24);
-
-    % TC pco2 co3 (Q3)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est25(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid25);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid25);
-
-    % TA pH pco2 (Q3)
-    obs = obs_backup;
-    obs.TC = nan; obs.eTC = nan;
-    obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est26(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid26);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid26);
-
-    % TA pH co3 (Q3)
-    obs = obs_backup;
-    obs.TC = nan; obs.eTC = nan;
-    obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est27(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid27);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid27);
-
-    % TA pco2 co3 (Q3)
-    obs = obs_backup;
-    obs.TC = nan; obs.eTC = nan;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est28(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid28);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid28);
-
-    % pH pco2 co3 (Q3)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    obs.TC = nan; obs.eTC = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est29(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid29);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid29);
-
-    % TC TA pH pco2 (Q4)
-    obs = obs_backup;
-    obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est30(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid30);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid30);
-
-    % TC TA pH co3 (Q4)
-    obs = obs_backup;
-    obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est31(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid31);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid31);
-
-    % TC TA pco2 co3 (Q4)
-    obs = obs_backup;
-    obs.m(2).ph = nan; obs.m(2).eph = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est32(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid32);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid32);
-
-    % TC pH pco2 co3 (Q4)
-    obs = obs_backup;
-    obs.TA = nan; obs.eTA = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est33(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid33);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid33);
-
-    % TA pH pco2 co3 (Q4)
-    obs = obs_backup;
-    obs.TC = nan; obs.eTC = nan;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est34(i) = est;
-    if i == 1
-        PrintCSVv2(sys,est,fid34);
-    end
-    PrintCSVv2(sys,est,obs,iflag,fid34);
-
     % TA TC ph pCO2 co3 (Q5)
     obs = obs_backup;
-    [est,obs,iflag] = QUODcarbV2(obs,sys);
-    est05(i) = est;
+    [est,obs,iflag] = QUODcarbV3(obs,sys);
+    %est05(i) = est;
     if i == 1
-        PrintCSVv2(sys,est,fid5);
+        PrintCSVv3(sys,est,fid5);
     end
-    PrintCSVv2(sys,est,obs,iflag,fid5);
-    [A] = compare(obs,2,est,fid5);
+    PrintCSVv3(sys,est,obs,iflag,fid5);
+    [A] = compare(obs,2,est,fid9);
        
-    fprintf('i = %i ', i , '\n' )
+    %fprintf('i = %i ', i , '\n' )
 end
 
 fclose(fid2);
@@ -503,26 +244,5 @@ fclose(fid6);
 fclose(fid7);
 fclose(fid8);
 fclose(fid9);
-fclose(fid10);
-fclose(fid11);
-fclose(fid12);
-fclose(fid13);
-fclose(fid14);
-fclose(fid15);
-fclose(fid16);
-fclose(fid20);
-fclose(fid21);
-fclose(fid22);
-fclose(fid23);
-fclose(fid24);
-fclose(fid25);
-fclose(fid26);
-fclose(fid27);
-fclose(fid28);
-fclose(fid29);
-fclose(fid30);
-fclose(fid31);
-fclose(fid32);
-fclose(fid33);
-fclose(fid34);
+
 

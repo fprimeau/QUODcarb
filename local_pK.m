@@ -420,7 +420,7 @@ function [pK,gpK] = local_pK(T,S,P)
     function [pKnh4, gpKnh4] = calc_pKnh4(T,S,Pbar,RT,RT_T)
     % Ammonia, added by Sharp et al 2021, from Clegg and Whitfield (1995)
         TK = T + 273.15; % convert to Kelvin
-        a = 9.44605; b = -2729.33; c = 1/298.15; d = 0.04203362; g = -11.24742; 
+        a = 9.244605; b = -2729.33; c = 1/298.15; d = 0.04203362; g = -11.24742; 
 
         f  = @(T,a) a(1)  + a(2) * sqrt(T) + a(3) * T + a(4) / T;
         df = @(T,a)    0.5 *a(2) / sqrt(T) + a(3)     - a(4) / T^2;
