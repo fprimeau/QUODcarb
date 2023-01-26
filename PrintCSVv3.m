@@ -42,7 +42,8 @@ function out = PrintCSVv3(varargin)
             if ( ( i == 1 ) || ( i == 2 ) )
                 fprintf(fid,'%s, ', '(PSU)');
                 fprintf(fid,'%s, ', '(PSU)');
-            elseif ( (i == 9 ) || ( i == 10 ))
+            elseif ( (i == 9 ) || ( i == 10 ) || ... % TS in mol/kg
+                    ( i == 21 ) || ( i == 22 ) )     % TCal in mol/kg
                 fprintf(fid,'%s, ', '(mol/kg)');
                 fprintf(fid,'%s, ', '(mol/kg)');
             else
@@ -211,6 +212,12 @@ function out = PrintCSVv3(varargin)
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
+                elseif ( (strcmp(fnm(i),'ca')) )
+                    % ca and eca ( = TCal)
+                    fprintf(fid, '%s, ', '(mol/kg)');
+                    fprintf(fid, '%s, ', '(mol/kg)');
+                    fprintf(fid, '%s, ', '(mol/kg)');
+                    fprintf(fid, '%s, ', '(mol/kg)');
                 end
             end
         end
@@ -299,6 +306,13 @@ function out = PrintCSVv3(varargin)
             fprintf(fid,'%f, ', obs.eTH2S);
             fprintf(fid,'%f, ', est.TH2S);
             fprintf(fid,'%f, ', est.eTH2S);
+        end
+        if ismember('solubility',sys.abr)
+            % Ksp = [co3][ca]/Omega
+            fprintf(fid,'%f, ', obs.TCal);
+            fprintf(fid,'%f, ', obs.eTCal);
+            fprintf(fid,'%f, ', est.TCal);
+            fprintf(fid,'%f, ', est.eTCal);
         end
         for j = 1:nTP
             % Temp
@@ -518,6 +532,11 @@ function out = PrintCSVv3(varargin)
                 fprintf(fid,'%f, ', est.m(j).epKh2s);                
             end
             if ismember('solubility',sys.abr)
+                % ca
+                fprintf(fid,'%f, ', obs.m(j).ca); 
+                fprintf(fid,'%f, ', obs.m(j).eca);
+                fprintf(fid,'%f, ', est.m(j).ca); 
+                fprintf(fid,'%f, ', est.m(j).eca);   
                 % OmegaAr
                 fprintf(fid,'%f, ', obs.m(j).OmegaAr); 
                 fprintf(fid,'%f, ', obs.m(j).eOmegaAr);

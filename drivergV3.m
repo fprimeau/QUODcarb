@@ -187,40 +187,40 @@ for i = 1:nD
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV3(obs,sys);
+    %[est,obs,iflag] = QUODcarbV3(obs,sys);
     %est02(i) = est;
-    if i == 1
-        % make headers
-        PrintCSVv3(sys,est,fid2);
-    end
-    PrintCSVv3(sys,est,obs,iflag,fid2);
-    [A] = compare(obs,1,est,fid6);
+    %if i == 1
+    %    % make headers
+    %    PrintCSVv3(sys,est,fid2);
+    %end
+    %PrintCSVv3(sys,est,obs,iflag,fid2);
+    %[A] = compare(obs,1,est,fid6);
    
     % TA ph (Q2)
     obs = obs_backup;
     obs.TC = nan; obs.eTC = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV3(obs,sys);
+    %[est,obs,iflag] = QUODcarbV3(obs,sys);
     %est03(i) = est;
-    if i == 1
-        PrintCSVv3(sys,est,fid3);
-    end
-    PrintCSVv3(sys,est,obs,iflag,fid3);
-    [A] = compare(obs,3,est,fid7);
+    %if i == 1
+    %    PrintCSVv3(sys,est,fid3);
+    %end
+    %PrintCSVv3(sys,est,obs,iflag,fid3);
+    %[A] = compare(obs,3,est,fid7);
     
     % TC ph (Q2)
     obs = obs_backup;
     obs.TA = nan; obs.eTA = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
-    [est,obs,iflag] = QUODcarbV3(obs,sys);
+    %[est,obs,iflag] = QUODcarbV3(obs,sys);
     %est04(i) = est;
-    if i == 1
-        PrintCSVv3(sys,est,fid4);
-    end
-    PrintCSVv3(sys,est,obs,iflag,fid4);
-    [A] = compare(obs,2,est,fid8);
+    %if i == 1
+    %    PrintCSVv3(sys,est,fid4);
+    %end
+    %PrintCSVv3(sys,est,obs,iflag,fid4);
+    %[A] = compare(obs,2,est,fid8);
     
     
     % TA TC ph pCO2 co3 (Q5)
@@ -233,7 +233,6 @@ for i = 1:nD
     PrintCSVv3(sys,est,obs,iflag,fid5);
     [A] = compare(obs,2,est,fid9);
        
-    %fprintf('i = %i ', i , '\n' )
 end
 
 fclose(fid2);
