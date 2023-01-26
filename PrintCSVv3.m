@@ -29,9 +29,9 @@ function out = PrintCSVv3(varargin)
             for i = 1:2:(length(fnm))
                 fnj = fieldnames(est.m(j));
                 fprintf(fid,'obs_%s, ', fnj{i});
-                fprintf(fid,'obs_%s, ', fnj{i+1});
+                fprintf(fid,'obs_e%s, ', fnj{i}); % error
                 fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_%s, ', fnj{i+1});
+                fprintf(fid,'est_e%s, ', fnj{i}); % error
             end
         end
 
@@ -103,7 +103,6 @@ function out = PrintCSVv3(varargin)
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-
                 elseif ( (strcmp(fnm(i),'oh')) )
                     % oh & eoh
                     fprintf(fid, '%s, ', '(umol/kg)');
@@ -195,6 +194,19 @@ function out = PrintCSVv3(varargin)
                     fprintf(fid, '%s, ', '(umol/kg)');
                 elseif ( (strcmp(fnm(i),'pKh2s')) )
                     % pKh2s & epKh2s
+                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+                elseif ( (strcmp(fnm(i),'OmegaAr')) || ...
+                        (strcmp(fnm(i),'OmegaCa')) )
+                    % OmegaAr & eOmegaAr, OmegaCa & eOmegaCa
+                    fprintf(fid, '%s, ', '   '); % dimensionless
+                    fprintf(fid, '%s, ', '   ');
+                    fprintf(fid, '%s, ', '   ');
+                    fprintf(fid, '%s, ', '   ');
+                elseif ( (strcmp(fnm(i),'pKar')) || ...
+                        (strcmp(fnm(i),'pKca')) )
                     fprintf(fid, '%s, ', '(p units)'); % log10 unitless
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
@@ -483,7 +495,7 @@ function out = PrintCSVv3(varargin)
                 fprintf(fid,'%f, ', est.m(j).nh4); 
                 fprintf(fid,'%f, ', est.m(j).enh4);                
                 % Knh4 = [h][nh3]/[nh4]
-                fprintf(fid,'%f, ', obs.m(j).Knh4); 
+                fprintf(fid,'%f, ', obs.m(j).pKnh4); 
                 fprintf(fid,'%f, ', obs.m(j).epKnh4);
                 fprintf(fid,'%f, ', est.m(j).pKnh4); 
                 fprintf(fid,'%f, ', est.m(j).epKnh4);                
@@ -500,10 +512,32 @@ function out = PrintCSVv3(varargin)
                 fprintf(fid,'%f, ', est.m(j).h2s); 
                 fprintf(fid,'%f, ', est.m(j).eh2s);                
                 % Kh2s = [h][hs]/[h2s]
-                fprintf(fid,'%f, ', obs.m(j).Kh2s); 
+                fprintf(fid,'%f, ', obs.m(j).pKh2s); 
                 fprintf(fid,'%f, ', obs.m(j).epKh2s);
                 fprintf(fid,'%f, ', est.m(j).pKh2s); 
                 fprintf(fid,'%f, ', est.m(j).epKh2s);                
+            end
+            if ismember('solubility',sys.abr)
+                % OmegaAr
+                fprintf(fid,'%f, ', obs.m(j).OmegaAr); 
+                fprintf(fid,'%f, ', obs.m(j).eOmegaAr);
+                fprintf(fid,'%f, ', est.m(j).OmegaAr); 
+                fprintf(fid,'%f, ', est.m(j).eOmegaAr);                                
+                % Kar = [ca][co3]/[omegaAr]
+                fprintf(fid,'%f, ', obs.m(j).pKar); 
+                fprintf(fid,'%f, ', obs.m(j).epKar);
+                fprintf(fid,'%f, ', est.m(j).pKar); 
+                fprintf(fid,'%f, ', est.m(j).epKar); 
+                % OmegaCa
+                fprintf(fid,'%f, ', obs.m(j).OmegaCa); 
+                fprintf(fid,'%f, ', obs.m(j).eOmegaCa);
+                fprintf(fid,'%f, ', est.m(j).OmegaCa); 
+                fprintf(fid,'%f, ', est.m(j).eOmegaCa);                                
+                % Kca = [ca][co3]/[omegaCa]
+                fprintf(fid,'%f, ', obs.m(j).pKca); 
+                fprintf(fid,'%f, ', obs.m(j).epKca);
+                fprintf(fid,'%f, ', est.m(j).pKca); 
+                fprintf(fid,'%f, ', est.m(j).epKca);
             end
         end
         

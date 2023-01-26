@@ -998,7 +998,7 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
     end
     
     function [pKar, gpKar] = calc_pKar(obs,T,S,Pbar,pfH,gpfH)
-    % Aragonite solubility, added by Sharp et al 2021
+    % Aragonite solubility
         TK = T + 273.15;
         Rgas = 83.14462618; % RgasConstant, ml bar-1 K-1 mol-1, DOEv2
         RT   = Rgas * TK;
@@ -1055,7 +1055,7 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
     end
 
     function [pKca, gpKca] = calc_pKca(obs,T,S,Pbar,pfH,gpfH)
-    % Calcite solubility, added to CO2SYSv3 by Sharp et al 2021
+    % Calcite solubility
         TK = T + 273.15;
         Rgas = 83.14462618; % RgasConstant, ml bar-1 K-1 mol-1, DOEv2
         RT   = Rgas * TK;

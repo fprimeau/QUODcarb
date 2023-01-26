@@ -72,7 +72,7 @@ function sys = mksysV3(obs,sys)
     if ismember('ammonia',sys.abr)
         % Knh4 = [h][nh3]/[nh4]
         i = i + 1;
-        iTNH3 = i;
+        iTNH3 = i; sys.iTNH3 = iTNH3;
     end
     if ismember('sulfide',sys.abr)
         % Kh2s = [h][hs]/[h2s]
@@ -447,7 +447,7 @@ function sys = mksysV3(obs,sys)
             m(j).jTH2S = row;
         end
         if (ismember('solubility',sys.abr)) % total Calcium
-            row = ro1 + 1;
+            row = row + 1;
             M(row, [ iTCal, m(j).ica]) = [1, -1];
             m(j).jTCal = row;
         end

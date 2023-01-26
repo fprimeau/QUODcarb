@@ -99,11 +99,11 @@ for i = 1:nD
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate'};
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride'};
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate'};
-        sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
+        %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride','phosphate','silicate'};
         %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
         % 'phosphate','silicate','ammonia'};
-        %sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
-        % 'phosphate','silicate','ammonia','sulfide','solubility'};
+        sys.abr = {'air-sea','carbonate','water','borate','sulfate','fluoride', ...
+         'phosphate','silicate','ammonia','sulfide','solubility'};
                         
         sys = mksysV3(obs,sys);
 
