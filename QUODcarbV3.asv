@@ -31,8 +31,8 @@ function [est,obs,iflag] = QUODcarbV3(obs,sys)
     warning('on');
     C = C(1:nv,1:nv);
     y = z(1:nv);
-    sigy = sqrt(diag(C));
-    
+    sigy = real( sqrt(diag(C)) );
+    keyboard
     % populate est
     [est] = parse_output(z,sigy,obs,sys);
 
@@ -619,12 +619,12 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         else
             yobs(sys.iTNH3) = p(obs.TNH3*1e-6);
         end
-        if (~isfield(obs, 'epTNH3'))
+        if (~isfield(obs, 'eTNH3'))
             %fprintf('Warning: Assuming eTNH3 = 1e-3  µmol/kg-SW.\n');
-            obs.epTNH3 = 1e-3; % µmol/kg
-            wobs(sys.iTNH3) = w(obs.TNH3,obs.epTNH3);
+            obs.eTNH3 = 1e-3; % µmol/kg
+            wobs(sys.iTNH3) = w(obs.TNH3,obs.eTNH3);
         else
-            wobs(sys.iTNH3) = w(obs.TNH3,obs.epTNH3);
+            wobs(sys.iTNH3) = w(obs.TNH3,obs.eTNH3);
         end
         if (~isfield(obs.m(1), 'nh3'))
             obs.m(1).nh3 = [];
@@ -676,28 +676,28 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
     end
 
     if (ismember('solubility',sys.abr))
-        if (~isfield(obs.m(1), 'epKca')) 
-            obs.m(1).epKca = [];
+        if (~isfield(obs.m(1), 'epKar')) 
+            obs.m(1).epKar = [];
         end
-        if (~isfield(obs.m(1), 'pKca'))
-            obs.m(1).pKca = [];
+        if (~isfield(obs.m(1), 'pKar'))
+            obs.m(1).pKar = [];
         end
         if (~isfield(obs, 'TCal'))
             if obs.cK1K2 == 6 || obs.cK1K2 == 7
             % Calculate Ca for GEOSECS, Riley and Skirrow 1965
-                obs.TCal = (0.01026 .* obs.sal ./ 35) .* (1e6) ; % convt to umol/kg 
-                yobs(sys.iTCal) = p(obs.TCal.*1e-6); % convt µmol/kg to mol/kg
+                obs.TCal = (0.01026 .* obs.sal ./ 35) ;
+                yobs(sys.iTCal) = p(obs.TCal); % convt µmol/kg to mol/kg
             else
             % Calculate Ca, Riley and Tongdui 1967
                 % this is 0.010285.*obs.sal./35;
-                obs.TCal = (0.02128./40.087.*(obs.sal./1.80655)).*(1e6) ; % convt to umol/kg
-                yobs(sys.iTCal) = p(obs.TCal.*1e-6); % convert back to mol/kg
+                obs.TCal = (0.02128./40.087.*(obs.sal./1.80655)) ; % convt to umol/kg
+                yobs(sys.iTCal) = p(obs.TCal); % convert back to mol/kg
             end
         else
-            yobs(sys.iTCal) = p(obs.TCal*1e-6); % assume user input of umol/kg
+            yobs(sys.iTCal) = p(obs.TCal); % assume user input of umol/kg
         end
         if (~isfield(obs, 'eTCal'))
-            obs.eTCal = (6e-5) .* (1e6); % µmol/kg, from Riley and Tongdui 1967
+            obs.eTCal = (6e-5); % mol/kg, from Riley and Tongdui 1967
             wobs(sys.iTCal) = w(obs.TCal,obs.eTCal);
         else
             wobs(sys.iTCal) = w(obs.TCal,obs.eTCal);
@@ -1316,7 +1316,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
                 yobs(sys.m(i).iKca) = pKca;
                 obs.m(i).pKca = pKca;
             end
-            if (isgood(obs.m(i).OmegCa))
+            if (isgood(obs.m(i).OmegaCa))
                 yobs(sys.m(i).iOmegaCa) = p(obs.m(i).OmegaCa); % Omega is dimensionless
             else
                 yobs(sys.m(i).iOmegaCa) = nan;
@@ -1354,7 +1354,7 @@ function [est] = parse_output(z,sigy,obs,sys)
         est.eTB = ebar(sys.iTB)*1e6;
     end
     if ismember('sulfate', sys.abr)
-        est.TS = q(z(sys.iTS)); % no convertion on TS
+        est.TS = q(z(sys.iTS)); % no conversion on TS
         est.eTS = ebar(sys.iTS);
     end
     if ismember('fluoride', sys.abr)
@@ -1378,8 +1378,8 @@ function [est] = parse_output(z,sigy,obs,sys)
         est.eTH2S = ebar(sys.iTH2S)*1e6;
     end
     if ismember('solubility', sys.abr)
-        est.TCal = q(z(sys.iTCal))*1e6;
-        est.eTCal = ebar(sys.iTCal)*1e6;
+        est.TCal = q(z(sys.iTCal));
+        est.eTCal = ebar(sys.iTCal);
     end
     
     nTP = length(obs.m);
@@ -1496,17 +1496,17 @@ function [est] = parse_output(z,sigy,obs,sys)
             est.m(i).h2s   = q(z(sys.m(i).ih2s))*1e6;
             est.m(i).eh2s  = ebar(sys.m(i).ih2s)*1e6;
             % equilibrium pK & errorbar
-            est.m(i).pKh2s  = z(sys.m(i).ipKh2s);
+            est.m(i).pKh2s  = z(sys.m(i).iKh2s);
             est.m(i).epKh2s = sigy(sys.m(i).iKh2s);
         end
-        if ismember('solubility',sys/abr)
+        if ismember('solubility',sys.abr)
             % chemical equilibrium & errorbar
             est.m(i).ca   = q(z(sys.m(i).ica))*1e6;
             est.m(i).eca  = ebar(sys.m(i).ica)*1e6;
             est.m(i).OmegaAr  = q(z(sys.m(i).iOmegaAr)); % unitless
             est.m(i).eOmegaAr = ebar(sys.m(i).iOmegaAr);
             est.m(i).OmegaCa  = q(z(sys.m(i).iOmegaCa));
-            est.m(i).OmegaCa  = ebar(sys.m(i).iOmegaCa);
+            est.m(i).eOmegaCa  = ebar(sys.m(i).iOmegaCa);
             % equilibrium pK & errorbar
             est.m(i).pKar  = z(sys.m(i).iKar);
             est.m(i).epKar = sigy(sys.m(i).iKar);
@@ -1655,19 +1655,33 @@ function z0 = init(yobs,sys);
             y0(sys.m(i).isioh4)  = p(sioh4);
         end
         if (ismember('ammonia',sys.abr));
-            error('Need to implement initialization for ammonia');
+            %error('Need to implement initialization for ammonia');
+            Knh4 = q(y0(sys.m(i).iKnh4));
+            TNH3 = q(yobs(sys.iTNH3));
+            nh3 = TNH3 / ( 1 + h / Knh4 );
+            nh4 = TNH3 - nh3 ;
+            y0(sys.iTNH3)      = p(TNH3);
+            y0(sys.m(i).inh3)  = p(nh3);
+            y0(sys.m(i).inh4)  = p(nh4);
         end
         if (ismember('sulfide',sys.abr))
-            error('Need to implement initialization for sulfide');
+            %error('Need to implement initialization for sulfide');
+            Kh2s = q(y0(sys.m(i).iKh2s));
+            TH2S = q(yobs(sys.iTH2S));
+            hs = TH2S / ( 1 + h / Kh2s );
+            h2s = TH2S - hs ;
+            y0(sys.iTH2S)     = p(TH2S);
+            y0(sys.m(i).ihs)  = p(hs);
+            y0(sys.m(i).ih2s) = p(h2s);
         end
         if (ismember('solubility',sys.abr))
-            % error('Need to implement initialization for TCal');
             Kar = q(y0(sys.m(i).iKar));
             TCal = q(yobs(sys.iTCal));
             OmegaAr = co3 * TCal / Kar;
             Kca = q(y0(sys.m(i).iKca));
             OmegaCa = co3 * TCal / Kca ;
-            y0(sys.iTCal) = p(TCal);
+            y0(sys.iTCal)         = p(TCal);
+            y0(sys.m(i).ica)      = p(TCal);
             y0(sys.m(i).iOmegaAr) = p(OmegaAr);
             y0(sys.m(i).iOmegaCa) = p(OmegaCa);
         end
