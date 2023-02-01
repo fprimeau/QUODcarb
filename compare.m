@@ -1,120 +1,253 @@
 % compare to co2sys with QUODcarb output loaded
 
-function [A] = compare(obs,pair,est,fid)
+function [A] = compare(varargin)    % (obs,pair,est,fid)
+
+    if (nargin == 1)
+        % 
+        % Print Column Headers
+        %
+        fid = varargin{1};
+
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cTA', 'eTA', 'qTA', 'eTA' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cTC', 'eTC', 'qTC', 'eTC' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cph', 'eph', 'qph', 'eph' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpCO2', 'epCO2', 'qpCO2', 'epCO2' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cCO3', 'eCO3', 'qCO3', 'eCO3' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK0', 'epK0', 'qpK0', 'epK0' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK1', 'epK1', 'qpK1', 'epK1' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK2', 'epK2', 'qpK2', 'epK2' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKw', 'epKw', 'qpKw', 'epKw' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKb', 'epKb', 'qpKb', 'epKb' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKs', 'qpKs', 'cpKf', 'qpKf' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK1p', 'qpK1p', 'cpK2p', 'qpK2p' ); % no error for CO2SYS K1p thru KH2S
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK3p', 'qpK3p', 'cpKsi', 'qpKsi' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKNH4', 'qpKNH4', 'cpKH2S', 'qpKH2S' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKar', 'qpKar', 'cpKca', 'qpKca' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cOmegaAr', 'eOmegaAr', 'qOmegaAr', 'eOmegaAr' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cOmegaCa', 'eOmegaCa', 'qOmegaCa', 'eOmegaCa' );
+        fprintf(fid,'%s, %s, %s, %s, %s ', 'cCAL', 'qTCal','eqTCal',' ');
+        fprintf(fid, '\n');
+        [A] = ' ';
+
+    else
+        obs = varargin{1};
+        pair = varargin{2};
+        est = varargin{3};
+        fid = varargin{4};
     
-    p = @(x) -log10(x); % use p as in "pH" to denote the negative log base 10 function
-    q = @(x) 10.^(-x);  % use q, i.e., a backward p
-    
-    par1type = 1; % alkalinity
-    par1 = obs.TA; % TA µmol/kg
-    epar1 = obs.eTA; % error alkalinity
-    par2type = 2; % DIC
-    par2 = obs.TC; % DIC_in µmol/kg
-    epar2 = obs.eTC; % error DIC
-    par3type = 3; % pH
-    par3 = obs.m(2).ph; % pH(total) 
-    epar3 = obs.m(2).eph; % error pH
-    sal = obs.sal; % salinity of sample
-    esal = obs.esal;% salinity error
-    tempin = obs.m(2).T;%obs.m(2).T; % temp of sample
-    etemp = obs.m(2).eT;%obs.m(2).eT; % error temp
-    presin = obs.m(2).P;%obs.m(2).P; % pressure of sample (dbars)
-    tempout = obs.m(2).T;
-    presout = obs.m(2).P;
-    sil = obs.TSi; % total Si of sample
-    esi = obs.eTSi; % error Si
-    po4 = obs.TP; % phosphate of sample
-    epo4 = obs.eTP;% error PO4
-    pHscale = 1; % pH(total scale)
-    k1k2c = 4; % Mehrbach refit
-    epK = [0.002,0.01,0.02,0.01,0.01,0.02,0.02]; % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02]
-    kso4c = 1; % 1 or 3 is Dickson 1990
-    %eBt = q(wobs(sys.iTB))^(-1/2)*1e6; % error total boron, 0.02
-    eBt = '';
-    r = 0; % correlation coefficient
+        p = @(x) -log10(x); % use p as in "pH" to denote the negative log base 10 function
+        q = @(x) 10.^(-x);  % use q, i.e., a backward p
+
+        par1type = 1; % alkalinity
+        par1 = obs.TA; % TA µmol/kg
+        epar1 = obs.eTA; % error alkalinity
+        par2type = 2; % DIC
+        par2 = obs.TC; % DIC_in µmol/kg
+        epar2 = obs.eTC; % error DIC
+        par3type = 3; % pH
+        par3 = obs.m(2).ph; % pH(total)
+        epar3 = obs.m(2).eph; % error pH
+        par4 = obs.m(3).pco2; % pCO2
+        epar4 = obs.m(3).epco2;
+        par4type = 4;
+        par5 = obs.m(2).co3; % CO3
+        epar5 = obs.m(2).eco3;
+        par5type = 7;
+
+        sal = obs.sal; % salinity of sample
+        esal = obs.esal; % salinity error
+        tempin = obs.m(2).T; % temp of sample
+        etemp = obs.m(2).eT; % error temp
+        presin = obs.m(2).P; % pressure of sample (dbars)
+        tempout = obs.m(2).T;
+        presout = obs.m(2).P;
+        sil = obs.TSi; % total Si of sample
+        esi = obs.eTSi; % error Si
+        po4 = obs.TP; % phosphate of sample
+        epo4 = obs.eTP; % error PO4
+        pHscale = 1; % pH(total scale)
+        k1k2c = 4; % Mehrbach refit
+        epK = [0.002,0.01,0.02,0.01,0.01,0.04,0.039]; % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02]
+        kso4c = 1; % 1 or 3 is Dickson 1990
+        %eBt = q(wobs(sys.iTB))^(-1/2)*1e6; % error total boron, 0.02
+        eBt = '';
+        r = 0; % correlation coefficient
+        nh4 = 1e-3;
+        enh4 = 1e-3;
+        h2s = 1e-3;
+        eh2s = 1e-3;
+        kfc = 2;
+        tbc = 2;
+        ecal = 0.06; % 60 umol/kg = 6e-5 mol/kg = 0.06 mmol/kg
+
+        % par1 = alk, par2 = dic, par3 = ph, par4 = pco2; par5 = co3
+        if pair == 1 % TA TC
+            OUT = CO2SYS(par1,par2,par1type,par2type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc);
+            err = errors(par1,par2,par1type,par2type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar1,epar2,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+        elseif pair == 2 % TC pH
+            OUT = CO2SYS(par2,par3,par2type,par3type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc); 
+            err = errors(par2,par3,par2type,par3type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar2,epar3,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+        elseif pair == 3 % TA pH
+            OUT = CO2SYS(par1,par3,par1type,par3type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc);
+            err = errors(par1,par3,par1type,par3type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar1,epar3,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+        elseif pair == 4 % pH pCO2
+            OUT = CO2SYS(par3,par4,par3type,par4type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc);
+            err = errors(par3,par4,par3type,par4type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar3,epar4,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal); 
+        elseif pair == 5 % pCO2 CO3
+            OUT = CO2SYS(par4,par5,par4type,par5type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc);
+            err = errors(par4,par5,par4type,par5type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar4,epar5,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal); 
+        elseif pair == 6 % TC CO3
+            OUT = CO2SYS(par2,par5,par2type,par5type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc);
+            err = errors(par2,par5,par2type,par5type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar2,epar5,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+        elseif pair == 7 % TC pCO2
+            OUT = CO2SYS(par2,par4,par2type,par4type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc);
+            err = errors(par2,par4,par2type,par4type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar2,epar4,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+        elseif pair == 8 % TA pCO2
+            OUT = CO2SYS(par1,par4,par1type,par4type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc);
+            err = errors(par1,par4,par1type,par4type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar1,epar4,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+        elseif pair == 9 % TA CO3
+            OUT = CO2SYS(par1,par5,par1type,par5type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc);
+            err = errors(par1,par5,par1type,par5type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar1,epar5,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+        elseif pair == 10 % pH CO3
+            OUT = CO2SYS(par3,par5,par3type,par5type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc);
+            err = errors(par3,par5,par3type,par5type,sal,tempin,tempout, ...
+                presin,presout,sil,po4,nh4,h2s,epar3,epar5,esal,etemp,esi, ...
+                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+        % par1 = alk, par2 = dic, par3 = ph, par4 = pco2; par5 = co3
+        end
 
 
-    % a = TA, c = DIC, p = pH -> 3 input pairs
-    if pair == 1 % TA TC
-        OUT = CO2SYS(par1,par2,par1type,par2type,sal,tempin,tempout,presin,presout,sil,po4,pHscale,k1k2c,kso4c);
-        err = errors(par1,par2,par1type,par2type,sal,tempin,tempout,presin,presout,sil,po4,epar1,epar2,esal,etemp,esi,epo4,epK,eBt,r,pHscale,k1k2c,kso4c);
-    elseif pair == 2 % TC pH
-        OUT = CO2SYS(par2,par3,par2type,par3type,sal,tempin,tempout,presin,presout,sil,po4,pHscale,k1k2c,kso4c);
-        err = errors(par2,par3,par2type,par3type,sal,tempin,tempout,presin,presout,sil,po4,epar2,epar3,esal,etemp,esi,epo4,epK,eBt,r,pHscale,k1k2c,kso4c);
-    elseif pair == 3 % TA pH
-        OUT = CO2SYS(par1,par3,par1type,par3type,sal,tempin,tempout,presin,presout,sil,po4,pHscale,k1k2c,kso4c);
-        err = errors(par1,par3,par1type,par3type,sal,tempin,tempout,presin,presout,sil,po4,epar1,epar3,esal,etemp,esi,epo4,epK,eBt,r,pHscale,k1k2c,kso4c);
+        % exit struct
+        out.TA = OUT(1);
+        out.eTA = err(1); % sigma, not precision
+        out.TC = OUT(2);
+        out.eTC = err(2);
+        out.ph = OUT(43); % total scale
+        out.eh = (err(13)*1e-9); % was nano units
+        out.eph = (out.eh/(10^(-out.ph)))*(1/log(10)); % dph = (-1/ln(10))*(dH/H) from Orr's 'errors'
+        out.pco2 = OUT(22);
+        out.epco2 = err(14);
+        out.co3 = OUT(25);
+        out.eco3 = err(17);
+        out.pK0 = p(OUT(78));
+        out.epK0 = (0.002);
+        out.pK1 = p(OUT(79));
+        out.epK1 = (0.01);
+        out.pK2 = p(OUT(80));
+        out.epK2 = (0.02);
+        out.pKw = p(OUT(83));
+        out.epKw = (0.01);
+        out.pKb = p(OUT(84));
+        out.epKb = (0.01);
+        out.pKs = p(OUT(86));
+        out.pKf = p(OUT(85));
+        out.pK1p = p(OUT(87));
+        out.pK2p = p(OUT(88));
+        out.pK3p = p(OUT(89));
+        out.pKSi = p(OUT(90));
+        out.pKnh4 = p(OUT(91));
+        out.pKh2s = p(OUT(92));
+        out.pKar = p(OUT(93));
+        out.pKca = p(OUT(94));
+        out.OmegaAr = OUT(36);
+        out.eOmegaAr = err(21);
+        out.OmegaCa = OUT(35);
+        out.eOmegaCa = err(20);
+        out.CAL = OUT(102);
+
+        % exit matrix at CTD temp
+        A = [out.TA, out.eTA, est.TA, est.eTA, ...
+            out.TC, out.eTC, est.TC, est.eTC, ...
+            out.ph, out.eph, est.m(2).ph, est.m(2).eph, ...
+            out.pco2, out.epco2, est.m(2).pco2, est.m(2).epco2, ...
+            out.co3, out.eco3, est.m(2).co3, est.m(2).eco3, ...
+            out.pK0, out.epK0, est.m(2).pK0, est.m(2).epK0, ... 
+            out.pK1, out.epK1, est.m(2).pK1, est.m(2).epK1, ...
+            out.pK2, out.epK2, est.m(2).pK2, est.m(2).epK2, ...
+            out.pKw, out.epKw, est.m(2).pKw, est.m(2).epKw, ...
+            out.pKb, out.epKb, est.m(2).pKb, est.m(2).epKb, ...
+            out.pKs, est.m(2).pKs, out.pKf, est.m(2).pKf, ...
+            out.pK1p, est.m(2).pK1p, out.pK2p, est.m(2).pK2p, ...
+            out.pK3p, est.m(2).pK3p, out.pKSi, est.m(2).pKsi, ...
+            out.pKnh4, est.m(2).pKnh4, out.pKca, est.m(2).pKca, ...
+            out.OmegaAr, out.eOmegaAr, est.m(2).OmegaAr, est.m(2).eOmegaAr, ...
+            out.OmegaCa, out.eOmegaCa, est.m(2).OmegaCa, est.m(2).eOmegaCa, ...
+            out.CAL, est.TCal, est.eTCal];
+
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.TA, out.eTA, est.TA, est.eTA);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.TC, out.eTC, est.TC, est.eTC);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.ph, out.eph, est.m(2).ph, est.m(2).eph);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pco2, out.epco2, est.m(2).pco2, est.m(2).epco2);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.co3, out.eco3, est.m(2).co3, est.m(2).eco3);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK0, out.epK0, est.m(2).pK0, est.m(2).epK0);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK1, out.epK1, est.m(2).pK1, est.m(2).epK1);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK2, out.epK2, est.m(2).pK2, est.m(2).epK2);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pKw, out.epKw, est.m(2).pKw, est.m(2).epKw);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pKb, out.epKb, est.m(2).pKb, est.m(2).epKb);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pKs, est.m(2).pKs, out.pKf, est.m(2).pKf);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK1p, est.m(2).pK1p, out.pK2p, est.m(2).pK2p);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK3p, est.m(2).pK3p, out.pKSi, est.m(2).pKsi);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pKnh4, est.m(2).pKnh4, out.pKh2s, est.m(2).pKh2s);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pKar, est.m(2).pKar, out.pKca, est.m(2).pKca);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.OmegaAr,out.eOmegaAr,est.m(2).OmegaAr,est.m(2).eOmegaAr);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.OmegaCa,out.eOmegaCa,est.m(2).OmegaCa,est.m(2).eOmegaCa);
+        fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.CAL, est.TCal, est.eTCal);
+        fprintf(fid,'\n');
+
     end
-    
-    % exit struct
-    out.TA = OUT(1); 
-    out.eTA = err(1); % sigma, not precision
-    out.TC = OUT(2);
-    out.eTC = err(2);
-    out.ph = OUT(37); % total scale
-    out.eh = (err(10)*1e-9); % was nano units
-    out.eph = (out.eh/(10^(-out.ph)))*(1/log(10)); % dph = (-1/ln(10))*(dH/H) from Orr's 'errors' 
-    out.pco2 = OUT(19);
-    out.epco2 = err(11);
-    out.pK0 = p(OUT(66));
-    out.epK0 = (0.002);
-    out.pK1 = p(OUT(67));
-    out.epK1 = (0.01);
-    out.pK2 = p(OUT(68));
-    out.epK2 = (0.02);
-    out.pKw = p(OUT(71));
-    out.epKw = (0.01);
-    out.pKb = p(OUT(72));
-    out.epKb = (0.01);
-    out.pKs = p(OUT(74));
-    out.pKf = p(OUT(73));
-    out.pK1p = p(OUT(75));
-    out.pK2p = p(OUT(76));
-    out.pK3p = p(OUT(77));
-    out.pKSi = p(OUT(78));
 
-    % exit matrix at CTD temp
-    A = [out.TA, out.eTA, est.TA, est.eTA, ...
-         out.TC, out.eTC, est.TC, est.eTC, ...
-         out.ph, out.eph, est.m(2).ph, est.m(2).eph, ...
-         out.pco2, out.epco2, est.m(2).pco2, est.m(2).epco2, ...
-         out.pK0, out.epK0, est.m(2).pK0, est.m(2).epK0, ... % 2
-         out.pK1, out.epK1, est.m(2).pK1, est.m(2).epK1, ...
-         out.pK2, out.epK2, est.m(2).pK2, est.m(2).epK2, ...
-         out.pKw, out.epKw, est.m(2).pKw, est.m(2).epKw, ...
-         out.pKb, out.epKb, est.m(2).pKb, est.m(2).epKb, ...
-         out.pKs, est.m(2).pKs, out.pKf, est.m(2).pKf, ...
-         out.pK1p, est.m(2).pK1p, out.pK2p, est.m(2).pK2p, ...
-         out.pK3p, est.m(2).pK3p, out.pKSi, est.m(2).pKsi];
-
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.TA, out.eTA, est.TA, est.eTA);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.TC, out.eTC, est.TC, est.eTC);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.ph, out.eph, est.m(2).ph, est.m(2).eph);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pco2, out.epco2, est.m(2).pco2, est.m(2).epco2);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK0, out.epK0, est.m(2).pK0, est.m(2).epK0);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK1, out.epK1, est.m(2).pK1, est.m(2).epK1);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK2, out.epK2, est.m(2).pK2, est.m(2).epK2);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pKw, out.epKw, est.m(2).pKw, est.m(2).epKw);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pKb, out.epKb, est.m(2).pKb, est.m(2).epKb);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pKs, est.m(2).pKs, out.pKf, est.m(2).pKf);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK1p, est.m(2).pK1p, out.pK2p, est.m(2).pK2p);
-    fprintf(fid,'%0.4g, %0.4g, %0.4g, %0.4g,',out.pK3p, est.m(2).pK3p, out.pKSi, est.m(2).pKsi);
-    fprintf(fid,'\n');
 end
 
-function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
+%
+% CO2SYSv3 ----------------------------------------------------------------
+%  --> 01/30/23 MF edited it slightly to output KCA, KAr, and CAL so output
+%       vector is slightly different than listed in documentation
+
+
+function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,NH4,H2S,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANT,KFCONSTANT,BORON,varargin)
 %**************************************************************************
 %
-% First   CO2SYS.m version: 1.1 (Sep 2011)
-% Current CO2SYS.m version: 2.0 (20 Dec 2016)
+% Current: CO2SYS.m v3.1.2   (Jan  2023: https://github.com/jonathansharp/CO2-System-Extd)
+%          CO2SYS.m v2       (Dec  2016: https://github.com/jamesorr/CO2SYS-MATLAB)
+%          CO2SYS.m v1       (Sept 2011: https://cdiac.ess-dive.lbl.gov/ftp/co2sys/CO2SYS_calc_MATLAB_v1.1/)
 %
 % CO2SYS is a MATLAB-version of the original CO2SYS for DOS. 
 % CO2SYS calculates and returns the state of the carbonate system of 
 %    oceanographic water samples, if supplied with enough input.
 %
-% Please note that this software is intended to be exactly identical to the 
-%    DOS and Excel versions that have been released previously, meaning that
-%    results obtained should be very nearly indentical for identical input.
+% Please note that, besides certain extended capabilities and minor
+%    corrections, this software is intended to be nearly identical to the
+%    DOS and Excel versions that have been released previously, meaning
+%    that results obtained should be very nearly identical for identical
+%    input.
 % Additionally, several of the dissociation constants K1 and K2 that have 
 %    been published since the original DOS version was written are implemented.
 %    For a complete list of changes since version 1.0, see below.
@@ -123,27 +256,26 @@ function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPI
 %    Lewis, E., and D. W. R. Wallace. 1998. Program Developed for
 %    CO2 System Calculations. ORNL/CDIAC-105. Carbon Dioxide Information
 %    Analysis Center, Oak Ridge National Laboratory, U.S. Department of Energy,
-%    Oak Ridge, Tennessee. 
-%    http://cdiac.ornl.gov/oceans/co2rprt.html
+%    Oak Ridge, Tennessee. http://cdiac.ornl.gov/oceans/co2rprt.html
 %
 %**************************************************************************
 %
 %  **** SYNTAX:
 %  [RESULT,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,...
-%        ...SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,pHSCALEIN,...
-%        ...K1K2CONSTANTS,KSO4CONSTANTS)
+%        ...SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,NH4,H2S,pHSCALEIN,...
+%        ...K1K2CONSTANTS,KSO4CONSTANT,KFCONSTANT,BORON,varargin)
 % 
 %  **** SYNTAX EXAMPLES:
-%  [Result]                     = CO2SYS(2400,2200,1,2,35,0,25,4200,0,15,1,1,4,1)
-%  [Result,Headers]             = CO2SYS(2400,   8,1,3,35,0,25,4200,0,15,1,1,4,1)
-%  [Result,Headers,Niceheaders] = CO2SYS( 500,   8,5,3,35,0,25,4200,0,15,1,1,4,1)
-%  [A]                          = CO2SYS(2400,2000:10:2400,1,2,35,0,25,4200,0,15,1,1,4,1)
-%  [A]                          = CO2SYS(2400,2200,1,2,0:1:35,0,25,4200,0,15,1,1,4,1)
-%  [A]                          = CO2SYS(2400,2200,1,2,35,0,25,0:100:4200,0,15,1,1,4,1)
+%  [Result]                     = CO2SYS(2400,2200,1,2,35,0,25,4200,0,15,1,0,0,1,4,1,1,1)
+%  [Result,Headers]             = CO2SYS(2400,   8,1,3,35,0,25,4200,0,15,1,0,0,1,4,1,1,1)
+%  [Result,Headers,Niceheaders] = CO2SYS( 500,   8,5,3,35,0,25,4200,0,15,1,0,0,1,4,1,1,1,'co2_press',1)
+%  [A]                          = CO2SYS(2400,2000:10:2400,1,2,35,0,25,4200,0,15,1,0,0,1,4,1,1,1)
+%  [A]                          = CO2SYS(2400,2200,1,2,0:1:35,0,25,4200,0,15,1,0,0,1,4,1,1,1)
+%  [A]                          = CO2SYS(2400,2200,1,2,35,0,25,0:100:4200,0,15,1,0,0,1,4,1,1,1,'co2_press',1)
 %  
 %  **** APPLICATION EXAMPLE (copy and paste this into command window):
 %  tmps=0:40; sals=0:40; [X,Y]=meshgrid(tmps,sals);
-%  A = CO2SYS(2300,2100,1,2,Y(:),X(:),nan,0,nan,1,1,1,9,1);
+%  A = CO2SYS(2300,2100,1,2,Y(:),X(:),nan,0,nan,1,1,0,0,1,9,1,1,1);
 %  Z=nan(size(X)); Z(:)=A(:,4); figure; contourf(X,Y,Z,20); caxis([0 1200]); colorbar;
 %  ylabel('Salinity [psu]'); xlabel('Temperature [degC]'); title('Dependence of pCO2 [uatm] on T and S')
 % 
@@ -153,8 +285,8 @@ function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPI
 %
 %   PAR1  (some unit) : scalar or vector of size n
 %   PAR2  (some unit) : scalar or vector of size n
-%   PAR1TYPE       () : scalar or vector of size n (*)
-%   PAR2TYPE       () : scalar or vector of size n (*)
+%   PAR1TYPE       () : scalar or vector of size n (Footnote *1 below)
+%   PAR2TYPE       () : scalar or vector of size n (Footnote *1 below)
 %   SAL            () : scalar or vector of size n
 %   TEMPIN  (degr. C) : scalar or vector of size n 
 %   TEMPOUT (degr. C) : scalar or vector of size n 
@@ -162,60 +294,80 @@ function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPI
 %   PRESOUT    (dbar) : scalar or vector of size n
 %   SI    (umol/kgSW) : scalar or vector of size n
 %   PO4   (umol/kgSW) : scalar or vector of size n
-%   pHSCALEIN         : scalar or vector of size n (**)
-%   K1K2CONSTANTS     : scalar or vector of size n (***)
-%   KSO4CONSTANTS     : scalar or vector of size n (****)
+%   NH4   (umol/kgSW) : scalar or vector of size n
+%   H2S   (umol/kgSW) : scalar or vector of size n
+%   pHSCALEIN         : scalar or vector of size n (Footnote *2 below)
+%   K1K2CONSTANTS     : scalar or vector of size n (Footnote *3 below)
+%   KSO4CONSTANT      : scalar or vector of size n (Footnote *4 below)
+%   KFCONSTANT        : scalar or vector of size n (Footnote *5 below)
+%   BORON             : scalar or vector of size n (Footnote *6 below)
 %
-%  (*) Each element must be an integer, 
+% OPTIONAL INPUT:
+%   'co2_press',X     : string,scalar pair
+%               X = 0 : K0 and FugFac are not corrected for in situ pressure
+%               X = 1 : K0 and FugFac are corrected for in situ pressure
+%
+%  (*1) Each element must be an integer, 
 %      indicating that PAR1 (or PAR2) is of type: 
-%  1 = Total Alkalinity
+%  1 = TA
 %  2 = DIC
 %  3 = pH
 %  4 = pCO2
 %  5 = fCO2
+%  6 = HCO3
+%  7 = CO3
+%  8 = CO2
 % 
-%  (**) Each element must be an integer, 
+%  (*2) Each element must be an integer, 
 %       indicating that the pH-input (PAR1 or PAR2, if any) is at:
 %  1 = Total scale
 %  2 = Seawater scale
 %  3 = Free scale
 %  4 = NBS scale
 % 
-%  (***) Each element must be an integer, 
-%        indicating the K1 K2 dissociation constants that are to be used:
-%   1 = Roy, 1993											T:    0-45  S:  5-45. Total scale. Artificial seawater.
-%   2 = Goyet & Poisson										T:   -1-40  S: 10-50. Seaw. scale. Artificial seawater.
-%   3 = HANSSON              refit BY DICKSON AND MILLERO	T:    2-35  S: 20-40. Seaw. scale. Artificial seawater.
-%   4 = MEHRBACH             refit BY DICKSON AND MILLERO	T:    2-35  S: 20-40. Seaw. scale. Artificial seawater.
-%   5 = HANSSON and MEHRBACH refit BY DICKSON AND MILLERO	T:    2-35  S: 20-40. Seaw. scale. Artificial seawater.
-%   6 = GEOSECS (i.e., original Mehrbach)					T:    2-35  S: 19-43. NBS scale.   Real seawater.
-%   7 = Peng	(i.e., originam Mehrbach but without XXX)	T:    2-35  S: 19-43. NBS scale.   Real seawater.
-%   8 = Millero, 1979, FOR PURE WATER ONLY (i.e., Sal=0)	T:    0-50  S:     0. 
-%   9 = Cai and Wang, 1998									T:    2-35  S:  0-49. NBS scale.   Real and artificial seawater.
-%  10 = Lueker et al, 2000									T:    2-35  S: 19-43. Total scale. Real seawater.
-%  11 = Mojica Prieto and Millero, 2002.					T:    0-45  S:  5-42. Seaw. scale. Real seawater
-%  12 = Millero et al, 2002									T: -1.6-35  S: 34-37. Seaw. scale. Field measurements.
-%  13 = Millero et al, 2006									T:    0-50  S:  1-50. Seaw. scale. Real seawater.
-%  14 = Millero        2010  									T:    0-50  S:  1-50. Seaw. scale. Real seawater.
-%  15 = Waters, Millero, & Woosley 2014  							T:    0-50  S:  1-50. Seaw. scale. Real seawater.
+%  (*3) Each element must be an integer, 
+%       indicating the K1 and K2 dissociation constants that are to be used:
+%   1 = Roy, 1993                                           T:    0-45  S:  5-45. Total scale. Artificial seawater.
+%   2 = Goyet & Poisson                                     T:   -1-40  S: 10-50. Seaw. scale. Artificial seawater.
+%   3 = HANSSON              refit BY DICKSON AND MILLERO   T:    2-35  S: 20-40. Seaw. scale. Artificial seawater.
+%   4 = MEHRBACH             refit BY DICKSON AND MILLERO   T:    2-35  S: 20-40. Seaw. scale. Artificial seawater.
+%   5 = HANSSON and MEHRBACH refit BY DICKSON AND MILLERO   T:    2-35  S: 20-40. Seaw. scale. Artificial seawater.
+%   6 = GEOSECS (i.e., original Mehrbach)                   T:    2-35  S: 19-43. NBS scale.   Real seawater.
+%   7 = Peng	(i.e., originam Mehrbach but without XXX)   T:    2-35  S: 19-43. NBS scale.   Real seawater.
+%   8 = Millero, 1979, FOR PURE WATER ONLY (i.e., Sal=0)    T:    0-50  S:     0. 
+%   9 = Cai and Wang, 1998                                  T:    2-35  S:  0-49. NBS scale.   Real and artificial seawater.
+%  10 = Lueker et al, 2000                                  T:    2-35  S: 19-43. Total scale. Real seawater.
+%  11 = Mojica Prieto and Millero, 2002                     T:    0-45  S:  5-42. Seaw. scale. Real seawater
+%  12 = Millero et al, 2002                                 T: -1.6-35  S: 34-37. Seaw. scale. Field measurements.
+%  13 = Millero et al, 2006                                 T:    0-50  S:  1-50. Seaw. scale. Real seawater.
+%  14 = Millero, 2010                                       T:    0-50  S:  1-50. Seaw. scale. Real seawater.
+%  15 = Waters, Millero, & Woosley, 2014                    T:    0-50  S:  1-50. Seaw. scale. Real seawater.
+%  16 = Sulpis et al, 2020                                  T: -1.7-32  S: 31-38. Total scale. Field measurements.
+%  17 = Schockman & Byrne, 2021                             T:   15-35  S: 19-41. Total scale. Real seawater.
 % 
-%  (****) Each element must be an integer that 
-%         indicates the KSO4 dissociation constants that are to be used,
-%         in combination with the formulation of the borate-to-salinity ratio to be used.
-%         Having both these choices in a single argument is somewhat awkward, 
-%         but it maintains syntax compatibility with the previous version.
-%  1 = KSO4 of Dickson 1990a   & TB of Uppstrom 1974  (PREFERRED) 
-%  2 = KSO4 of Khoo et al 1977 & TB of Uppstrom 1974
-%  3 = KSO4 of Dickson 1990a   & TB of Lee 2010
-%  4 = KSO4 of Khoo et al 1977 & TB of Lee 2010
+%  (*4) Each element must be an integer that
+%       indicates the KSO4 dissociation constant that is to be used:
+%  1 = KSO4 of Dickson   (PREFERRED)
+%  2 = KSO4 of Khoo
+%  3 = KSO4 of Waters and Millero
 %
-%**************************************************************************%
+%  (*5) Each element must be an integer that 
+%       indicates the KHF dissociation constant that is to be used:
+%  1 = KF of Dickson & Riley 1979  
+%  2 = KF of Perez & Fraga, 1987  (PREFERRED)
 %
-% OUTPUT: * an array containing the following parameter values (one row per sample):
+%  (*6) Each element must be an integer that 
+%       indicates the the formulation of the borate-to-salinity ratio to be used:
+%  1 = TB of Uppstrom 1979
+%  2 = TB of Lee 2010  (PREFERRED)
+%
+%**************************************************************************
+%
+% OUTPUT: *  an array containing the following parameter values (one row per sample):
 %         *  a cell-array containing crudely formatted headers
 %         *  a cell-array containing nicely formatted headers
 %
-%    POS  PARAMETER        UNIT
+%   POS   PARAMETER            UNIT
 %
 %    01 - TAlk                 (umol/kgSW)
 %    02 - TCO2                 (umol/kgSW)
@@ -229,100 +381,149 @@ function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPI
 %    10 - OH input             (umol/kgSW)
 %    11 - PAlk input           (umol/kgSW)
 %    12 - SiAlk input          (umol/kgSW)
-%    13 - Hfree input          (umol/kgSW)
-%    14 - RevelleFactor input  ()
-%    15 - OmegaCa input        ()
-%    16 - OmegaAr input        ()
-%    17 - xCO2 input           (ppm)
-%    18 - pH output            ()
-%    19 - pCO2 output          (uatm)
-%    20 - fCO2 output          (uatm)
-%    21 - HCO3 output          (umol/kgSW)
-%    22 - CO3 output           (umol/kgSW)
-%    23 - CO2 output           (umol/kgSW)
-%    24 - BAlk output          (umol/kgSW)
-%    25 - OH output            (umol/kgSW)
-%    26 - PAlk output          (umol/kgSW)
-%    27 - SiAlk output         (umol/kgSW)
-%    28 - Hfree output         (umol/kgSW)
-%    29 - RevelleFactor output ()
-%    30 - OmegaCa output       ()
-%    31 - OmegaAr output       ()
-%    32 - xCO2 output          (ppm)
-%    33 - pH input (Total)     ()          
-%    34 - pH input (SWS)       ()          
-%    35 - pH input (Free)      ()          
-%    36 - pH input (NBS)       ()          
-%    37 - pH output (Total)    ()          
-%    38 - pH output (SWS)      ()          
-%    39 - pH output (Free)     ()          
-%    40 - pH output (NBS)      () 
-%    41 - TEMP input           (deg C)     ***    
-%    42 - TEMPOUT              (deg C)     ***
-%    43 - PRES input           (dbar or m) ***
-%    44 - PRESOUT              (dbar or m) ***
-%    45 - PAR1TYPE             (integer)   ***
-%    46 - PAR2TYPE             (integer)   ***
-%    47 - K1K2CONSTANTS        (integer)   ***
-%    48 - KSO4CONSTANTS        (integer)   *** 
-%    49 - pHSCALE of input     (integer)   ***
-%    50 - SAL                  (psu)       ***
-%    51 - PO4                  (umol/kgSW) ***
-%    52 - SI                   (umol/kgSW) ***
-%    53 - K0  input            ()          
-%    54 - K1  input            ()          
-%    55 - K2  input            ()          
-%    56 - pK1 input            ()          
-%    57 - pK2 input            ()          
-%    58 - KW  input            ()          
-%    59 - KB  input            ()          
-%    60 - KF  input            ()          
-%    61 - KS  input            ()          
-%    62 - KP1 input            ()          
-%    63 - KP2 input            ()          
-%    64 - KP3 input            ()          
-%    65 - KSi input            ()              
-%    66 - K0  output           ()          
-%    67 - K1  output           ()          
-%    68 - K2  output           ()          
-%    69 - pK1 output           ()          
-%    70 - pK2 output           ()          
-%    71 - KW  output           ()          
-%    72 - KB  output           ()          
-%    73 - KF  output           ()          
-%    74 - KS  output           ()          
-%    75 - KP1 output           ()          
-%    76 - KP2 output           ()          
-%    77 - KP3 output           ()          
-%    78 - KSi output           ()              
-%    79 - TB                   (umol/kgSW) 
-%    80 - TF                   (umol/kgSW) 
-%    81 - TS                   (umol/kgSW) 
-%    82 - TP                   (umol/kgSW) 
-%    83 - TSi                  (umol/kgSW)
+%    13 - AmmAlk input         (umol/kgSW)
+%    14 - HSAlk input          (umol/kgSW)
+%    15 - Hfree input          (umol/kgSW)
+%    16 - RevelleFactor input  ()
+%    17 - OmegaCa input        ()
+%    18 - OmegaAr input        ()
+%    19 - xCO2 input           (ppm)
+%    20 - SIR input            ()
+%    21 - pH output            ()
+%    22 - pCO2 output          (uatm)
+%    23 - fCO2 output          (uatm)
+%    24 - HCO3 output          (umol/kgSW)
+%    25 - CO3 output           (umol/kgSW)
+%    26 - CO2 output           (umol/kgSW)
+%    27 - BAlk output          (umol/kgSW)
+%    28 - OH output            (umol/kgSW)
+%    29 - PAlk output          (umol/kgSW)
+%    30 - SiAlk output         (umol/kgSW)
+%    31 - AmmAlk output        (umol/kgSW)
+%    32 - HSAlk output         (umol/kgSW)
+%    33 - Hfree output         (umol/kgSW)
+%    34 - RevelleFactor output ()
+%    35 - OmegaCa output       ()
+%    36 - OmegaAr output       ()
+%    37 - xCO2 output          (ppm)
+%    38 - SIR output            ()
+%    39 - pH input (Total)     ()          
+%    40 - pH input (SWS)       ()          
+%    41 - pH input (Free)      ()          
+%    42 - pH input (NBS)       ()          
+%    43 - pH output (Total)    ()          
+%    44 - pH output (SWS)      ()          
+%    45 - pH output (Free)     ()          
+%    46 - pH output (NBS)      () 
+%    47 - TEMP input           (deg C)     ***    
+%    48 - TEMPOUT              (deg C)     ***
+%    49 - PRES input           (dbar or m) ***
+%    50 - PRESOUT              (dbar or m) ***
+%    51 - PAR1TYPE             (integer)   ***
+%    52 - PAR2TYPE             (integer)   ***
+%    53 - K1K2CONSTANTS        (integer)   ***
+%    54 - KSO4CONSTANT         (integer)   *** 
+%    55 - KFCONSTANT           (integer)   *** 
+%    56 - BORON                (integer)   *** 
+%    57 - pHSCALE of input     (integer)   ***
+%    58 - SAL                  (psu)       ***
+%    59 - PO4                  (umol/kgSW) ***
+%    60 - SI                   (umol/kgSW) ***
+%    61 - NH4                  (umol/kgSW) ***
+%    62 - H2S                  (umol/kgSW) ***
+%    63 - K0  input            ()          
+%    64 - K1  input            ()          
+%    65 - K2  input            ()          
+%    66 - pK1 input            ()          
+%    67 - pK2 input            ()          
+%    68 - KW  input            ()          
+%    69 - KB  input            ()          
+%    70 - KF  input            ()          
+%    71 - KS  input            ()          
+%    72 - KP1 input            ()          
+%    73 - KP2 input            ()          
+%    74 - KP3 input            ()          
+%    75 - KSi input            ()              
+%    76 - KNH4input            ()    
+%    77 - KH2Sinput            ()    
+%    78 - K0  output           ()          
+%    79 - K1  output           ()          
+%    80 - K2  output           ()          
+%    81 - pK1 output           ()          
+%    82 - pK2 output           ()          
+%    83 - KW  output           ()          
+%    84 - KB  output           ()          
+%    85 - KF  output           ()          
+%    86 - KS  output           ()          
+%    87 - KP1 output           ()          
+%    88 - KP2 output           ()          
+%    89 - KP3 output           ()          
+%    90 - KSi output           ()              
+%    91 - KNH4output           ()    
+%    92 - KH2Soutput           () 
+%    93 - TB                   (umol/kgSW) 
+%    94 - TF                   (umol/kgSW) 
+%    95 - TS                   (umol/kgSW) 
+%    96 - TP                   (umol/kgSW) 
+%    97 - TSi                  (umol/kgSW)
+%    98 - TNH4                 (umol/kgSW) 
+%    99 - TH2S                 (umol/kgSW)
 %
 %    *** SIMPLY RESTATES THE INPUT BY USER 
 %
 % In all the above, the terms "input" and "output" may be understood
 %    to refer to the 2 scenarios for which CO2SYS performs calculations, 
 %    each defined by its own combination of temperature and pressure.
-%    For instance, one may use CO2SYS to calculate, from measured DIC and TAlk,
-%    the pH that that sample will have in the lab (e.g., T=25 degC, P=0 dbar),
-%    and what the in situ pH would have been (e.g., at T=1 degC, P=4500).
-%    A = CO2SYS(2400,2200,1,2,35,25,1,0,4200,1,1,1,4,1)
-%    pH_lab = A(3);  % 7.84
-%    pH_sea = A(18); % 8.05
+%    For instance, one may use CO2SYS to calculate, from measured DIC and
+%    TAlk, the pH that that sample will have in the lab (e.g., T=25 degC, P=0
+%    dbar), and what the in situ pH would have been (e.g., at T=1 degC, P=4500).
+%    A = CO2SYS(2400,2200,1,2,35,25,1,0,4200,1,1,0,0,1,4,1,1,1)
+%    pH_lab = A(3);  % 7.8429
+%    pH_sea = A(20); % 8.0503
 % 
 %**************************************************************************
 %
-% This is version 2.0 (uploaded to CDIAC at SEP XXth, 2011):
+% **** Changes since 3.1 by JD Sharp.
+%   - rigorous validation performed against PyCO2SYS
+%     (https://github.com/mvdh7/PyCO2SYS)
+%   - initial pH estimates obtained via the approach of Munhoven (2013)
+%   - correction to solution for free scale pH within iterative pH solvers
+%   - correction to uncertainty calculation for parameters at output conditions
+%   - consitency implemented for [CO2(aq)] calculations
+%   - substrate-inhibitor ratio (SIR; Bach, 2015) included as an output argument
+%   - input uncertainty in [CO2], [HCO3], and [CO3] should now be in mol/kg
+%   - option added for pressure corrections to K0 and fugacity factor
+%
+% **** Changes since 3.0 by JD Sharp.
+%   - added KSO4 of Waters and Millero (2013)
+%   - added K1 and K2 of Sulpis et al. (2020)
+%   - added K1 and K2 of Schockman and Byrne (2021)
+%
+% **** Changes since 3.0 by JD Sharp based on code from D Pierrot.
+%   - changed code to set pH values that don't converge to NaN. All	
+%     subsequent calculated values also set to NaN.
+%   - modified input function to separate KHSO4 and TB choices
+%   - added KHF of Perez & Fraga as choice for HF dissociation constant
+%   - modified output to reflect all changes mentioned above
+%
+% **** Changes since 3.0 by MP Humphreys.
+%   - include Peng correction for Icase 16 and 17.
+%   - fix Icase typo for CO2-HCO3 input pair.
+%   - make corrections to (F) indexing in a few places.
+%
+% **** Changes since 2.1 (uploaded to GitHub Jul 2019) by JD Sharp
+%	- now allows for input of NH4+ and H2S concentrations
+%
+% **** Additional changes since 2.0 by JD Sharp
+%	- now allows for HCO3, CO3, and CO2 as input parameters for calculation and
+%     for error propagation
 %
 % **** Changes since 2.0
 %	- slight changes to allow error propagation
 %	- new option to choose K1 & K2 from Waters et al. (2014): fixes inconsistencies with Millero (2010) identified by Orr et al. (2015)
 %
 % **** Changes since 1.01 (uploaded to CDIAC at June 11th, 2009):
-% - Function cleans up its global variables when done (if you loose variables, this may be the cause -- see around line 570)
+% - Function cleans up its global variables when done (if you lose variables, this may be the cause -- see around line 570)
 % - Added the outputting of K values
 % - Implementation of constants of Cai and Wang, 1998
 % - Implementation of constants of Lueker et al., 2000
@@ -331,7 +532,7 @@ function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPI
 % - Implementation of constants of Millero et al., 2006
 % - Implementation of constants of Millero et al., 2010
 % - Properly listed Sal and Temp limits for the available constants
-% - added switch for using the new Lee et al., (2010) formulation of Total Borate (see KSO4CONSTANTS above)
+% - added switch for using the new Lee et al., (2010) formulation of Total Borate
 % - Minor corrections to the GEOSECS constants (gave NaN for some output in earlier version)
 % - Fixed decimal point error on [H+] (did not get converted to umol/kgSW from mol/kgSW).
 % - Changed 'Hfreein' to 'Hfreeout' in the 'NICEHEADERS'-output (typo)
@@ -342,14 +543,30 @@ function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPI
 %**************************************************************************
 %
 % CO2SYS originally by Lewis and Wallace 1998
+%
 % Converted to MATLAB by Denis Pierrot at
 % CIMAS, University of Miami, Miami, Florida
+%
 % Vectorization, internal refinements and speed improvements by
 % Steven van Heuven, University of Groningen, The Netherlands.
 % Questions, bug reports et cetera: svheuven@gmail.com
 %
+% Modifications for error propagation by JM Epitalon
+%
+% Extension to include input of CO2, HCO3, CO3, NH4, and H2S by
+% Jonathan Sharp, University of South Florida.
+%
+% Modification to set pH values that do not converge to NaN, separate
+% KHSO4 and TB, and to add the KHF of Perez & Fraga by Denis Pierrot,
+% implemented in this version by Jonathan Sharp, University of Washington
+%
+% Bug fixes by Matthew Humphreys, NIOZ Texel, the Netherlands.
+%
+% Additional modifications for consistency with PyCO2SYS and other added
+% options and input/output arguments by Jonathan Sharp, University of
+% Washington
+%
 %**************************************************************************
-
 
 
 %**************************************************************************
@@ -357,14 +574,13 @@ function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPI
 %**************************************************************************
 
 
-
 % Declare global variables
-global pHScale WhichKs WhoseKSO4 Pbar
+global pHScale WhichKs WhoseKSO4 WhoseKF WhoseTB Pbar
 global Sal sqrSal TempK logTempK TempCi TempCo Pdbari Pdbaro;
 global FugFac VPFac PengCorrection ntps RGasConstant;
 global fH RT;
-global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi;
-global TB TF TS TP TSi F;
+global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S CAL F;
 
 % Added by JM Epitalon
 % For computing derivative with respect to Ks, one has to call CO2sys with a perturbed K
@@ -374,12 +590,23 @@ global Perturb  % perturbation
 
 % Input conditioning
 
+% set default for optional input argument
+global p_opt
+p_opt = 0;
+% parse optional input argument
+for i = 1:2:length(varargin)-1
+    if strcmpi(varargin{i}, 'co2_press')
+        p_opt = varargin{i+1};
+    end
+end
+
 % Determine lengths of input vectors
 veclengths=[length(PAR1) length(PAR2) length(PAR1TYPE)...
             length(PAR2TYPE) length(SAL) length(TEMPIN)...
             length(TEMPOUT) length(PRESIN) length(PRESOUT)...
-            length(SI) length(PO4) length(pHSCALEIN)...
-            length(K1K2CONSTANTS) length(KSO4CONSTANTS)];
+            length(SI) length(PO4) length(NH4) length(H2S)...
+            length(pHSCALEIN) length(K1K2CONSTANTS) length(KSO4CONSTANT)...
+	        length(KFCONSTANT) length(BORON)];
 
 if length(unique(veclengths))>2
 	disp(' '); disp('*** INPUT ERROR: Input vectors must all be of same length, or of length 1. ***'); disp(' '); return
@@ -397,9 +624,13 @@ PRESIN       =PRESIN       (:);
 PRESOUT      =PRESOUT      (:);
 SI           =SI           (:);
 PO4          =PO4          (:);
+NH4          =NH4          (:);
+H2S          =H2S          (:);
 pHSCALEIN    =pHSCALEIN    (:);
 K1K2CONSTANTS=K1K2CONSTANTS(:);
-KSO4CONSTANTS=KSO4CONSTANTS(:);
+KSO4CONSTANT =KSO4CONSTANT (:);
+KFCONSTANT   =KFCONSTANT   (:);
+BORON        =BORON        (:);
 
 % Find the longest column vector:
 ntps = max(veclengths);
@@ -416,14 +647,20 @@ PRESIN(1:ntps,1)        = PRESIN(:)        ;
 PRESOUT(1:ntps,1)       = PRESOUT(:)       ;
 SI(1:ntps,1)            = SI(:)            ;
 PO4(1:ntps,1)           = PO4(:)           ;
+NH4(1:ntps,1)           = NH4(:)           ;
+H2S(1:ntps,1)           = H2S(:)           ;
 pHSCALEIN(1:ntps,1)     = pHSCALEIN(:)     ;
 K1K2CONSTANTS(1:ntps,1) = K1K2CONSTANTS(:) ;
-KSO4CONSTANTS(1:ntps,1) = KSO4CONSTANTS(:) ;
+KSO4CONSTANT(1:ntps,1)  = KSO4CONSTANT(:)  ;
+KFCONSTANT(1:ntps,1)    = KFCONSTANT(:)    ;
+BORON(1:ntps,1)         = BORON(:)         ;
 
 % Assign input to the 'historical' variable names.
 pHScale      = pHSCALEIN;
 WhichKs      = K1K2CONSTANTS;
-WhoseKSO4    = KSO4CONSTANTS;
+WhoseKSO4    = KSO4CONSTANT;
+WhoseKF      = KFCONSTANT;
+WhoseTB      = BORON;
 p1           = PAR1TYPE;
 p2           = PAR2TYPE;
 TempCi       = TEMPIN;
@@ -434,29 +671,45 @@ Sal          = SAL;
 sqrSal       = sqrt(SAL);
 TP           = PO4;
 TSi          = SI;
-RGasConstant = 83.1451;  % ml bar-1 K-1 mol-1, DOEv2
+TNH4         = NH4;
+TH2S         = H2S;
+
+RGasConstant = 83.14462618; % ml bar-1 K-1 mol-1,
+%                             recommended by NIST
+%                             https://physics.nist.gov/cgi-bin/cuu/Value?r
+%RGasConstant = 83.1451;  % ml bar-1 K-1 mol-1, DOEv2
+%                           Compatible w/ CO2SYSv2.0.5
 %RGasConstant = 83.14472; % ml bar-1 K-1 mol-1, DOEv3
 
 % Generate empty vectors for...
-TA  = nan(ntps,1); % Talk
-TC  = nan(ntps,1); % DIC
-PH  = nan(ntps,1); % pH
-PC  = nan(ntps,1); % pCO2
-FC  = nan(ntps,1); % fCO2
+TA   = nan(ntps,1); % Talk
+TC   = nan(ntps,1); % DIC
+PH   = nan(ntps,1); % pH
+PC   = nan(ntps,1); % pCO2
+FC   = nan(ntps,1); % fCO2
+HCO3 = nan(ntps,1); % [HCO3]
+CO3  = nan(ntps,1); % [CO3]
+CO2  = nan(ntps,1); % [CO2*]
 
 % Assign values to empty vectors.
-F=(p1==1); TA(F)=PAR1(F)/1e6; % Convert from micromol/kg to mol/kg
-F=(p1==2); TC(F)=PAR1(F)/1e6; % Convert from micromol/kg to mol/kg
-F=(p1==3); PH(F)=PAR1(F);
-F=(p1==4); PC(F)=PAR1(F)/1e6; % Convert from microatm. to atm.
-F=(p1==5); FC(F)=PAR1(F)/1e6; % Convert from microatm. to atm.
-F=(p2==1); TA(F)=PAR2(F)/1e6; % Convert from micromol/kg to mol/kg
-F=(p2==2); TC(F)=PAR2(F)/1e6; % Convert from micromol/kg to mol/kg
-F=(p2==3); PH(F)=PAR2(F);
-F=(p2==4); PC(F)=PAR2(F)/1e6; % Convert from microatm. to atm.
-F=(p2==5); FC(F)=PAR2(F)/1e6; % Convert from microatm. to atm.
+F=(p1==1 & PAR1~=-999);   TA(F)=PAR1(F)/1e6; % Convert from micromol/kg to mol/kg
+F=(p1==2 & PAR1~=-999);   TC(F)=PAR1(F)/1e6; % Convert from micromol/kg to mol/kg
+F=(p1==3 & PAR1~=-999);   PH(F)=PAR1(F);
+F=(p1==4 & PAR1~=-999);   PC(F)=PAR1(F)/1e6; % Convert from microatm. to atm.
+F=(p1==5 & PAR1~=-999);   FC(F)=PAR1(F)/1e6; % Convert from microatm. to atm.
+F=(p1==6 & PAR1~=-999); HCO3(F)=PAR1(F)/1e6; % Convert from micromol/kg to mol/kg
+F=(p1==7 & PAR1~=-999);  CO3(F)=PAR1(F)/1e6; % Convert from micromol/kg to mol/kg
+F=(p1==8 & PAR1~=-999);  CO2(F)=PAR1(F)/1e6; % Convert from micromol/kg to mol/kg
+F=(p2==1 & PAR2~=-999);   TA(F)=PAR2(F)/1e6; % Convert from micromol/kg to mol/kg
+F=(p2==2 & PAR2~=-999);   TC(F)=PAR2(F)/1e6; % Convert from micromol/kg to mol/kg
+F=(p2==3 & PAR2~=-999);   PH(F)=PAR2(F);
+F=(p2==4 & PAR2~=-999);   PC(F)=PAR2(F)/1e6; % Convert from microatm. to atm.
+F=(p2==5 & PAR2~=-999);   FC(F)=PAR2(F)/1e6; % Convert from microatm. to atm.
+F=(p2==6 & PAR2~=-999); HCO3(F)=PAR2(F)/1e6; % Convert from micromol/kg to mol/kg
+F=(p2==7 & PAR2~=-999);  CO3(F)=PAR2(F)/1e6; % Convert from micromol/kg to mol/kg
+F=(p2==8 & PAR2~=-999);  CO2(F)=PAR2(F)/1e6; % Convert from micromol/kg to mol/kg
 
-% Generate the columns holding Si, Phos and Sal.
+% Generate the columns holding Si, Phos, Amm, H2S and Sal.
 % Pure Water case:
 F=(WhichKs==8);
 Sal(F) = 0;
@@ -464,10 +717,14 @@ Sal(F) = 0;
 F=(WhichKs==8 | WhichKs==6);  
 TP(F)  = 0;
 TSi(F) = 0;
+TNH4(F)  = 0;
+TH2S(F)  = 0;
 % All other cases
 F=~F;                         
-TP(F)  = TP(F)./1e6;
-TSi(F) = TSi(F)./1e6;
+TP(F)   = TP(F)./1e6;
+TSi(F)  = TSi(F)./1e6;
+TNH4(F) = TNH4(F)./1e6;
+TH2S(F) = TH2S(F)./1e6;
 
 % The vector 'PengCorrection' is used to modify the value of TA, for those
 % cases where WhichKs==7, since PAlk(Peng) = PAlk(Dickson) + TP.
@@ -499,74 +756,181 @@ if (~ isempty(PertK))
 end
 
 
-% Make sure fCO2 is available for each sample that has pCO2.
-F=find(p1==4 | p2==4); FC(F) = PC(F).*FugFac(F);
+% Make sure fCO2 is available for each sample that has pCO2 or CO2.
+F = (~isnan(PC) & (p1==4 | p2==4));  FC(F) = PC(F).*FugFac(F);
+F = (~isnan(CO2) & (p1==8 | p2==8)); FC(F) = CO2(F)./K0(F);
 
-% Generate vector for results, and copy the raw input values into them. This
-% copies ~60% NaNs, which will be replaced for calculated values later on.
-TAc  = TA;
-TCc  = TC;
-PHic = PH;
-PCic = PC;
-FCic = FC;
+% Generate vectors for results, and copy the raw input values into them
+TAc    = TA;
+TCc    = TC;
+PHic   = PH;
+PCic   = PC;
+FCic   = FC;
+HCO3ic = HCO3;
+CO3ic  = CO3;
+CO2ic  = CO2;
 
 % Generate vector describing the combination of input parameters
-% So, the valid ones are: 12,13,15,23,25,35
+% So, the valid ones are:
+% 12,13,15,16,17,18,23,25,26,27,28,35,36,37,38,56,57,67,68,78
 Icase = 10*min(p1,p2) + max(p1,p2);
 
-% Calculate missing values for AT,CT,PH,FC:
+% Calculate missing values for AT,CT,PH,FC,HCO3,CO3,CO2:
 % pCO2 will be calculated later on, routines work with fCO2.
 F=Icase==12; % input TA, TC
 if any(F)
-    [PHic(F) FCic(F)] = CalculatepHfCO2fromTATC(TAc(F)-PengCorrection(F), TCc(F));
+F=(~isnan(TAc) & ~isnan(TCc) & F);
+    PHic(F)                = CalculatepHfromTATC(TAc(F)-PengCorrection(F),TCc(F));
+    F=(~isnan(PHic) & F);
+    if any(F)
+       FCic(F)              = CalculatefCO2fromTCpH(TCc(F), PHic(F));
+       [CO3ic(F),HCO3ic(F)] = CalculateCO3HCO3fromTCpH(TCc(F),PHic(F));
+    end
 end
 F=Icase==13; % input TA, pH
 if any(F)
-    TCc(F)  =   CalculateTCfromTApH(TAc(F)-PengCorrection(F), PHic(F));
-    FCic(F) = CalculatefCO2fromTCpH(TCc(F), PHic(F));
+F=(~isnan(TAc) & ~isnan(PHic) & F);
+    TCc(F)                 = CalculateTCfromTApH(TAc(F)-PengCorrection(F),PHic(F));
+    FCic(F)                = CalculatefCO2fromTCpH(TCc(F),PHic(F));
+    [CO3ic(F),HCO3ic(F)]   = CalculateCO3HCO3fromTCpH(TCc(F),PHic(F));
 end
-F=Icase==14 | Icase==15; % input TA, (pCO2 or fCO2)
+F=Icase==14 | Icase==15 | Icase==18; % input TA, (pCO2 or fCO2 or CO2)
 if any(F)
-    PHic(F) = CalculatepHfromTAfCO2(TAc(F)-PengCorrection(F), FCic(F));
-    TCc(F)  = CalculateTCfromTApH  (TAc(F)-PengCorrection(F), PHic(F));
+F=(~isnan(TAc) & ~isnan(FCic) & F);
+    PHic(F)                = CalculatepHfromTAfCO2(TAc(F)-PengCorrection(F),FCic(F));
+    F=(~isnan(PHic) & F);
+    if any(F)
+       TCc(F)              = CalculateTCfromTApH(TAc(F)-PengCorrection(F),PHic(F));
+       [CO3ic(F),HCO3ic(F)]= CalculateCO3HCO3fromTCpH(TCc(F),PHic(F));
+    end
+end
+F=Icase==16; % input TA, HCO3
+if any(F)
+F=(~isnan(TAc) & ~isnan(HCO3ic) & F);
+    PHic(F)                = CalculatepHfromTAHCO3(TAc(F)-PengCorrection(F),HCO3ic(F));  % added Peng correction // MPH
+    F=(~isnan(PHic) & F);
+    if any(F)
+       TCc(F)              = CalculateTCfromTApH(TAc(F)-PengCorrection(F),PHic(F));
+       FCic(F)             = CalculatefCO2fromTCpH(TCc(F),PHic(F)); 
+       CO3ic(F)            = CalculateCO3fromTCpH(TCc(F),PHic(F));
+    end
+end
+F=Icase==17; % input TA, CO3
+if any(F)
+F=(~isnan(TAc) & ~isnan(CO3ic) & F);
+    PHic(F)                 = CalculatepHfromTACO3(TAc(F)-PengCorrection(F),CO3ic(F));  % added Peng correction // MPH
+    F=(~isnan(PHic) & F);
+    if any(F)
+       TCc(F)               = CalculateTCfromTApH(TAc(F)-PengCorrection(F),PHic(F));
+       FCic(F)              = CalculatefCO2fromTCpH(TCc(F),PHic(F)); 
+       HCO3ic(F)            = CalculateHCO3fromTCpH(TCc(F),PHic(F));
+    end
 end
 F=Icase==23; % input TC, pH
 if any(F)
-    TAc(F)  = CalculateTAfromTCpH  (TCc(F), PHic(F)) + PengCorrection(F);
-    FCic(F) = CalculatefCO2fromTCpH(TCc(F), PHic(F));
+F=(~isnan(TCc) & ~isnan(PHic) & F);
+    TAc(F)                  = CalculateTAfromTCpH(TCc(F),PHic(F)) + PengCorrection(F);
+    FCic(F)                 = CalculatefCO2fromTCpH(TCc(F),PHic(F));
+    [CO3ic(F),HCO3ic(F)]    = CalculateCO3HCO3fromTCpH(TCc(F), PHic(F));
 end
-F=Icase==24 | Icase==25;  % input TC, (pCO2 or fCO2)
+F=Icase==24 | Icase==25 | Icase==28;  % input TC, (pCO2 or fCO2 or CO2)
 if any(F)
-    PHic(F) = CalculatepHfromTCfCO2(TCc(F), FCic(F));
-    TAc(F)  = CalculateTAfromTCpH  (TCc(F), PHic(F)) + PengCorrection(F);
+F=(~isnan(TCc) & ~isnan(FCic) & F);
+    PHic(F)                 = CalculatepHfromTCfCO2(TCc(F),FCic(F));
+    TAc(F)                  = CalculateTAfromTCpH(TCc(F),PHic(F)) + PengCorrection(F);
+    [CO3ic(F),HCO3ic(F)]    = CalculateCO3HCO3fromTCpH(TCc(F),PHic(F));
 end
-F=Icase==34 | Icase==35; % input pH, (pCO2 or fCO2)
+F=Icase==26; % input TC, HCO3
 if any(F)
-    TCc(F)  = CalculateTCfrompHfCO2(PHic(F), FCic(F));
-    TAc(F)  = CalculateTAfromTCpH  (TCc(F),  PHic(F)) + PengCorrection(F);
+F=(~isnan(TCc) & ~isnan(HCO3ic) & F);
+    [PHic(F),FCic(F)]       = CalculatepHfCO2fromTCHCO3(TCc(F),HCO3ic(F));
+    TAc(F)                  = CalculateTAfromTCpH(TCc(F),PHic(F)) + PengCorrection(F);
+    CO3ic(F)                = CalculateCO3fromTCpH(TCc(F),PHic(F));
+end
+F=Icase==27; % input TC, CO3
+if any(F)
+F=(~isnan(TCc) & ~isnan(CO3ic) & F);
+    [PHic(F),FCic(F)]       = CalculatepHfCO2fromTCCO3(TCc(F),CO3ic(F));
+    TAc(F)                  = CalculateTAfromTCpH(TCc(F),PHic(F)) + PengCorrection(F);
+    HCO3ic(F)               = CalculateHCO3fromTCpH(TCc(F),PHic(F));
+end
+F=Icase==34 | Icase==35 | Icase==38; % input pH, (pCO2 or fCO2 or CO2)
+if any(F)
+F=(~isnan(PHic) & ~isnan(FCic) & F);
+    TCc(F)                  = CalculateTCfrompHfCO2(PHic(F),FCic(F));
+    TAc(F)                  = CalculateTAfromTCpH(TCc(F),PHic(F)) + PengCorrection(F);
+    [CO3ic(F),HCO3ic(F)]    = CalculateCO3HCO3fromTCpH(TCc(F),PHic(F));
+end
+F=Icase==36; % input pH, HCO3
+if any(F)
+F=(~isnan(PHic) & ~isnan(HCO3ic) & F);
+    TAc(F)                  = CalculateTAfrompHHCO3(PHic(F),HCO3ic(F)) + PengCorrection(F);
+    TCc(F)                  = CalculateTCfromTApH(TAc(F)-PengCorrection(F),PHic(F));
+    FCic(F)                 = CalculatefCO2fromTCpH(TCc(F),PHic(F));
+    CO3ic(F)                = CalculateCO3fromTCpH(TCc(F),PHic(F));
+end
+F=Icase==37; % input pH, CO3
+if any(F)
+F=(~isnan(PHic) & ~isnan(CO3ic) & F);
+    TAc(F)                  = CalculateTAfrompHCO3(PHic(F),CO3ic(F)) + PengCorrection(F);
+    TCc(F)                  = CalculateTCfromTApH(TAc(F)-PengCorrection(F),PHic(F));
+    FCic(F)                 = CalculatefCO2fromTCpH(TCc(F),PHic(F));
+    HCO3ic(F)               = CalculateHCO3fromTCpH(TCc(F),PHic(F));
+end
+F=Icase==46 | Icase==56 | Icase==68; % input (pCO2 or fCO2 or CO2), HCO3
+if any(F)
+F=(~isnan(FCic) & ~isnan(HCO3ic) & F);
+    PHic(F)                 = CalculatepHfromfCO2HCO3(FCic(F),HCO3ic(F));
+    TCc(F)                  = CalculateTCfrompHfCO2(PHic(F),FCic(F));
+    TAc(F)                  = CalculateTAfromTCpH(TCc(F),PHic(F)) + PengCorrection(F);
+    CO3ic(F)                = CalculateCO3fromTCpH(TCc(F),PHic(F));
+end
+F=Icase==47 | Icase==57 | Icase==78; % input (pCO2 or fCO2 or CO2), CO3
+if any(F)
+F=(~isnan(FCic) & ~isnan(CO3ic) & F);
+    PHic(F)                 = CalculatepHfromfCO2CO3(FCic(F),CO3ic(F));
+    TCc(F)                  = CalculateTCfrompHfCO2 (PHic(F),FCic(F));
+    TAc(F)                  = CalculateTAfromTCpH(TCc(F),PHic(F)) + PengCorrection(F);
+    HCO3ic(F)               = CalculateHCO3fromTCpH(TCc(F),PHic(F));
+end
+F=Icase==67; % input HCO3, CO3
+if any(F)
+F=(~isnan(HCO3ic) & ~isnan(CO3ic) & F);
+    PHic(F)                 = CalculatepHfromCO3HCO3(CO3ic(F),HCO3ic(F));
+    TAc(F)                  = CalculateTAfrompHCO3(PHic(F),CO3ic(F)) + PengCorrection(F);
+    TCc(F)                  = CalculateTCfromTApH(TAc(F)-PengCorrection(F),PHic(F));
+    FCic(F)                 = CalculatefCO2fromTCpH(TCc(F),PHic(F));
+    %CO2ic(F)                = CalculateCO2fromTCpH(TCc(F),PHic(F));
 end
 
 % By now, an fCO2 value is available for each sample.
 % Generate the associated pCO2 value:
-PCic = FCic./FugFac;
+F = (isnan(PCic) & (p1~=4 | p2~=4)); PCic(F)  = FCic(F)./FugFac(F);
+% Generate the associated CO2 value:
+F = (isnan(CO2ic) & (p1~=8 | p2~=8)); CO2ic(F) = FCic(F).*K0(F);
 
-% CalculateOtherParamsAtInputConditions:
-[HCO3inp CO3inp BAlkinp...
-    OHinp PAlkinp...
-    SiAlkinp Hfreeinp...
-    HSO4inp HFinp]      = CalculateAlkParts(PHic, TCc);
-PAlkinp                 = PAlkinp+PengCorrection;
-CO2inp                  = TCc - CO3inp - HCO3inp;
-F=true(ntps,1);           % i.e., do for all samples:
-Revelleinp              = RevelleFactor(TAc-PengCorrection, TCc);
-[OmegaCainp OmegaArinp] = CaSolubility(Sal, TempCi, Pdbari, TCc, PHic);
-xCO2dryinp              = PCic./VPFac; % ' this assumes pTot = 1 atm
+% Calculate Other Params At Input Conditions:
+BAlkinp    = nan(ntps,1); % Generate empty vectors
+[OHinp,PAlkinp,SiAlkinp,AmmAlkinp,HSAlkinp,Hfreeinp,HSO4inp,HFinp,...
+    Revelleinp,OmegaCainp,OmegaArinp,xCO2dryinp] = deal(BAlkinp);
+F=(~isnan(PHic)); % if PHic = NaN, pH calculation was not performed or did not converge
+[BAlkinp(F),OHinp(F), PAlkinp(F),SiAlkinp(F),AmmAlkinp(F),...
+    HSAlkinp(F), Hfreeinp(F),HSO4inp(F),HFinp(F)] = CalculateAlkParts(PHic(F));
+PAlkinp(F)                = PAlkinp(F)+PengCorrection(F);
+Revelleinp(F)             = RevelleFactor(TAc(F)-PengCorrection(F), TCc(F));
+[OmegaCainp(F),OmegaArinp(F)] = CaSolubility(Sal(F), TempCi(F), Pdbari(F), TCc(F), PHic(F));
+xCO2dryinp(~isnan(PCic),1) = PCic(~isnan(PCic),1)./VPFac(~isnan(PCic),1); % ' this assumes pTot = 1 atm
+SIRinp = HCO3ic./(Hfreeinp.*1e6);
 
-% Just for reference, convert pH at input conditions to the other scales, too. 
-[pHicT pHicS pHicF pHicN]=FindpHOnAllScales(PHic);
+% % Just for reference, convert pH at input conditions to the other scales
+pHicT = nan(ntps,1);
+pHicS = nan(ntps,1);
+pHicF = nan(ntps,1);
+pHicN = nan(ntps,1);
+[pHicT(F),pHicS(F),pHicF(F),pHicN(F)]=FindpHOnAllScales(PHic(F));
 
 % Merge the Ks at input into an array. Ks at output will be glued to this later.
-KIVEC=[K0 K1 K2 -log10(K1) -log10(K2) KW KB KF KS KP1 KP2 KP3 KSi];
+KIVEC=[K0 K1 K2 -log10(K1) -log10(K2) KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S];
 
 % Calculate the constants for all samples at output conditions
 Constants(TempCo,Pdbaro);
@@ -586,60 +950,79 @@ if (~ isempty(PertK))
             KB = KB + Perturb;
         case {'KW'}
             KW = KW + Perturb;
-        case {'TB'}
+        case {'BOR'}
             TB = TB + Perturb;
     end
-end
+end                  
 
+% For output conditions, using conservative TA and TC, calculate pH, fCO2
+% and pCO2, HCO3, CO3, and CO2
+F=(~isnan(TAc) & ~isnan(TCc)); % i.e., do for all samples that have TA and TC values
+PHoc=nan(ntps,1);
+[CO3oc,HCO3oc,FCoc] = deal(PHoc);
+PHoc(F) = CalculatepHfromTATC(TAc(F)-PengCorrection(F), TCc(F)); % pH is returned on the scale requested in "pHscale" (see 'constants'...)
+    FCoc(F) = CalculatefCO2fromTCpH(TCc(F), PHoc(F));
+    [CO3oc(F),HCO3oc(F)] = CalculateCO3HCO3fromTCpH(TCc(F),PHoc(F));
 
-% Calculate, for output conditions, using conservative TA and TC, pH, fCO2 and pCO2
-F=true(ntps,1); % i.e., do for all samples:
-[PHoc FCoc] = CalculatepHfCO2fromTATC(TAc-PengCorrection, TCc);
-PCoc = FCoc./FugFac;
+% Generate the associated pCO2 value:
+PCoc  = FCoc./FugFac;
+% Generate the associated CO2 value:
+CO2oc = FCoc.*K0;
 
-% Calculate Other Stuff At Output Conditions:
-[HCO3out CO3out BAlkout...
-    OHout PAlkout...
-    SiAlkout Hfreeout...
-    HSO4out HFout]      = CalculateAlkParts(PHoc, TCc);
-PAlkout                 = PAlkout+PengCorrection;
-CO2out                  = TCc - CO3out - HCO3out;
-Revelleout              = RevelleFactor(TAc, TCc);
-[OmegaCaout OmegaArout] = CaSolubility(Sal, TempCo, Pdbaro, TCc, PHoc);
-xCO2dryout              = PCoc./VPFac; % ' this assumes pTot = 1 atm
+% Calculate Other Params At Output Conditions:
+BAlkout    = nan(ntps,1); % Generate empty vectors
+[OHout,PAlkout,SiAlkout,AmmAlkout,HSAlkout,Hfreeout,HSO4out,HFout,...
+    Revelleout,OmegaCaout,OmegaArout,xCO2dryout] = deal(BAlkout);
+F=(~isnan(PHoc)); % if PHoc = NaN, pH calculation was not performed or did not converge
+[BAlkout(F),OHout(F),PAlkout(F),SiAlkout(F),AmmAlkout(F),...
+    HSAlkout(F), Hfreeout(F),HSO4out(F),HFout(F)] = CalculateAlkParts(PHoc(F));
+PAlkout(F)                 = PAlkout(F)+PengCorrection(F);
+Revelleout(F)              = RevelleFactor(TAc(F)-PengCorrection(F), TCc(F));
+[OmegaCaout(F),OmegaArout(F),KCa,KAr,CAL] = CaSolubility(Sal(F), TempCo(F), Pdbaro(F), TCc(F), PHoc(F));
+xCO2dryout(~isnan(PCoc),1)    = PCoc(~isnan(PCoc))./VPFac(~isnan(PCoc)); % ' this assumes pTot = 1 atm
+SIRout = HCO3oc./(Hfreeout.*1e6);
 
-% Just for reference, convert pH at output conditions to the other scales, too. 
-[pHocT pHocS pHocF pHocN]=FindpHOnAllScales(PHoc);
+% Just for reference, convert pH at output conditions to the other scales
+pHocT = nan(ntps,1);
+pHocS = nan(ntps,1);
+pHocF = nan(ntps,1);
+pHocN = nan(ntps,1);
+[pHocT(F),pHocS(F),pHocF(F),pHocN(F)]=FindpHOnAllScales(PHoc(F));
 
-KOVEC=[K0 K1 K2 -log10(K1) -log10(K2) KW KB KF KS KP1 KP2 KP3 KSi];
-TVEC =[TB TF TS TP TSi];
+KOVEC=[K0 K1 K2 -log10(K1) -log10(K2) KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S KCa KAr];
+TVEC =[TB TF TS TP TSi TNH4 TH2S CAL];
 
-% Saving data in array, 81 columns, as many rows as samples input
-DATA=[TAc*1e6        TCc*1e6         PHic           PCic*1e6        FCic*1e6...
-      HCO3inp*1e6    CO3inp*1e6      CO2inp*1e6     BAlkinp*1e6     OHinp*1e6...
-      PAlkinp*1e6    SiAlkinp*1e6    Hfreeinp*1e6   Revelleinp      OmegaCainp... %%% Multiplied Hfreeinp *1e6, svh20100827
-      OmegaArinp     xCO2dryinp*1e6  PHoc           PCoc*1e6        FCoc*1e6...
-      HCO3out*1e6    CO3out*1e6      CO2out*1e6     BAlkout*1e6     OHout*1e6...
-      PAlkout*1e6    SiAlkout*1e6    Hfreeout*1e6   Revelleout      OmegaCaout... %%% Multiplied Hfreeout *1e6, svh20100827
-      OmegaArout     xCO2dryout*1e6  pHicT          pHicS           pHicF...
-      pHicN          pHocT           pHocS          pHocF           pHocN...
-      TEMPIN         TEMPOUT         PRESIN         PRESOUT         PAR1TYPE...
-      PAR2TYPE       K1K2CONSTANTS   KSO4CONSTANTS  pHSCALEIN       SAL...
-      PO4            SI              KIVEC          KOVEC           TVEC*1e6];
+% Saving data in array, 99 columns, as many rows as samples input
+DATA=[TAc*1e6         TCc*1e6        PHic           PCic*1e6        FCic*1e6...
+      HCO3ic*1e6      CO3ic*1e6      CO2ic*1e6      BAlkinp*1e6     OHinp*1e6...
+      PAlkinp*1e6     SiAlkinp*1e6   AmmAlkinp*1e6  HSAlkinp*1e6    Hfreeinp*1e6... %%% Multiplied Hfreeinp *1e6, svh20100827
+      Revelleinp      OmegaCainp     OmegaArinp     xCO2dryinp*1e6  SIRinp...
+      PHoc            PCoc*1e6       FCoc*1e6       HCO3oc*1e6      CO3oc*1e6...
+      CO2oc*1e6       BAlkout*1e6    OHout*1e6      PAlkout*1e6     SiAlkout*1e6...
+      AmmAlkout*1e6   HSAlkout*1e6   Hfreeout*1e6   Revelleout      OmegaCaout... %%% Multiplied Hfreeout *1e6, svh20100827
+      OmegaArout      xCO2dryout*1e6 SIRout         pHicT           pHicS...
+      pHicF           pHicN          pHocT          pHocS           pHocF...
+      pHocN           TEMPIN         TEMPOUT        PRESIN          PRESOUT...
+      PAR1TYPE        PAR2TYPE       K1K2CONSTANTS  KSO4CONSTANT    KFCONSTANT...
+      BORON           pHSCALEIN      SAL            PO4             SI...
+      NH4             H2S            KIVEC          KOVEC           TVEC*1e6];
+DATA(isnan(DATA))=-999;
 
 HEADERS={'TAlk';'TCO2';'pHin';'pCO2in';'fCO2in';'HCO3in';'CO3in';...
-    'CO2in';'BAlkin';'OHin';'PAlkin';'SiAlkin';'Hfreein';'RFin';...
-    'OmegaCAin';'OmegaARin';'xCO2in';'pHout';'pCO2out';'fCO2out';...
-    'HCO3out';'CO3out';'CO2out';'BAlkout';'OHout';'PAlkout';...
-    'SiAlkout';'Hfreeout';'RFout';'OmegaCAout';'OmegaARout';'xCO2out';
-    'pHinTOTAL';'pHinSWS';'pHinFREE';'pHinNBS';...
+    'CO2in';'BAlkin';'OHin';'PAlkin';'SiAlkin';'AmmAlkin';'HSAlkin';...
+    'Hfreein';'RFin';'OmegaCAin';'OmegaARin';'xCO2in';'SIRin';'pHout';...
+    'pCO2out';'fCO2out';'HCO3out';'CO3out';'CO2out';'BAlkout';'OHout';...
+    'PAlkout';'SiAlkout';'AmmAlkout';'HSAlkout';'Hfreeout';'RFout';'OmegaCAout';...
+    'OmegaARout';'xCO2out';'SIRout';'pHinTOTAL';'pHinSWS';'pHinFREE';'pHinNBS';...
     'pHoutTOTAL';'pHoutSWS';'pHoutFREE';'pHoutNBS';'TEMPIN';'TEMPOUT';...
-    'PRESIN';'PRESOUT';'PAR1TYPE';'PAR2TYPE';'K1K2CONSTANTS';'KSO4CONSTANTS';...
-    'pHSCALEIN';'SAL';'PO4';'SI';'K0input';'K1input';'K2input';'pK1input';...
-    'pK2input';'KWinput';'KBinput';'KFinput';'KSinput';'KP1input';'KP2input';...
-    'KP3input';'KSiinput';'K0output';'K1output';'K2output';'pK1output';...
-    'pK2output';'KWoutput';'KBoutput';'KFoutput';'KSoutput';'KP1output';...
-    'KP2output';'KP3output';'KSioutput';'TB';'TF';'TS';};
+    'PRESIN';'PRESOUT';'PAR1TYPE';'PAR2TYPE';'K1K2CONSTANTS';'KSO4CONSTANT';... KSO4CONSTANTS => KSO4CONSTANT // MPH
+    'KFCONSTANT';'BORON';'pHSCALEIN';'SAL';'PO4';'SI';'NH4';'H2S';'K0input';...
+    'K1input';'K2input';'pK1input';'pK2input';'KWinput';'KBinput';'KFinput';...
+    'KSinput';'KP1input';'KP2input';'KP3input';'KSiinput';'KNH4input';...
+    'KH2Sinput';'K0output';'K1output';'K2output';'pK1output';'pK2output';...
+    'KWoutput';'KBoutput';'KFoutput';'KSoutput';'KP1output';'KP2output';...
+    'KP3output';'KSioutput';'KNH4output';'KH2Soutput';'TB';'TF';'TS';...
+    'TP';'TSi';'TNH4';'TH2S'};
 
 NICEHEADERS={...
     '01 - TAlk             (umol/kgSW) ';
@@ -654,85 +1037,101 @@ NICEHEADERS={...
     '10 - OHin             (umol/kgSW) ';
     '11 - PAlkin           (umol/kgSW) ';
     '12 - SiAlkin          (umol/kgSW) ';
-    '13 - Hfreein          (umol/kgSW) ';
-    '14 - RevelleFactorin  ()          ';
-    '15 - OmegaCain        ()          ';
-    '16 - OmegaArin        ()          ';
-    '17 - xCO2in           (ppm)       ';
-    '18 - pHout            ()          ';
-    '19 - pCO2out          (uatm)      ';
-    '20 - fCO2out          (uatm)      ';
-    '21 - HCO3out          (umol/kgSW) ';
-    '22 - CO3out           (umol/kgSW) ';
-    '23 - CO2out           (umol/kgSW) ';
-    '24 - BAlkout          (umol/kgSW) ';
-    '25 - OHout            (umol/kgSW) ';
-    '26 - PAlkout          (umol/kgSW) ';
-    '27 - SiAlkout         (umol/kgSW) ';
-    '28 - Hfreeout         (umol/kgSW) '; %%% Changed 'Hfreein' to 'Hfreeout', svh20100827
-    '29 - RevelleFactorout ()          ';
-    '30 - OmegaCaout       ()          ';
-    '31 - OmegaArout       ()          ';
-    '32 - xCO2out          (ppm)       ';
-    '33 - pHin (Total)     ()          ';
-    '34 - pHin (SWS)       ()          ';
-    '35 - pHin (Free)      ()          ';
-    '36 - pHin (NBS )      ()          ';
-    '37 - pHout(Total)     ()          ';
-    '38 - pHout(SWS)       ()          ';
-    '39 - pHout(Free)      ()          ';
-    '40 - pHout(NBS )      ()          ';
-    '41 - TEMPIN           (Deg C)     ';    
-    '42 - TEMPOUT          (Deg C)     ';
-    '43 - PRESIN           (dbar)      ';
-    '44 - PRESOUT          (dbar)      ';
-    '45 - PAR1TYPE         ()          ';
-    '46 - PAR2TYPE         ()          ';
-    '47 - K1K2CONSTANTS    ()          ';
-    '48 - KSO4CONSTANTS    ()          ';
-    '49 - pHSCALEIN        ()          ';
-    '50 - SAL              (umol/kgSW) ';
-    '51 - PO4              (umol/kgSW) ';
-    '52 - SI               (umol/kgSW) ';
-    '53 - K0input          ()          ';
-    '54 - K1input          ()          ';
-    '55 - K2input          ()          ';
-    '56 - pK1input         ()          ';
-    '57 - pK2input         ()          ';
-    '58 - KWinput          ()          ';
-    '59 - KBinput          ()          ';
-    '60 - KFinput          ()          ';
-    '61 - KSinput          ()          ';
-    '62 - KP1input         ()          ';
-    '63 - KP2input         ()          ';
-    '64 - KP3input         ()          ';
-    '65 - KSiinput         ()          ';    
-    '66 - K0output         ()          ';
-    '67 - K1output         ()          ';
-    '68 - K2output         ()          ';
-    '69 - pK1output        ()          ';
-    '70 - pK2output        ()          ';
-    '71 - KWoutput         ()          ';
-    '72 - KBoutput         ()          ';
-    '73 - KFoutput         ()          ';
-    '74 - KSoutput         ()          ';
-    '75 - KP1output        ()          ';
-    '76 - KP2output        ()          ';
-    '77 - KP3output        ()          ';
-    '78 - KSioutput        ()          ';    
-    '79 - TB               (umol/kgSW) ';
-    '80 - TF               (umol/kgSW) ';
-    '81 - TS               (umol/kgSW) '};
+    '13 - AmmAlkin         (umol/kgSW) ';
+    '14 - HSAlkin          (umol/kgSW) ';
+    '15 - Hfreein          (umol/kgSW) ';
+    '16 - RevelleFactorin  ()          ';
+    '17 - OmegaCain        ()          ';
+    '18 - OmegaArin        ()          ';
+    '19 - xCO2in           (ppm)       ';
+    '20 - SIRin            ()          ';
+    '21 - pHout            ()          ';
+    '22 - pCO2out          (uatm)      ';
+    '23 - fCO2out          (uatm)      ';
+    '24 - HCO3out          (umol/kgSW) ';
+    '25 - CO3out           (umol/kgSW) ';
+    '26 - CO2out           (umol/kgSW) ';
+    '27 - BAlkout          (umol/kgSW) ';
+    '28 - OHout            (umol/kgSW) ';
+    '29 - PAlkout          (umol/kgSW) ';
+    '30 - SiAlkout         (umol/kgSW) ';
+    '31 - AmmAlkout        (umol/kgSW) ';
+    '32 - HSAlkout         (umol/kgSW) ';
+    '33 - Hfreeout         (umol/kgSW) ';
+    '34 - RevelleFactorout ()          ';
+    '35 - OmegaCaout       ()          ';
+    '36 - OmegaArout       ()          ';
+    '37 - xCO2out          (ppm)       ';
+    '38 - SIRout           ()          ';
+    '39 - pHin (Total)     ()          ';
+    '40 - pHin (SWS)       ()          ';
+    '41 - pHin (Free)      ()          ';
+    '42 - pHin (NBS )      ()          ';
+    '43 - pHout(Total)     ()          ';
+    '44 - pHout(SWS)       ()          ';
+    '45 - pHout(Free)      ()          ';
+    '46 - pHout(NBS )      ()          ';
+    '47 - TEMPIN           (Deg C)     ';    
+    '48 - TEMPOUT          (Deg C)     ';
+    '49 - PRESIN           (dbar)      ';
+    '50 - PRESOUT          (dbar)      ';
+    '51 - PAR1TYPE         ()          ';
+    '52 - PAR2TYPE         ()          ';
+    '53 - K1K2CONSTANTS    ()          ';
+    '54 - KSO4CONSTANT     ()          ';
+    '55 - KFCONSTANT       ()          ';
+    '56 - BORON            ()          ';
+    '57 - pHSCALEIN        ()          ';
+    '58 - SAL              (umol/kgSW) ';
+    '59 - PO4              (umol/kgSW) ';
+    '60 - SI               (umol/kgSW) ';
+    '61	- NH4	           (umol/kgSW) ';
+    '62	- H2S	           (umol/kgSW) ';
+    '63 - K0input          ()          ';
+    '64 - K1input          ()          ';
+    '65 - K2input          ()          ';
+    '66 - pK1input         ()          ';
+    '67 - pK2input         ()          ';
+    '68 - KWinput          ()          ';
+    '69 - KBinput          ()          ';
+    '70 - KFinput          ()          ';
+    '71 - KSinput          ()          ';
+    '72 - KP1input         ()          ';
+    '73 - KP2input         ()          ';
+    '74 - KP3input         ()          ';
+    '75 - KSiinput         ()          ';
+    '76 - KNH4input        ()          ';
+    '77 - KH2Sinput        ()          ';  
+    '78 - K0output         ()          ';
+    '79 - K1output         ()          ';
+    '80 - K2output         ()          ';
+    '81 - pK1output        ()          ';
+    '82 - pK2output        ()          ';
+    '83 - KWoutput         ()          ';
+    '84 - KBoutput         ()          ';
+    '85 - KFoutput         ()          ';
+    '86 - KSoutput         ()          ';
+    '87 - KP1output        ()          ';
+    '88 - KP2output        ()          ';
+    '89 - KP3output        ()          ';
+    '90 - KSioutput        ()          ';
+    '91 - KNH4output       ()          ';
+    '92 - KH2Soutput       ()          ';
+    '93 - TB               (umol/kgSW) ';
+    '94 - TF               (umol/kgSW) ';
+    '95 - TS               (umol/kgSW) ';
+    '96 - TP               (umol/kgSW) ';
+    '97 - TSi              (umol/kgSW) ';
+    '98 - TNH4             (umol/kgSW) ';
+    '99 - TH2S             (umol/kgSW) '};
 
 clear global F K2 KP3 Pdbari Sal TS VPFac ntps 
-clear global FugFac KB KS Pdbaro T TSi WhichKs pHScale 
-clear global K KF KSi PengCorrection TB TempCi WhoseKSO4 sqrSal 
+clear global FugFac KB KS Pdbaro T TSi BORON WhichKs pHScale 
+clear global K KF KSi KNH4 KH2S PengCorrection TB TempCi WhoseKSO4 WhoseKF WhoseTB sqrSal 
 clear global K0 KP1 KW RGasConstant TF TempCo fH 
 clear global K1 KP2 Pbar RT TP TempK logTempK
 	
 end % end main function
-
-
 
 
 %**************************************************************************
@@ -740,13 +1139,11 @@ end % end main function
 %**************************************************************************
 
 
-
-
 function Constants(TempC,Pdbar)
-global pHScale WhichKs WhoseKSO4 sqrSal Pbar RT;
+global pHScale WhichKs WhoseKSO4 WhoseKF WhoseTB sqrSal Pbar RT;
 global K0 fH FugFac VPFac ntps TempK logTempK;
-global K1 K2 KW KB KF KS KP1 KP2 KP3 KSi;
-global TB TF TS TP TSi RGasConstant Sal;
+global K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi CAL RGasConstant Sal p_opt;
 
 % SUB Constants, version 04.01, 10-13-97, written by Ernie Lewis.
 % Inputs: pHScale%, WhichKs%, WhoseKSO4%, Sali, TempCi, Pdbar
@@ -775,6 +1172,7 @@ Pbar     = Pdbar ./ 10;
 TB = nan(ntps,1);
 TF = nan(ntps,1);
 TS = nan(ntps,1);
+CAL = nan(ntps,1);
 
 % CalculateTB - Total Borate:
 F=(WhichKs==8); % Pure water case.
@@ -793,20 +1191,31 @@ if any(F)
 end
 F=(WhichKs~=6 & WhichKs~=7 & WhichKs~=8); % All other cases
 if any(F)
-	FF=F&(WhoseKSO4==1|WhoseKSO4==2); % If user opted for Uppstrom's values:
+	FF=F&(WhoseTB==1); % If user opted for Uppstrom's values:
 	if any(FF)
 	    % Uppstrom, L., Deep-Sea Research 21:161-162, 1974:
 	    % this is .000416.*Sali./35. = .0000119.*Sali
 		% TB(FF) = (0.000232./10.811).*(Sal(FF)./1.80655); % in mol/kg-SW
 	    TB(FF) =  0.0004157.*Sal(FF)./35; % in mol/kg-SW
 	end
-	FF=F&(WhoseKSO4==3|WhoseKSO4==4); % If user opted for the new Lee values:
+	FF=F&(WhoseTB==2); % If user opted for the Lee et al. values:
 	if any(FF)
 		% Lee, Kim, Byrne, Millero, Feely, Yong-Ming Liu. 2010.	
-	 	% Geochimica Et Cosmochimica Acta 74 (6): 1801–1811.
+	 	% Geochimica Et Cosmochimica Acta 74 (6): 1801-1811.
 		TB(FF) =  0.0004326.*Sal(FF)./35; % in mol/kg-SW
 	end
 end
+
+% CalculateCAL - Total Calcium:
+F=(WhichKs~=6 & WhichKs~=7);
+    % Riley, J. P. and Tongudai, M., Chemical Geology 2:263-269, 1967:
+    % this is .010285.*Sali./35
+    CAL(F) = 0.02128./40.087.*(Sal(F)./1.80655);
+F=(WhichKs==6 | WhichKs==7);
+    % *** CalculateCaforGEOSECS:
+    % Culkin, F, in Chemical Oceanography, ed. Riley and Skirrow, 1965:
+    % (quoted in Takahashi et al, GEOSECS Pacific Expedition v. 3, 1982) 
+    CAL(F) = 0.01026.*Sal(F)./35;
 
 % CalculateTF;
 % Riley, J. P., Deep-Sea Research 12:219-220, 1965:
@@ -823,15 +1232,26 @@ TS = (0.14./96.062).*(Sal./1.80655); % in mol/kg-SW
 TempK100  = TempK./100;
 lnK0 = -60.2409 + 93.4517 ./ TempK100 + 23.3585 .* log(TempK100) + Sal .*...
     (0.023517 - 0.023656 .* TempK100 + 0.0047036 .* TempK100 .^2);
-K0   = exp(lnK0);                  % this is in mol/kg-SW/atm
+K0   = exp(lnK0);                 % this is in mol/kg-SW/atm
+vCO2 = 32.3;                      % partial molal volume of CO2 (cm3 / mol)
+                                  % from Weiss (1974, Appendix, paragraph 3)
+if p_opt == 0
+    prscorr = 1; % Set pressure correction to 1
+elseif p_opt == 1
+    prscorr = exp((-Pbar).*vCO2./RT); % Calculate pressure correction to K0
+else
+    disp('co2_press must be set to either 0 or 1'); % Display error message
+end         
+K0   = K0 .* prscorr; % this is in mol/kg-SW/atm
 
 % CalculateIonS:
 % This is from the DOE handbook, Chapter 5, p. 13/22, eq. 7.2.4:
 IonS         = 19.924 .* Sal ./ (1000 - 1.005   .* Sal);
 
 % CalculateKS:
-lnKS = nan(ntps,1); pKS  = nan(ntps,1); KS   = nan(ntps,1);
-F=(WhoseKSO4==1|WhoseKSO4==3);
+lnKS   = nan(ntps,1); pKS  = nan(ntps,1); KS   = nan(ntps,1);
+logKS0 = nan(ntps,1); logKSK0 = nan(ntps,1);
+F=(WhoseKSO4==1);
 if any(F)
     % Dickson, A. G., J. Chemical Thermodynamics, 22:113-127, 1990
     % The goodness of fit is .021.
@@ -845,9 +1265,9 @@ if any(F)
 	KS(F) = exp(lnKS(F))...            % this is on the free pH scale in mol/kg-H2O
         .* (1 - 0.001005 .* Sal(F));   % convert to mol/kg-SW
 end
-F=(WhoseKSO4==2|WhoseKSO4==4);
+F=(WhoseKSO4==2);
 if any(F)
-    % Khoo, et al, Analytical Chemistry, 49(1):29-34, 1977
+    % Khoo et al, Analytical Chemistry, 49(1):29-34, 1977
     % KS was found by titrations with a hydrogen electrode
     % of artificial seawater containing sulfate (but without F)
     % at 3 salinities from 20 to 45 and artificial seawater NOT
@@ -863,16 +1283,35 @@ if any(F)
     KS(F) = 10.^(-pKS(F))...          % this is on the free pH scale in mol/kg-H2O
         .* (1 - 0.001005.*Sal(F));    % convert to mol/kg-SW
 end
+F=(WhoseKSO4==3);
+if any(F)
+    % Waters and Millero, Marine Chemistry, 149: 8-22, 2013, with corrections from
+    % Waters et al, Marine Chemistry, 165: 66-67, 2014
+    logKS0(F) = 562.69486 - 102.5154.*logTempK(F) - 0.0001117033.*TempK(F).*TempK(F) + ...
+        0.2477538.*TempK(F) - 13273.76./TempK(F);
+    logKSK0(F) = (4.24666 - 0.152671.*TempK(F) + 0.0267059.*TempK(F).*logTempK(F) - 0.000042128.*TempK(F).*TempK(F)).*Sal(F).^0.5 + ...
+        (0.2542181 - 0.00509534.*TempK(F) + 0.00071589.*TempK(F).*logTempK(F)).*Sal(F) + (-0.00291179 + 0.0000209968.*TempK(F)).*Sal(F).^1.5 + ...
+        -0.0000403724.*Sal(F).^2;
+    KS(F) = ((10.^(logKSK0(F))).*(10.^logKS0(F))) ... % this is on the free pH scale in mol/kg-H2O
+        .* (1 - 0.001005.*Sal(F));                    % convert to mol/kg-SW
+end
 
 % CalculateKF:
-% Dickson, A. G. and Riley, J. P., Marine Chemistry 7:89-99, 1979:
-lnKF = 1590.2./TempK - 12.641 + 1.525.*IonS.^0.5;
-KF   = exp(lnKF)...                 % this is on the free pH scale in mol/kg-H2O
-    .*(1 - 0.001005.*Sal);          % convert to mol/kg-SW
-% Another expression exists for KF: Perez and Fraga 1987. Not used here since ill defined for low salinity. (to be used for S: 10-40, T: 9-33)
-% Nonetheless, P&F87 might actually be better than the fit of D&R79 above, which is based on only three salinities: [0 26.7 34.6]
-% lnKF = 874./TempK - 9.68 + 0.111.*Sal.^0.5; 
-% KF   = exp(lnKF);                   % this is on the free pH scale in mol/kg-SW
+KF = NaN(ntps, 1);  % added preallocation here and F-indexing below // MPH
+F=(WhoseKF==1);
+if any(F)
+    % Dickson, A. G. and Riley, J. P., Marine Chemistry 7:89-99, 1979:
+    lnKF = 1590.2./TempK - 12.641 + 1.525.*IonS.^0.5;
+    KF(F)   = exp(lnKF(F))...                 % this is on the free pH scale in mol/kg-H2O
+        .*(1 - 0.001005.*Sal(F));          % convert to mol/kg-SW
+end
+F=(WhoseKF==2);
+if any(F)
+    % Perez and Fraga 1987 (to be used for S: 10-40, T: 9-33)
+    % P&F87 might actually be better than the fit of D&R79 above, which is based on only three salinities: [0 26.7 34.6]
+    lnKF = 874./TempK - 9.68 + 0.111.*Sal.^0.5;
+    KF(F)   = exp(lnKF(F));                   % this is on the free pH scale in mol/kg-SW
+end
 
 % CalculatepHScaleConversionFactors:
 %       These are NOT pressure-corrected.
@@ -983,6 +1422,7 @@ if any(F)
     % The Chemical Society (London), Special Publ. 17:751, 1964:
     KSi(F) = 0.0000000004...              % this is on the NBS scale
         ./fH(F);                          % convert to SWS scale
+    
 end
 F=(WhichKs==6 | WhichKs==8);
 if any(F)
@@ -1009,6 +1449,42 @@ if any(F)
         (-12.1652./TempK(F) + 0.07871).*IonS(F).^2;
     KSi(F) = exp(lnKSi(F))...                % this is on the SWS pH scale in mol/kg-H2O
         .*(1 - 0.001005.*Sal(F));        % convert to mol/kg-SW
+end
+
+% Calculate KNH4 and KH2S: added by J. Sharp
+KNH4           = nan(ntps,1); KH2S       = nan(ntps,1);
+PKNH4expCW     = nan(ntps,1); lnKH2S     = nan(ntps,1);
+F=(WhichKs==6 | WhichKs==7 | WhichKs==8); % GEOSECS or freshwater cases
+if any(F)
+    KNH4(F) = 0;
+    KH2S(F) = 0;
+end
+F=(WhichKs~=6 & WhichKs~=7 & WhichKs~=8); % All other cases
+if any(F)
+% Ammonia dissociation constant from Yao and Millero (1995)
+%   KNH4(F) = (exp(-6285.33./TempK(F)+0.0001635.*TempK(F)-0.25444+...
+%             (0.46532-123.7184./TempK(F)).*Sal(F).^0.5+(-0.01992+...
+%             3.17556./TempK(F)).*Sal(F)))...
+%             ./SWStoTOT(F);                    % convert to SWS pH scale
+% Ammonia dissociation constant from Clegg and Whitfield (1995)
+  PKNH4(F) = 9.244605-2729.33.*(1./298.15-1./TempK(F)) +...
+          (0.04203362-11.24742./TempK(F)).*Sal(F).^0.25+...  % added missing (F) index on Sal // MPH
+          (-13.6416+1.176949.*TempK(F).^0.5-...
+          0.02860785.*TempK(F)+545.4834./TempK(F)).*Sal(F).^0.5+...
+          (-0.1462507+0.0090226468.*TempK(F).^0.5-...
+          0.0001471361.*TempK(F)+10.5425./TempK(F)).*Sal(F).^1.5+...
+          (0.004669309-0.0001691742.*TempK(F).^0.5-...
+          0.5677934./TempK(F)).*Sal(F).^2+...
+          (-2.354039E-05+0.009698623./TempK(F)).*Sal(F).^2.5;
+  KNH4(F)  = 10.^-PKNH4(F);                    % total scale, mol/kg-H2O
+  KNH4(F)  = KNH4(F).*(1-0.001005.*Sal(F)); % mol/kg-SW
+  KNH4(F)  = KNH4(F)./SWStoTOT(F);             % converts to SWS pH scale
+
+% First hydrogen sulfide dissociation constant from Millero et al. (1988)
+  KH2S(F)  = (exp(225.838-13275.3./TempK(F)-34.6435.*log(TempK(F))+...
+              0.3449.*Sal(F).^0.5-0.0274.*Sal(F)))...
+              ./SWStoTOT(F);                    % convert to SWS pH scale
+
 end
 
 % CalculateK1K2:
@@ -1159,11 +1635,11 @@ F=(WhichKs==9);
 if any(F)
     % From Cai and Wang 1998, for estuarine use.
 	% Data used in this work is from:
-	% K1: Merhback (1973) for S>15, for S<15: Mook and Keone (1975)
-	% K2: Merhback (1973) for S>20, for S<20: Edmond and Gieskes (1970)
+	% K1: Mehrbach (1973) for S>15, for S<15: Mook and Keone (1975)
+	% K2: Mehrbach (1973) for S>20, for S<20: Edmond and Gieskes (1970)
 	% Sigma of residuals between fits and above data: ±0.015, +0.040 for K1 and K2, respectively.
 	% Sal 0-40, Temp 0.2-30
-    % Limnol. Oceanogr. 43(4) (1998) 657-668
+  % Limnol. Oceanogr. 43(4) (1998) 657-668
 	% On the NBS scale
 	% Their check values for F1 don't work out, not sure if this was correctly published...
 	F1 = 200.1./TempK(F) + 0.3220;
@@ -1232,8 +1708,8 @@ if any(F)
 end
 F=(WhichKs==14);
 if any(F)
-    % From Millero, 2010, also for estuarine use.
-	% Marine and Freshwater Research, v. 61, p. 139–142.
+  % From Millero, 2010, also for estuarine use.
+	% Marine and Freshwater Research, v. 61, p. 139-142.
 	% Fits through compilation of real seawater titration results:
 	% Mehrbach et al. (1973), Mojica-Prieto & Millero (2002), Millero et al. (2006)
 	% Constants for K's on the SWS;
@@ -1257,9 +1733,9 @@ end
 F=(WhichKs==15);
 % Added by J. C. Orr on 4 Dec 2016
 if any(F)
-    % From Waters, Millero, Woosley 2014
+    % From Waters, Millero, and Woosley, 2014
 	% Mar. Chem., 165, 66-67, 2014
-        % Corrigendum to “The free proton concentration scale for seawater pH”.
+  % Corrigendum to "The free proton concentration scale for seawater pH".
 	% Effectively, this is an update of Millero (2010) formulation (WhichKs==14)
 	% Constants for K's on the SWS;
 	pK10 = -126.34048 + 6320.813./TempK(F) + 19.568224.*log(TempK(F));
@@ -1274,6 +1750,44 @@ if any(F)
 	C2 = -3.3534679.*Sal(F).^0.5;
 	pK2 = pK20 + A2 + B2./TempK(F) + C2.*log(TempK(F));
 	K2(F) = 10.^-pK2;
+end
+F=(WhichKs==16);
+% Added by J. D. Sharp on 9 Jul 2020
+if any(F)
+    % From Sulpis et al, 2020
+	% Ocean Science Discussions, 16, 847-862
+    % This study uses overdeterminations of the carbonate system to
+    % iteratively fit K1 and K2
+    pK1(F) = 8510.63./TempK(F)-172.4493+26.32996.*log(TempK(F))-0.011555.*Sal(F)+0.0001152.*Sal(F).^2;
+	K1(F)  = 10.^-pK1(F)...           % this is on the total pH scale in mol/kg-SW
+        ./SWStoTOT(F);                % convert to SWS pH scale
+    pK2(F) = 4226.23./TempK(F)-59.4636+9.60817.*log(TempK(F))-0.01781 .*Sal(F)+0.0001122.*Sal(F).^2;
+	K2(F)  = 10.^-pK2(F)...           % this is on the total pH scale in mol/kg-SW
+        ./SWStoTOT(F);                % convert to SWS pH scale
+end
+
+F=(WhichKs==17);
+% Added by J. D. Sharp on 15 Feb 2021
+if any(F)
+    % From Schockman & Byrne, 2021
+	% Geochimica et Cosmochimica Acta, in press
+    % This study uses spectrophotometric pH measurements to determine
+    % K1*K2 with unprecedented precision, and presents a new
+    % parameterization for K2 based on these determinations
+    % K1 is taken from Waters, Millero, and Woosley, 2014, on the total pH scale:
+    pK10 = -126.34048 + 6320.813./TempK(F) + 19.568224.*log(TempK(F));
+	A1 = 13.568513.*Sal(F).^0.5 + 0.031645.*Sal(F) - 5.3834e-5.*Sal(F).^2;
+	B1 = -539.2304.*Sal(F).^0.5 - 5.635.*Sal(F);
+	C1 = -2.0901396.*Sal(F).^0.5;
+	pK1 = pK10 + A1 + B1./TempK(F) + C1.*log(TempK(F));
+	K1(F) = 10.^-pK1...               % this is on the total pH scale in mol/kg-sw
+        ./SWStoTOT(F);                % convert to SWS pH scale
+    % K2 is based on measurements of K1*K2:
+    pK2 = 116.8067 - 3655.02./TempK(F) - 16.45817.*log(TempK(F)) + ...
+        0.04523.*Sal(F) - 0.615.*Sal(F).^0.5 - 0.0002799.*Sal(F).^2 + ...
+        4.969.*(Sal(F)./TempK(F));
+    K2(F)  = 10.^-pK2...           % this is on the total pH scale in mol/kg-SW
+        ./SWStoTOT(F);                % convert to SWS pH scale
 end
 
 %***************************************************************************
@@ -1489,6 +2003,14 @@ lnKP3fac = (-deltaV + 0.5.*Kappa.*Pbar).*Pbar./RT;
 deltaV = -29.48 + 0.1622.*TempC - 0.002608.*TempC.^2;
 Kappa  = -2.84./1000;
 lnKSifac = (-deltaV + 0.5.*Kappa.*Pbar).*Pbar./RT;
+% PressureEffectsOnKNH4: added by J. Sharp
+deltaV = -26.43 + 0.0889.*TempC - 0.000905.*TempC.^2;
+Kappa  = (-5.03 + 0.0814.*TempC)./1000;
+lnKNH4fac = (-deltaV + 0.5.*Kappa.*Pbar).*Pbar./RT;
+% PressureEffectsOnKH2S: added by J. Sharp
+deltaV = -11.07 - 0.009.*TempC - 0.000942.*TempC.^2;
+Kappa  = (-2.89 + 0.054 .*TempC)./1000;
+lnKH2Sfac = (-deltaV + 0.5.*Kappa.*Pbar).*Pbar./RT;
 
 % CorrectKsForPressureHere:
 K1fac  = exp(lnK1fac);  K1  = K1 .*K1fac;
@@ -1501,6 +2023,8 @@ KP1fac = exp(lnKP1fac); KP1 = KP1.*KP1fac;
 KP2fac = exp(lnKP2fac); KP2 = KP2.*KP2fac;
 KP3fac = exp(lnKP3fac); KP3 = KP3.*KP3fac;
 KSifac = exp(lnKSifac); KSi = KSi.*KSifac;
+KNH4fac= exp(lnKNH4fac);KNH4= KNH4.*KNH4fac; % added by J. Sharp
+KH2Sfac= exp(lnKH2Sfac);KH2S= KH2S.*KH2Sfac; % added by J. Sharp
 
 % CorrectpHScaleConversionsForPressure:
 % fH has been assumed to be independent of pressure.
@@ -1523,24 +2047,34 @@ F=(pHScale==4); %pHNBS
 pHfactor(F) = fH(F);
 
 % ConvertFromSWSpHScaleToChosenScale:
-K1  = K1.* pHfactor; K2  = K2.* pHfactor;
-KW  = KW.* pHfactor; KB  = KB.* pHfactor;
-KP1 = KP1.*pHfactor; KP2 = KP2.*pHfactor;
-KP3 = KP3.*pHfactor; KSi = KSi.*pHfactor;
+K1   = K1.* pHfactor;  K2   = K2.* pHfactor;
+KW   = KW.* pHfactor;  KB   = KB.* pHfactor;
+KP1  = KP1.*pHfactor;  KP2  = KP2.*pHfactor;
+KP3  = KP3.*pHfactor;  KSi  = KSi.*pHfactor;
+KNH4 = KNH4.*pHfactor; KH2S = KH2S.*pHfactor;
 
 % CalculateFugacityConstants:
-% This assumes that the pressure is at one atmosphere, or close to it.
-% Otherwise, the Pres term in the exponent affects the results.
+% In previos versions of CO2SYS, the fugacity factor was calculated
+% assuming pressure at one atmosphere, or close to it. Starting with
+% v3.2.1, an option to use in situ pressure is provided.
 %       Weiss, R. F., Marine Chemistry 2:203-215, 1974.
 %       Delta and B in cm3/mol
 FugFac=ones(ntps,1);
 Delta = (57.7 - 0.118.*TempK);
 b = -1636.75 + 12.0408.*TempK - 0.0327957.*TempK.^2 + 3.16528.*0.00001.*TempK.^3;
-% For a mixture of CO2 and air at 1 atm (at low CO2 concentrations);
-P1atm = 1.01325; % in bar
-FugFac = exp((b + 2.*Delta).*P1atm./RT);
+% For a mixture of CO2 and air at in situ pressure;
+xc2 = 1; % assumed to be 1, though not strictly correct (xc2 = [1-xCO2]^2)
+P1atm = 1.01325; % atmospheric pressure in bar
+if p_opt == 0
+    FugFac = exp((b + 2.*xc2.*Delta).*P1atm./RT); % FugFac at 1 atm
+elseif p_opt == 1
+    FugFac = exp((b + 2.*xc2.*Delta).*(P1atm+Pbar)./RT); % FugFac at in situ pressure
+else
+    disp('co2_press must be set to either 0 or 1'); % Display error message
+end
 F=(WhichKs==6 | WhichKs==7); % GEOSECS and Peng assume pCO2 = fCO2, or FugFac = 1
 FugFac(F) = 1;
+
 % CalculateVPFac:
 % Weiss, R. F., and Price, B. A., Nitrous oxide solubility in water and
 %       seawater, Marine Chemistry 8:347-359, 1980.
@@ -1565,77 +2099,79 @@ VPSWWP = VPWP.*VPCorrWP;
 VPFac = 1 - VPSWWP; % this assumes 1 atmosphere
 end % end nested function
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Core input functions, based on functions written by Ernie Lewis.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function varargout=CalculatepHfCO2fromTATC(TAx, TCx)
-global FugFac F;
-% Outputs pH fCO2, in that order
-% SUB FindpHfCO2fromTATC, version 01.02, 10-10-97, written by Ernie Lewis.
-% Inputs: pHScale%, WhichKs%, WhoseKSO4%, TA, TC, Sal, K(), T(), TempC, Pdbar
-% Outputs: pH, fCO2
-% This calculates pH and fCO2 from TA and TC at output conditions.
-pHx   = CalculatepHfromTATC(TAx, TCx); % pH is returned on the scale requested in "pHscale" (see 'constants'...)
-fCO2x = CalculatefCO2fromTCpH(TCx, pHx);
-varargout{1} = pHx;
-varargout{2} = fCO2x;
-end % end nested function
-
-
-function varargout=CalculatepHfromTATC(TAx, TCx)
-global pHScale  WhichKs  WhoseKSO4 sqrSal Pbar RT;
-global K0 fH FugFac VPFac ntps TempK logTempK;
-global K1 K2 KW KB KF KS KP1 KP2 KP3 KSi;
-global TB TF TS TP TSi F;
-%Outputs pH
-% SUB CalculatepHfromTATC, version 04.01, 10-13-96, written by Ernie Lewis.
-% Inputs: TA, TC, K(), T()
-% Output: pH
-% This calculates pH from TA and TC using K1 and K2 by Newton's method.
-% It tries to solve for the pH at which Residual = 0.
-% The starting guess is pH = 8.
-% Though it is coded for H on the total pH scale, for the pH values occuring
-% in seawater (pH > 6) it will be equally valid on any pH scale (H terms
-% negligible) as long as the K Constants are on that scale.
+function varargout=CalculatepHfromTATC(TAi, TCi)
+global K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S F;
+% ' SUB CalculatepHfromTATC, version 04.01, 10-13-96, written by Ernie Lewis
+% ' with modifications from Denis Pierrot.
+% ' Inputs: TA, TC, K(), T()
+% ' Output: pH
 %
-% Made this to accept vectors. It will continue iterating until all
-% values in the vector are "abs(deltapH) < pHTol". SVH2007
-K1F=K1(F);   K2F=K2(F);   KWF =KW(F);
-KP1F=KP1(F); KP2F=KP2(F); KP3F=KP3(F);  TPF=TP(F);
-TSiF=TSi(F); KSiF=KSi(F); TBF =TB(F);   KBF=KB(F);
-TSF =TS(F);  KSF =KS(F);  TFF =TF(F);   KFF=KF(F);
+% ' This calculates pH from TA and TC using K1 and K2 by Newton's method.
+% ' It tries to solve for the pH at which Residual = 0.
+% ' The starting guess is determined by the method introduced by Munhoven
+% ' (2013).
+%
+% ' Made this to accept vectors. It will continue iterating until all
+% ' values in the vector are "abs(deltapH) < pHTol". SVH2007
+% ' However, once a given abs(deltapH) is less than pHTol, that pH value
+% ' will be locked in. This avoids erroneous contributions to results from
+% ' other lines of input. JDS2020
+K1F=K1(F);     K2F=K2(F);     KWF =KW(F);
+KP1F=KP1(F);   KP2F=KP2(F);   KP3F=KP3(F);   TPF=TP(F);
+TSiF=TSi(F);   KSiF=KSi(F);   TNH4F=TNH4(F); KNH4F=KNH4(F);
+TH2SF=TH2S(F); KH2SF=KH2S(F); TBF =TB(F);    KBF=KB(F);
+TSF =TS(F);    KSF =KS(F);    TFF =TF(F);    KFF=KF(F);
 vl          = sum(F);  % VectorLength
-pHGuess     = 8;       % this is the first guess
-pHTol       = 0.0001;  % tolerance for iterations end
-ln10        = log(10); %
-pHx(1:vl,1) = pHGuess; % creates a vector holding the first guess for all samples
-deltapH     = pHTol+1;
-while any(abs(deltapH) > pHTol)
-    H         = 10.^(-pHx);
+% Find initital pH guess using method of Munhoven (2013)
+pHGuess         = CalculatepHfromTATCMunhoven(TAi, TCi);
+ln10            = log(10);
+pH              = pHGuess;
+pHTol           = 0.0001;  % tolerance for iterations end
+deltapH(1:vl,1) = pHTol+1;
+loopc=0;
+nF=(abs(deltapH) > pHTol);
+while any(nF)
+    H         = 10.^(-pH);
     Denom     = (H.*H + K1F.*H + K1F.*K2F);
-    CAlk      = TCx.*K1F.*(H + 2.*K2F)./Denom;
+    CAlk      = TCi.*K1F.*(H + 2.*K2F)./Denom;
     BAlk      = TBF.*KBF./(KBF + H);
     OH        = KWF./H;
     PhosTop   = KP1F.*KP2F.*H + 2.*KP1F.*KP2F.*KP3F - H.*H.*H;
     PhosBot   = H.*H.*H + KP1F.*H.*H + KP1F.*KP2F.*H + KP1F.*KP2F.*KP3F;
     PAlk      = TPF.*PhosTop./PhosBot;
     SiAlk     = TSiF.*KSiF./(KSiF + H);
-    FREEtoTOT = (1 + TSF./KSF); % pH scale conversion factor
-    Hfree     = H./FREEtoTOT; % for H on the total scale
+    AmmAlk    = TNH4F.*KNH4F./(KNH4F + H);
+    HSAlk     = TH2SF.*KH2SF./(KH2SF + H);
+    [~,~,pHfree,~] = FindpHOnAllScales(pH); % this converts pH to pHfree no matter the scale
+    Hfree     = 10.^-pHfree; % this converts pHfree to Hfree
     HSO4      = TSF./(1 + KSF./Hfree); % since KS is on the free scale
     HF        = TFF./(1 + KFF./Hfree); % since KF is on the free scale
-    Residual  = TAx - CAlk - BAlk - OH - PAlk - SiAlk + Hfree + HSO4 + HF;
+    Residual  = TAi - CAlk - BAlk - OH - PAlk - SiAlk  - AmmAlk - HSAlk + Hfree + HSO4 + HF;
     % find Slope dTA/dpH;
     % (this is not exact, but keeps all important terms);
-    Slope     = ln10.*(TCx.*K1F.*H.*(H.*H + K1F.*K2F + 4.*H.*K2F)./Denom./Denom + BAlk.*H./(KBF + H) + OH + H);
-    deltapH   = Residual./Slope; % this is Newton's method
-    % to keep the jump from being too big;
+    Slope     = ln10.*(TCi.*K1F.*H.*(H.*H + K1F.*K2F + 4.*H.*K2F)./Denom./Denom + BAlk.*H./(KBF + H) + OH + H);
+    deltapH   = Residual./Slope; %' this is Newton's method
+    % ' to keep the jump from being too big:
     while any(abs(deltapH) > 1)
         FF=abs(deltapH)>1; deltapH(FF)=deltapH(FF)./2;
     end
-    pHx       = pHx + deltapH; % Is on the same scale as K1 and K2 were calculated...
+    pH(nF) = pH(nF) + deltapH(nF);
+    nF     = abs(deltapH) > pHTol;
+    loopc=loopc+1;
+ 
+    if loopc>10000
+        Fr=find(abs(deltapH) > pHTol);
+        pH(Fr)=NaN;  disp(['pH value did not converge for data on row(s): ' num2str((Fr)')]);
+        deltapH=pHTol*0.9;
+    end
 end
-varargout{1}=pHx;
+varargout{1}=pH;
 end % end nested function
-
 
 function varargout=CalculatefCO2fromTCpH(TCx, pHx)
 global K0 K1 K2 F
@@ -1648,21 +2184,18 @@ fCO2x        = TCx.*H.*H./(H.*H + K1(F).*H + K1(F).*K2(F))./K0(F);
 varargout{1} = fCO2x;
 end % end nested function
 
-
 function varargout=CalculateTCfromTApH(TAx, pHx)
-global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi;
-global TB TF TS TP TSi F
-K1F=K1(F);   K2F=K2(F);   KWF=KW(F);
-KP1F=KP1(F); KP2F=KP2(F); KP3F=KP3(F); TPF=TP(F);
-TSiF=TSi(F); KSiF=KSi(F); TBF=TB(F);   KBF=KB(F);
-TSF=TS(F);   KSF=KS(F);   TFF=TF(F);   KFF=KF(F);
+global K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S F
+K1F=K1(F);     K2F=K2(F);     KWF =KW(F);
+KP1F=KP1(F);   KP2F=KP2(F);   KP3F=KP3(F);   TPF=TP(F);
+TSiF=TSi(F);   KSiF=KSi(F);   TNH4F=TNH4(F); KNH4F=KNH4(F);
+TH2SF=TH2S(F); KH2SF=KH2S(F); TBF =TB(F);    KBF=KB(F);
+TSF =TS(F);    KSF =KS(F);    TFF =TF(F);    KFF=KF(F);
 % ' SUB CalculateTCfromTApH, version 02.03, 10-10-97, written by Ernie Lewis.
 % ' Inputs: TA, pH, K(), T()
 % ' Output: TC
 % ' This calculates TC from TA and pH.
-% ' Though it is coded for H on the total pH scale, for the pH values occuring
-% ' in seawater (pH > 6) it will be equally valid on any pH scale (H terms
-% ' negligible) as long as the K Constants are on that scale.
 H         = 10.^(-pHx);
 BAlk      = TBF.*KBF./(KBF + H);
 OH        = KWF./H;
@@ -1670,39 +2203,50 @@ PhosTop   = KP1F.*KP2F.*H + 2.*KP1F.*KP2F.*KP3F - H.*H.*H;
 PhosBot   = H.*H.*H + KP1F.*H.*H + KP1F.*KP2F.*H + KP1F.*KP2F.*KP3F;
 PAlk      = TPF.*PhosTop./PhosBot;
 SiAlk     = TSiF.*KSiF./(KSiF + H);
-FREEtoTOT = (1 + TSF./KSF); % pH scale conversion factor
-Hfree     = H./FREEtoTOT; %' for H on the total scale
+AmmAlk    = TNH4F.*KNH4F./(KNH4F + H);
+HSAlk     = TH2SF.*KH2SF./(KH2SF + H);
+[~,~,pHfree,~] = FindpHOnAllScales(pHx); % this converts pH to pHfree no matter the scale
+Hfree     = 10.^-pHfree; % this converts pHfree to Hfree
 HSO4      = TSF./(1 + KSF./Hfree); %' since KS is on the free scale
 HF        = TFF./(1 + KFF./Hfree); %' since KF is on the free scale
-CAlk      = TAx - BAlk - OH - PAlk - SiAlk + Hfree + HSO4 + HF;
+CAlk      = TAx - BAlk - OH - PAlk - SiAlk - AmmAlk - HSAlk + Hfree + HSO4 + HF;
 TCxtemp   = CAlk.*(H.*H + K1F.*H + K1F.*K2F)./(K1F.*(H + 2.*K2F));
 varargout{1} = TCxtemp;
 end % end nested function
 
-
 function varargout=CalculatepHfromTAfCO2(TAi, fCO2i)
-global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi;
-global TB TF TS TP TSi F
-% ' SUB CalculatepHfromTAfCO2, version 04.01, 10-13-97, written by Ernie Lewis.
+global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S F
+% ' SUB CalculatepHfromTAfCO2, version 04.01, 10-13-97, written by Ernie
+% ' Lewis with modifications from Denis Pierrot.
 % ' Inputs: TA, fCO2, K0, K(), T()
 % ' Output: pH
 % ' This calculates pH from TA and fCO2 using K1 and K2 by Newton's method.
 % ' It tries to solve for the pH at which Residual = 0.
-% ' The starting guess is pH = 8.
-% ' Though it is coded for H on the total pH scale, for the pH values occuring
-% ' in seawater (pH > 6) it will be equally valid on any pH scale (H terms
-% ' negligible) as long as the K Constants are on that scale.
-K0F=K0(F);   K1F=K1(F);   K2F=K2(F);   KWF=KW(F);
-KP1F=KP1(F); KP2F=KP2(F); KP3F=KP3(F); TPF=TP(F);
-TSiF=TSi(F); KSiF=KSi(F); TBF=TB(F);   KBF=KB(F);
-TSF=TS(F);   KSF=KS(F);   TFF=TF(F);   KFF=KF(F);
+% ' The starting guess is determined by the method introduced by Munhoven
+% ' (2013) and extended by Humphreys et al. (2021).
+%
+% ' This will continue iterating until all values in the vector are
+% ' "abs(deltapH) < pHTol"
+% ' However, once a given abs(deltapH) is less than pHTol, that pH value
+% ' will be locked in. This avoids erroneous contributions to results from
+% ' other lines of input.
+K0F=K0(F);     K1F=K1(F);     K2F=K2(F);     KWF =KW(F);
+KP1F=KP1(F);   KP2F=KP2(F);   KP3F=KP3(F);   TPF=TP(F);
+TSiF=TSi(F);   KSiF=KSi(F);   TNH4F=TNH4(F); KNH4F=KNH4(F);
+TH2SF=TH2S(F); KH2SF=KH2S(F); TBF =TB(F);    KBF=KB(F);
+TSF =TS(F);    KSF =KS(F);    TFF =TF(F);    KFF=KF(F);
 vl         = sum(F); % vectorlength
-pHGuess    = 8;      % this is the first guess
-pHTol      = 0.0001; % tolerance
+% Find initital pH guess using method of Munhoven (2013)
+CO2i       = fCO2i.*K0F; % Convert fCO2 to CO2
+pHGuess    = CalculatepHfromTACO2Munhoven(TAi, CO2i);
 ln10       = log(10);
-pH(1:vl,1) = pHGuess;
+pH         = pHGuess;
+pHTol      = 0.0001; % tolerance
 deltapH = pHTol+pH;
-while any(abs(deltapH) > pHTol)
+loopc=0;
+nF=(abs(deltapH) > pHTol);
+while any(nF)
     H         = 10.^(-pH);
     HCO3      = K0F.*K1F.*fCO2i./H;
     CO3       = K0F.*K1F.*K2F.*fCO2i./(H.*H);
@@ -1713,11 +2257,13 @@ while any(abs(deltapH) > pHTol)
     PhosBot   = H.*H.*H + KP1F.*H.*H + KP1F.*KP2F.*H + KP1F.*KP2F.*KP3F;
     PAlk      = TPF.*PhosTop./PhosBot;
     SiAlk     = TSiF.*KSiF./(KSiF + H);
-    FREEtoTOT = (1 + TSF./KSF);% ' pH scale conversion factor
-    Hfree     = H./FREEtoTOT;%' for H on the total scale
+    AmmAlk    = TNH4F.*KNH4F./(KNH4F + H);
+    HSAlk     = TH2SF.*KH2SF./(KH2SF + H);
+    [~,~,pHfree,~] = FindpHOnAllScales(pH); % this converts pH to pHfree no matter the scale
+    Hfree     = 10.^-pHfree; % this converts pHfree to Hfree
     HSO4      = TSF./(1 + KSF./Hfree); %' since KS is on the free scale
     HF        = TFF./(1 + KFF./Hfree);% ' since KF is on the free scale
-    Residual  = TAi - CAlk - BAlk - OH - PAlk - SiAlk + Hfree + HSO4 + HF;
+    Residual  = TAi - CAlk - BAlk - OH - PAlk - SiAlk - AmmAlk - HSAlk + Hfree + HSO4 + HF;
     % '               find Slope dTA/dpH
     % '               (this is not exact, but keeps all important terms):
     Slope     = ln10.*(HCO3 + 4.*CO3 + BAlk.*H./(KBF + H) + OH + H);
@@ -1726,26 +2272,31 @@ while any(abs(deltapH) > pHTol)
     while any(abs(deltapH) > 1)
         FF=abs(deltapH)>1; deltapH(FF)=deltapH(FF)./2;
     end
-    pH = pH + deltapH;
+    pH(nF) = pH(nF) + deltapH(nF);
+    nF     = abs(deltapH) > pHTol;
+    loopc=loopc+1;
+ 
+    if loopc>10000
+        Fr=find(abs(deltapH) > pHTol);
+        pH(Fr)=NaN;  disp(['pH value did not converge for data on row(s): ' num2str((Fr)')]);
+        deltapH=pHTol*0.9;
+    end
 end
 varargout{1}=pH;
 end % end nested function
 
-
 function varargout=CalculateTAfromTCpH(TCi, pHi)
-global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi;
-global TB TF TS TP TSi F
+global K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S F
 % ' SUB CalculateTAfromTCpH, version 02.02, 10-10-97, written by Ernie Lewis.
 % ' Inputs: TC, pH, K(), T()
 % ' Output: TA
 % ' This calculates TA from TC and pH.
-% ' Though it is coded for H on the total pH scale, for the pH values occuring
-% ' in seawater (pH > 6) it will be equally valid on any pH scale (H terms
-% ' negligible) as long as the K Constants are on that scale.
-K1F=K1(F);   K2F=K2(F);   KWF=KW(F);
-KP1F=KP1(F); KP2F=KP2(F); KP3F=KP3(F); TPF=TP(F);
-TSiF=TSi(F); KSiF=KSi(F); TBF=TB(F);   KBF=KB(F);
-TSF=TS(F);   KSF=KS(F);   TFF=TF(F);   KFF=KF(F);
+K1F=K1(F);     K2F=K2(F);     KWF =KW(F);
+KP1F=KP1(F);   KP2F=KP2(F);   KP3F=KP3(F);   TPF=TP(F);
+TSiF=TSi(F);   KSiF=KSi(F);   TNH4F=TNH4(F); KNH4F=KNH4(F);
+TH2SF=TH2S(F); KH2SF=KH2S(F); TBF =TB(F);    KBF=KB(F);
+TSF =TS(F);    KSF =KS(F);    TFF =TF(F);    KFF=KF(F);
 H         = 10.^(-pHi);
 CAlk      = TCi.*K1F.*(H + 2.*K2F)./(H.*H + K1F.*H + K1F.*K2F);
 BAlk      = TBF.*KBF./(KBF + H);
@@ -1754,14 +2305,15 @@ PhosTop   = KP1F.*KP2F.*H + 2.*KP1F.*KP2F.*KP3F - H.*H.*H;
 PhosBot   = H.*H.*H + KP1F.*H.*H + KP1F.*KP2F.*H + KP1F.*KP2F.*KP3F;
 PAlk      = TPF.*PhosTop./PhosBot;
 SiAlk     = TSiF.*KSiF./(KSiF + H);
-FREEtoTOT = (1 + TSF./KSF); % ' pH scale conversion factor
-Hfree     = H./FREEtoTOT; %' for H on the total scale
+AmmAlk    = TNH4F.*KNH4F./(KNH4F + H);
+HSAlk     = TH2SF.*KH2SF./(KH2SF + H);
+[~,~,pHfree,~] = FindpHOnAllScales(pHi); % this converts pH to pHfree no matter the scale
+Hfree = 10.^-pHfree; % this converts pHfree to Hfree
 HSO4      = TSF./(1 + KSF./Hfree);% ' since KS is on the free scale
 HF        = TFF./(1 + KFF./Hfree);% ' since KF is on the free scale
-TActemp     = CAlk + BAlk + OH + PAlk + SiAlk - Hfree - HSO4 - HF;
+TActemp    = CAlk + BAlk + OH + PAlk + SiAlk + AmmAlk + HSAlk - Hfree - HSO4 - HF;
 varargout{1}=TActemp;
 end % end nested function
-
 
 function varargout=CalculatepHfromTCfCO2(TCi, fCO2i)
 global K0 K1 K2 F;
@@ -1787,7 +2339,6 @@ pHctemp = log(H)./log(0.1);
 varargout{1}=pHctemp;
 end % end nested function
 
-
 function varargout=CalculateTCfrompHfCO2(pHi, fCO2i)
 global K0 K1 K2 F;
 % ' SUB CalculateTCfrompHfCO2, version 01.02, 12-13-96, written by Ernie Lewis.
@@ -1799,6 +2350,463 @@ TCctemp = K0(F).*fCO2i.*(H.*H + K1(F).*H + K1(F).*K2(F))./(H.*H);
 varargout{1}=TCctemp;
 end % end nested function
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HCO3 input functions, modified from functions written by Ernie Lewis.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function varargout=CalculateTAfrompHHCO3(pHi, HCO3i)
+global K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S F
+% ' SUB CalculateTAfrompHCO3, version 01.0, 3-19, added by J. Sharp
+% ' Inputs: pH, HCO3, K(), T()
+% ' Output: TA
+% ' This calculates TA from pH and HCO3.
+K1F=K1(F);     K2F=K2(F);     KWF =KW(F);
+KP1F=KP1(F);   KP2F=KP2(F);   KP3F=KP3(F);   TPF=TP(F);
+TSiF=TSi(F);   KSiF=KSi(F);   TNH4F=TNH4(F); KNH4F=KNH4(F);
+TH2SF=TH2S(F); KH2SF=KH2S(F); TBF =TB(F);    KBF=KB(F);
+TSF =TS(F);    KSF =KS(F);    TFF =TF(F);    KFF=KF(F);
+H         = 10.^(-pHi);
+CAlk      = HCO3i.*(2.*K2F./H + 1);
+BAlk      = TBF.*KBF./(KBF + H);
+OH        = KWF./H;
+PhosTop   = KP1F.*KP2F.*H + 2.*KP1F.*KP2F.*KP3F - H.*H.*H;
+PhosBot   = H.*H.*H + KP1F.*H.*H + KP1F.*KP2F.*H + KP1F.*KP2F.*KP3F;
+PAlk      = TPF.*PhosTop./PhosBot;
+SiAlk     = TSiF.*KSiF./(KSiF + H);
+AmmAlk    = TNH4F.*KNH4F./(KNH4F + H);
+HSAlk     = TH2SF.*KH2SF./(KH2SF + H);
+[~,~,pHfree,~] = FindpHOnAllScales(pHi); % this converts pH to pHfree no matter the scale
+Hfree = 10.^-pHfree; % this converts pHfree to Hfree
+HSO4      = TSF./(1 + KSF./Hfree);% ' since KS is on the free scale
+HF        = TFF./(1 + KFF./Hfree);% ' since KF is on the free scale
+TActemp     = CAlk + BAlk + OH + PAlk + SiAlk + AmmAlk + HSAlk - Hfree - HSO4 - HF;
+varargout{1}=TActemp;
+end % end nested function
+
+function varargout=CalculatepHfromTAHCO3(TAi, HCO3i)
+global K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S F
+% ' SUB CalculatepHfromTAHCO3, version 01.0, 8-18, added by J. Sharp with
+% ' modifications from Denis Pierrot.
+% ' Inputs: TA, CO3, K0, K(), T()
+% ' Output: pH
+%
+% ' This calculates pH from TA and CO3 using K1 and K2 by Newton's method.
+% ' It tries to solve for the pH at which Residual = 0.
+% ' The starting guess is determined by the method introduced by Munhoven
+% ' (2013) and extended by Humphreys et al. (2021).
+%
+% ' This will continue iterating until all values in the vector are
+% ' "abs(deltapH) < pHTol"
+% ' However, once a given abs(deltapH) is less than pHTol, that pH value
+% ' will be locked in. This avoids erroneous contributions to results from
+% ' other lines of input.
+K2F=K2(F);     KWF =KW(F);
+KP1F=KP1(F);   KP2F=KP2(F);   KP3F=KP3(F);   TPF=TP(F);
+TSiF=TSi(F);   KSiF=KSi(F);   TNH4F=TNH4(F); KNH4F=KNH4(F);
+TH2SF=TH2S(F); KH2SF=KH2S(F); TBF =TB(F);    KBF=KB(F);
+TSF =TS(F);    KSF =KS(F);    TFF =TF(F);    KFF=KF(F);
+vl         = sum(F); % vectorlength
+% Find initital pH guess using method of Munhoven (2013)
+pHGuess    = CalculatepHfromTAHCO3Munhoven(TAi, HCO3i);
+ln10       = log(10);
+pH         = pHGuess;
+pHTol      = 0.0001; % tolerance
+deltapH    = pHTol+pH;
+loopc=0;
+nF=(abs(deltapH) > pHTol);
+while any(nF)
+    H         = 10.^(-pH);
+    CAlk      = HCO3i.*(H+2.*K2F)./H;
+    BAlk      = TBF.*KBF./(KBF + H);
+    OH        = KWF./H;
+    PhosTop   = KP1F.*KP2F.*H + 2.*KP1F.*KP2F.*KP3F - H.*H.*H;
+    PhosBot   = H.*H.*H + KP1F.*H.*H + KP1F.*KP2F.*H + KP1F.*KP2F.*KP3F;
+    PAlk      = TPF.*PhosTop./PhosBot;
+    SiAlk     = TSiF.*KSiF./(KSiF + H);
+    AmmAlk    = TNH4F.*KNH4F./(KNH4F + H);
+    HSAlk     = TH2SF.*KH2SF./(KH2SF + H);
+    [~,~,pHfree,~] = FindpHOnAllScales(pH); % this converts pH to pHfree no matter the scale
+    Hfree = 10.^-pHfree; % this converts pHfree to Hfree
+    HSO4      = TSF./(1 + KSF./Hfree); %' since KS is on the free scale
+    HF        = TFF./(1 + KFF./Hfree);% ' since KF is on the free scale
+    Residual  = TAi - CAlk - BAlk - OH - PAlk - SiAlk - AmmAlk - HSAlk + Hfree + HSO4 + HF;
+    % '               find Slope dTA/dpH
+    % '               (this is not exact, but keeps all important terms):
+    Slope = ln10 .* (2 .* HCO3i .* K2F ./ H + BAlk .* H ./ (KBF + H) + OH + H);
+    deltapH   = Residual./Slope; %' this is Newton's method
+    % ' to keep the jump from being too big:
+    while any(abs(deltapH) > 1)
+        FF=abs(deltapH)>1; deltapH(FF)=deltapH(FF)./2;
+    end
+    pH(nF) = pH(nF) + deltapH(nF);
+    nF     = abs(deltapH) > pHTol;
+    loopc=loopc+1;
+ 
+    if loopc>10000
+        Fr=find(abs(deltapH) > pHTol);
+        pH(Fr)=NaN;  disp(['pH value did not converge for data on row(s): ' num2str((Fr)')]);
+        deltapH=pHTol*0.9;
+    end
+end
+varargout{1}=pH;
+end % end nested function
+
+function varargout=CalculatepHfromTCHCO3(TCi, HCO3i)
+global K1 K2 F;
+% ' SUB CalculatepHfromTCHCO3, version 01.0, 3-19, added by J. Sharp
+% ' Inputs: TC, HCO3, K0, K1, K2
+% ' Output: pH
+% ' This calculates pH from TC and HCO3 using K1 and K2 by solving the
+% '       quadratic in H: TC = HCO3i.*(H./K1 + 1 + K2./H).
+% '       Therefore:      0  = H.*H./K1 + (1-TC/HCO3i).*H + K2.
+% ' if there is not a real root, then pH is returned as missingn.
+RR = TCi./HCO3i;
+%       if RR >= 1
+%          varargout{1}= missingn;
+%          disp('nein!');return;
+%       end
+% check after sub to see if pH = missingn.
+Discr = ((1-RR).*(1-RR) - 4.*(1./(K1(F))).*(K2(F)));
+H     = 0.5.*((-(1-RR)) - sqrt(Discr))./(1./(K1(F))); % Subtraction
+%       if (H <= 0)
+%           pHctemp = missingn;
+%       else
+pHctemp = log(H)./log(0.1);
+%       end
+varargout{1}=pHctemp;
+end % end nested function
+
+function varargout=CalculatepHfromfCO2HCO3(fCO2i, HCO3i)
+global K0 K1 F;
+% ' SUB CalculatepHfromfCO2HCO3, version 01.0, 3-19, added by J. Sharp
+% ' Inputs: fCO2, HCO3, K0, K1, K2
+% ' Output: pH
+% ' This calculates pH from fCO2 and HCO3, using K0, K1, and K2.
+H            = (fCO2i.*K0(F).*K1(F))./HCO3i;  % removed incorrect (F) index from HCO3i // MPH
+pHx          = -log10(H);
+varargout{1} = pHx;
+end % end nested function
+
+function varargout=CalculatepHfCO2fromTCHCO3(TCx, HCO3x)
+% Outputs pH fCO2, in that order
+% SUB CalculatepHfCO2fromTCHCO3, version 01.0, 3-19, added by J. Sharp
+% Inputs: pHScale%, WhichKs%, WhoseKSO4%, TC, HCO3, Sal, K(), T(), TempC, Pdbar
+% Outputs: pH, fCO2
+% This calculates pH and fCO2 from TC and HCO3 at output conditions.
+pHx   = CalculatepHfromTCHCO3(TCx, HCO3x); % pH is returned on the scale requested in "pHscale" (see 'constants'...)
+fCO2x = CalculatefCO2fromTCpH(TCx, pHx);
+varargout{1} = pHx;
+varargout{2} = fCO2x;
+end % end nested function
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CO3 input functions, modified from functions written by Ernie Lewis.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function varargout=CalculateTAfrompHCO3(pHi, CO3i)
+global K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S F
+% ' SUB CalculateTAfrompHCO3, version 01.0, 8-18, added by J. Sharp
+% ' Inputs: pH, CO3, K(), T()
+% ' Output: TA
+% ' This calculates TA from pH and CO3.
+K1F=K1(F);     K2F=K2(F);     KWF =KW(F);
+KP1F=KP1(F);   KP2F=KP2(F);   KP3F=KP3(F);   TPF=TP(F);
+TSiF=TSi(F);   KSiF=KSi(F);   TNH4F=TNH4(F); KNH4F=KNH4(F);
+TH2SF=TH2S(F); KH2SF=KH2S(F); TBF =TB(F);    KBF=KB(F);
+TSF =TS(F);    KSF =KS(F);    TFF =TF(F);    KFF=KF(F);
+H         = 10.^(-pHi);
+CAlk      = CO3i.*(H./K2F + 2);
+BAlk      = TBF.*KBF./(KBF + H);
+OH        = KWF./H;
+PhosTop   = KP1F.*KP2F.*H + 2.*KP1F.*KP2F.*KP3F - H.*H.*H;
+PhosBot   = H.*H.*H + KP1F.*H.*H + KP1F.*KP2F.*H + KP1F.*KP2F.*KP3F;
+PAlk      = TPF.*PhosTop./PhosBot;
+SiAlk     = TSiF.*KSiF./(KSiF + H);
+AmmAlk    = TNH4F.*KNH4F./(KNH4F + H);
+HSAlk     = TH2SF.*KH2SF./(KH2SF + H);
+[~,~,pHfree,~] = FindpHOnAllScales(pHi); % this converts pH to pHfree no matter the scale
+Hfree = 10.^-pHfree; % this converts pHfree to Hfree
+HSO4      = TSF./(1 + KSF./Hfree);% ' since KS is on the free scale
+HF        = TFF./(1 + KFF./Hfree);% ' since KF is on the free scale
+TActemp     = CAlk + BAlk + OH + PAlk + SiAlk + AmmAlk + HSAlk - Hfree - HSO4 - HF;
+varargout{1}=TActemp;
+end % end nested function
+
+function varargout=CalculatepHfromTACO3(TAi, CO3i)
+global K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S F
+% ' SUB CalculatepHfromTACO3, version 01.0, 8-18, added by J. Sharp with
+% ' modifications from Denis Pierrot.
+% ' Inputs: TA, CO3, K0, K(), T()
+% ' Output: pH
+%
+% ' This calculates pH from TA and CO3 using K1 and K2 by Newton's method.
+% ' It tries to solve for the pH at which Residual = 0.
+% ' The starting guess is determined by the method introduced by Munhoven
+% ' (2013) and extended by Humphreys et al. (2021).
+%
+% ' This will continue iterating until all values in the vector are
+% ' "abs(deltapH) < pHTol"
+% ' However, once a given abs(deltapH) is less than pHTol, that pH value
+% ' will be locked in. This avoids erroneous contributions to results from
+% ' other lines of input.
+K2F=K2(F);     KWF =KW(F);
+KP1F=KP1(F);   KP2F=KP2(F);   KP3F=KP3(F);   TPF=TP(F);
+TSiF=TSi(F);   KSiF=KSi(F);   TNH4F=TNH4(F); KNH4F=KNH4(F);
+TH2SF=TH2S(F); KH2SF=KH2S(F); TBF =TB(F);    KBF=KB(F);
+TSF =TS(F);    KSF =KS(F);    TFF =TF(F);    KFF=KF(F);
+vl         = sum(F); % vectorlength
+% Find initital pH guess using method of Munhoven (2013)
+pHGuess    = CalculatepHfromTACO3Munhoven(TAi, CO3i);
+ln10       = log(10);
+pH         = pHGuess;
+pHTol      = 0.0001; % tolerance
+deltapH    = pHTol+pH;
+loopc=0;
+nF=(abs(deltapH) > pHTol);
+while any(nF)
+    H         = 10.^(-pH);
+    CAlk      = CO3i.*(H+2.*K2F)./K2F;
+    BAlk      = TBF.*KBF./(KBF + H);
+    OH        = KWF./H;
+    PhosTop   = KP1F.*KP2F.*H + 2.*KP1F.*KP2F.*KP3F - H.*H.*H;
+    PhosBot   = H.*H.*H + KP1F.*H.*H + KP1F.*KP2F.*H + KP1F.*KP2F.*KP3F;
+    PAlk      = TPF.*PhosTop./PhosBot;
+    SiAlk     = TSiF.*KSiF./(KSiF + H);
+    AmmAlk    = TNH4F.*KNH4F./(KNH4F + H);
+    HSAlk     = TH2SF.*KH2SF./(KH2SF + H);
+    [~,~,pHfree,~] = FindpHOnAllScales(pH); % this converts pH to pHfree no matter the scale
+    Hfree = 10.^-pHfree; % this converts pHfree to Hfree
+    HSO4      = TSF./(1 + KSF./Hfree); %' since KS is on the free scale
+    HF        = TFF./(1 + KFF./Hfree);% ' since KF is on the free scale
+    Residual  = TAi - CAlk - BAlk - OH - PAlk - SiAlk - AmmAlk - HSAlk + Hfree + HSO4 + HF;
+    % '               find Slope dTA/dpH
+    % '               (this is not exact, but keeps all important terms):
+    Slope = ln10 .* (-CO3i .* H ./ K2F + BAlk .* H ./ (KBF + H) + OH + H);
+    deltapH   = Residual./Slope; %' this is Newton's method
+    % ' to keep the jump from being too big:
+    while any(abs(deltapH) > 1)
+        FF=abs(deltapH)>1; deltapH(FF)=deltapH(FF)./2;
+    end
+    pH(nF) = pH(nF) + deltapH(nF);
+    nF     = abs(deltapH) > pHTol;
+    loopc=loopc+1;
+ 
+    if loopc>10000 
+        Fr=find(abs(deltapH) > pHTol);
+        pH(Fr)=NaN;  disp(['pH value did not converge for data on row(s): ' num2str((Fr)')]);
+        deltapH=pHTol*0.9;
+    end
+end
+varargout{1}=pH;
+end % end nested function
+
+function varargout=CalculatepHfromTCCO3(TCi, CO3i)
+global K1 K2 F;
+% ' SUB CalculatepHfromTCCO3, version 01.0, 8-18, added by J. Sharp
+% ' Inputs: TC, CO3, K0, K1, K2
+% ' Output: pH
+% ' This calculates pH from TC and CO3 using K1 and K2 by solving the
+% '       quadratic in H: TC = CO3i.*(H.*H/(K1.*K2) + H./K2 + 1).
+% '       Therefore:      0  = H.*H/(K1.*K2) + H./K2 + (1-TC./CO3i).
+% ' if there is not a real root, then pH is returned as missingn.
+RR = TCi./CO3i;
+%       if RR >= 1
+%          varargout{1}= missingn;
+%          disp('nein!');return;
+%       end
+% check after sub to see if pH = missingn.
+Discr = ((1./K2(F)).*(1./K2(F)) - 4.*(1./(K1(F).*K2(F))).*(1-RR));
+H     = 0.5.*((-1./K2(F)) + sqrt(Discr))./(1./(K1(F).*K2(F))); % Addition
+%       if (H <= 0)
+%           pHctemp = missingn;
+%       else
+pHctemp = log(H)./log(0.1);
+%       end
+varargout{1}=pHctemp;
+end % end nested function
+
+function varargout=CalculatepHfromfCO2CO3(fCO2i, CO3i)
+global K0 K1 K2 F;
+% ' SUB CalculatepHfromfCO2CO3, version 01.0, 8-18, added by J. Sharp
+% ' Inputs: fCO2, CO3, K0, K1, K2
+% ' Output: pH
+% ' This calculates pH from fCO2 and CO3, using K0, K1, and K2.
+H            = sqrt((fCO2i.*K0(F).*K1(F).*K2(F))./CO3i);    % removed incorrect (F) index from CO3i // MPH
+pHx          = -log10(H);
+varargout{1} = pHx;
+end % end nested function
+
+function varargout=CalculatepHfCO2fromTCCO3(TCx, CO3x)
+% Outputs pH fCO2, in that order
+% SUB CalculatepHfCO2fromTCCO3, version 01.0, 8-18, added by J. Sharp
+% Inputs: pHScale%, WhichKs%, WhoseKSO4%, TC, CO3, Sal, K(), T(), TempC, Pdbar
+% Outputs: pH, fCO2
+% This calculates pH and fCO2 from TC and CO3 at output conditions.
+pHx   = CalculatepHfromTCCO3(TCx, CO3x); % pH is returned on the scale requested in "pHscale" (see 'constants'...)
+fCO2x = CalculatefCO2fromTCpH(TCx, pHx);
+varargout{1} = pHx;
+varargout{2} = fCO2x;
+end % end nested function
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CO3/HCO3 input function, modified from functions written by Ernie Lewis.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function varargout=CalculatepHfromCO3HCO3(CO3x, HCO3x)
+global K2 F
+% ' SUB CalculatepHfromCO3HCO3, version 01.0, 3-19, added by J. Sharp
+% ' Inputs: CO3, HCO3, K2
+% ' Output: pH
+% ' This calculates fCO2 from TC and pH, using K2.
+H            = HCO3x.*K2(F)./CO3x;
+pHx          = -log10(H);
+varargout{1} = pHx;
+end % end nested function
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CO3/HCO3/CO2 output functions, modified from functions written by Ernie Lewis.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function varargout=CalculateCO3HCO3fromTCpH(TCx, pHx)
+global K1 K2 F
+% ' SUB CalculateCO3HCO3CO2fromTCpH, version 01.0, 3-19, added by J. Sharp
+% ' Inputs: TC, pH, K1, K2
+% ' Output: CO3, HCO3, CO2
+% ' This calculates CO3, HCO3, and CO2 from TC and pH, using K1, and K2.
+H            = 10.^(-pHx);
+CO3x         = TCx.*K1(F).*K2(F)./(K1(F).*H + H.*H + K1(F).*K2(F));
+HCO3x        = TCx.*K1(F).*H./(K1(F).*H + H.*H + K1(F).*K2(F));
+varargout{1} = CO3x;
+varargout{2} = HCO3x;
+end % end nested function
+
+function varargout=CalculateCO3fromTCpH(TCx, pHx)
+global K1 K2 F
+% ' SUB CalculateCO3CO2fromTCpH, version 01.0, 3-19, added by J. Sharp
+% ' Inputs: TC, pH, K1, K2
+% ' Output: CO3, CO2
+% ' This calculates CO3 and CO2 from TC and pH, using K1, and K2.
+H            = 10.^(-pHx);
+CO3x         = TCx.*K1(F).*K2(F)./(K1(F).*H + H.*H + K1(F).*K2(F));
+varargout{1} = CO3x;
+end % end nested function
+
+function varargout=CalculateHCO3fromTCpH(TCx, pHx)
+global K1 K2 F
+% ' SUB CalculateHCO3CO2fromTCpH, version 01.0, 3-19, added by J. Sharp
+% ' Inputs: TC, pH, K1, K2
+% ' Output: HCO3, CO2
+% ' This calculates HCO3 and CO2 from TC and pH, using K1, and K2.
+H            = 10.^(-pHx);
+HCO3x        = TCx.*K1(F).*H./(K1(F).*H + H.*H + K1(F).*K2(F));
+varargout{1} = HCO3x;
+end % end nested function
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Initial pH estimates via Munhoven (2013), Humphreys et al (2021).
+% Added by J. Sharp (3-30-21)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function varargout=CalculatepHfromTATCMunhoven(TAi, TCi)
+global K1 K2 KB TB F;
+K1F=K1(F);     K2F=K2(F);     TBF =TB(F);    KBF=KB(F);
+g0 = K1F.*K2F.*KBF.*(1-(2.*TCi+TBF)./TAi);
+g1 = K1F.*(KBF.*(1-TBF./TAi-TCi./TAi)+K2F.*(1-2.*TCi./TAi));
+g2 = KBF.*(1-TBF./TAi)+K1F.*(1-TCi./TAi);
+% Determine g21min
+g21min = g2.^2-3.*g1;
+g21min_positive = g21min > 0;
+sq21 = nan(size(TAi,1),1);
+sq21(g21min_positive) = sqrt(g21min(g21min_positive));
+sq21(~g21min_positive) = 0;
+% Determine Hmin
+Hmin = nan(size(TAi,1),1);
+g2_positive = g2 >=0;
+Hmin(~g2_positive) = (-g2(~g2_positive) + sq21(~g2_positive))./3;
+Hmin(g2_positive) = -g1(g2_positive)./(g2(g2_positive) + sq21(g2_positive));
+% Calculate initial pH
+pHGuess = nan(size(TAi,1),1);
+idx = TAi <= 0;
+pHGuess(idx) = -log10(1e-3);
+idx = TAi > 0 & TAi < 2.*TCi + TBF;
+pHGuess(idx & g21min_positive) = ...
+    -log10(Hmin(idx & g21min_positive) + ...
+    sqrt(-(Hmin(idx & g21min_positive).^3 + g2(idx & g21min_positive).*Hmin(idx & g21min_positive).^2 + ...
+    g1(idx & g21min_positive).*Hmin(idx & g21min_positive) + ...
+    g0(idx & g21min_positive))./sq21(idx & g21min_positive)));
+pHGuess(idx & ~g21min_positive) = -log10(1e-7);
+idx = TAi >= 2.*TCi + TBF;
+pHGuess(idx) = -log10(1e-10);
+varargout{1}=pHGuess;
+end
+
+function varargout=CalculatepHfromTACO2Munhoven(TAi, CO2x)
+global K1 K2 KB TB F;
+K1F=K1(F);     K2F=K2(F);     TBF =TB(F);    KBF=KB(F);
+g0 = -2.*K1F.*K2F.*KBF.*CO2x./TAi;
+g1 = -K1F.*(2.*K2F.*CO2x+KBF.*CO2x)./TAi;
+g2 = KBF-(TBF.*KBF+K1F.*CO2x)./TAi;
+% Determine Hmin
+g21min = g2.^2-3.*g1;
+g21min_positive = g21min > 0;
+sq21 = nan(size(TAi,1),1);
+sq21(g21min_positive) = sqrt(g21min(g21min_positive));
+sq21(~g21min_positive) = 0;
+Hmin = nan(size(TAi,1),1);
+g2_positive = g2 >=0;
+Hmin(~g2_positive) = (-g2(~g2_positive) + sq21(~g2_positive))./3;
+Hmin(g2_positive) = -g1(g2_positive)./(g2(g2_positive) + sq21(g2_positive));
+% Calculate initial pH
+pHGuess = nan(size(TAi,1),1);
+idx = TAi <= 0;
+pHGuess(idx) = -log10(1e-3);
+idx = TAi > 0;
+pHGuess(idx & g21min_positive) = ...
+    -log10(Hmin(idx & g21min_positive) + ...
+    sqrt(-(Hmin(idx & g21min_positive).^3 + g2(idx & g21min_positive).*Hmin(idx & g21min_positive).^2 + ...
+    g1(idx & g21min_positive).*Hmin(idx & g21min_positive)+...
+    g0(idx & g21min_positive))./sq21(idx & g21min_positive)));
+pHGuess(idx & ~g21min_positive) = -log10(1e-7);
+varargout{1}=pHGuess;
+end
+
+function varargout=CalculatepHfromTAHCO3Munhoven(TAi, HCO3x)
+global K1 K2 KB TB F;
+K1F=K1(F);     K2F=K2(F);     TBF =TB(F);    KBF=KB(F);
+g0 = 2.*K2F.*KBF.*HCO3x;
+g1 = KBF.*(HCO3x+TBF-TAi)+2.*K2F.*HCO3x;
+g2 = HCO3x-TAi;
+% Calculate initial pH
+pHGuess = nan(size(TAi,1),1);
+idx = TAi <= HCO3x;
+pHGuess(idx) = -log10(1e-3);
+idx = TAi > HCO3x;
+pHGuess(idx) = ...
+    -log10((-g1(idx)-sqrt(g1(idx).^2-4.*g0(idx).*g2(idx)))./(2.*g2(idx)));
+varargout{1}=pHGuess;
+end
+
+function varargout=CalculatepHfromTACO3Munhoven(TAi, CO3x)
+global K1 K2 KB TB F;
+K1F=K1(F);     K2F=K2(F);     TBF =TB(F);    KBF=KB(F);
+g0 = K2F.*KBF.*(2.*CO3x+TBF-TAi);
+g1 = KBF.*CO3x+K2F.*(2.*CO3x-TAi);
+g2 = CO3x;
+% Calculate initial pH
+pHGuess = nan(size(TAi,1),1);
+idx = TAi <= 2.*CO3x+TBF;
+pHGuess(idx) = -log10(1e-3);
+idx = TAi > 2.*CO3x+TBF;
+pHGuess(idx) = ...
+    -log10((-g1(idx)+sqrt(g1(idx).^2-4.*g0(idx).*g2(idx)))./(2.*g2(idx)));
+varargout{1}=pHGuess;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function varargout=RevelleFactor(TAi, TCi)
 % global WhichKs;
@@ -1810,7 +2818,7 @@ function varargout=RevelleFactor(TAi, TCi)
 % '       here at the given K(), which may be at pressure <> 1 atm. Care must
 % '       thus be used to see if there is any validity to the number computed.
 TC0 = TCi;
-dTC = 0.000001;% ' 1 umol/kg-SW
+dTC = 0.00000001;% ' 0.01 umol/kg-SW (lower than prior versions of CO2SYS)
 % ' Find fCO2 at TA, TC + dTC
 TCi = TC0 + dTC;
 pHc= CalculatepHfromTATC(TAi, TCi);
@@ -1822,45 +2830,50 @@ pHc= CalculatepHfromTATC(TAi, TCi);
 fCO2c= CalculatefCO2fromTCpH(TCi, pHc);
 fCO2minus = fCO2c;
 % CalculateRevelleFactor:
-Revelle = (fCO2plus - fCO2minus)./dTC./((fCO2plus + fCO2minus)./TCi);
+Revelle = (fCO2plus - fCO2minus)./dTC./((fCO2plus + fCO2minus)./TC0); % Corrected error pointed out by MP Humphreys (https://pyco2sys.readthedocs.io/en/latest/validate/)
 varargout{1}=Revelle;
 end % end nested function
 
 
-function varargout=CalculateAlkParts(pHx, TCx)
-global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi;
-global TB TF TS TP TSi F;
+function varargout=CalculateAlkParts(pH)
+global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S;
+global TB TF TS TP TSi TNH4 TH2S F;
 % ' SUB CalculateAlkParts, version 01.03, 10-10-97, written by Ernie Lewis.
 % ' Inputs: pH, TC, K(), T()
-% ' Outputs: HCO3, CO3, BAlk, OH, PAlk, SiAlk, Hfree, HSO4, HF
+% ' Outputs: BAlk, OH, PAlk, SiAlk, Hfree, HSO4, HF
 % ' This calculates the various contributions to the alkalinity.
 % ' Though it is coded for H on the total pH scale, for the pH values occuring
 % ' in seawater (pH > 6) it will be equally valid on any pH scale (H terms
 % ' negligible) as long as the K Constants are on that scale.
-H         = 10.^(-pHx);
-HCO3      = TCx.*K1.*H  ./(K1.*H + H.*H + K1.*K2);
-CO3       = TCx.*K1.*K2./(K1.*H + H.*H + K1.*K2);
-BAlk      = TB.*KB./(KB + H);
-OH        = KW./H;
-PhosTop   = KP1.*KP2.*H + 2.*KP1.*KP2.*KP3 - H.*H.*H;
-PhosBot   = H.*H.*H + KP1.*H.*H + KP1.*KP2.*H + KP1.*KP2.*KP3;
-PAlk      = TP.*PhosTop./PhosBot;
-% this is good to better than .0006*TP:
-% PAlk = TP*(-H/(KP1+H) + KP2/(KP2+H) + KP3/(KP3+H))
-SiAlk     = TSi.*KSi./(KSi + H);
-FREEtoTOT = (1 + TS./KS);        %' pH scale conversion factor
-Hfree     = H./FREEtoTOT;          %' for H on the total scale
-HSO4      = TS./(1 + KS./Hfree); %' since KS is on the free scale
-HF        = TF./(1 + KF./Hfree); %' since KF is on the free scale
 
-varargout{1} = HCO3; varargout{2} = CO3;   varargout{3} = BAlk;  varargout{4} = OH;
-varargout{5} = PAlk; varargout{6} = SiAlk; varargout{7} = Hfree; varargout{8} = HSO4;
-varargout{9} = HF;
+KWF =KW(F);
+KP1F=KP1(F);   KP2F=KP2(F);   KP3F=KP3(F);   TPF=TP(F);
+TSiF=TSi(F);   KSiF=KSi(F);   TNH4F=TNH4(F); KNH4F=KNH4(F);
+TH2SF=TH2S(F); KH2SF=KH2S(F); TBF =TB(F);    KBF=KB(F);
+TSF =TS(F);    KSF =KS(F);    TFF =TF(F);    KFF=KF(F);
+
+H         = 10.^(-pH);
+BAlk      = TBF.*KBF./(KBF + H);
+OH        = KWF./H;
+PhosTop   = KP1F.*KP2F.*H + 2.*KP1F.*KP2F.*KP3F - H.*H.*H;
+PhosBot   = H.*H.*H + KP1F.*H.*H + KP1F.*KP2F.*H + KP1F.*KP2F.*KP3F;
+PAlk      = TPF.*PhosTop./PhosBot;
+SiAlk     = TSiF.*KSiF./(KSiF + H);
+AmmAlk    = TNH4F.*KNH4F./(KNH4F + H);
+HSAlk     = TH2SF.*KH2SF./(KH2SF + H);
+[~,~,pHfree,~] = FindpHOnAllScales(pH); % this converts pH to pHfree no matter the scale
+Hfree = 10.^-pHfree; % this converts pHfree to Hfree
+HSO4      = TSF./(1 + KSF./Hfree); %' since KS is on the free scale
+HF        = TFF./(1 + KFF./Hfree); %' since KF is on the free scale
+
+varargout{1} = BAlk;  varargout{2} = OH; varargout{3} = PAlk;
+varargout{4} = SiAlk; varargout{5} = AmmAlk; varargout{6} = HSAlk;
+varargout{7} = Hfree; varargout{8} = HSO4; varargout{9} = HF;
 end % end nested function
 
 
 function varargout=CaSolubility(Sal, TempC, Pdbar, TC, pH)
-global K1 K2 TempK logTempK sqrSal Pbar RT WhichKs ntps
+global K1 K2 TempK logTempK sqrSal Pbar RT WhichKs CAL ntps F
 global PertK    % Id of perturbed K
 global Perturb  % perturbation
 % '***********************************************************************
@@ -1889,73 +2902,66 @@ global Perturb  % perturbation
 % '       boric acid, and the pHi of seawater, Limnology and Oceanography
 % '       13:403-417, 1968.
 % '***********************************************************************
-Ca=nan(ntps,1);
-Ar=nan(ntps,1);
-KCa=nan(ntps,1);
-KAr=nan(ntps,1);
-F=(WhichKs~=6 & WhichKs~=7);
-if any(F)
+Ca=CAL(F);
+Ar=nan(sum(F),1);
+KCa=nan(sum(F),1);
+KAr=nan(sum(F),1);
+TempKx=TempK(F);
+logTempKx=logTempK(F);
+sqrSalx=sqrSal(F);
+Pbarx=Pbar(F);
+RTx=RT(F);
+FF=(WhichKs(F)~=6 & WhichKs(F)~=7);
+if any(FF)
 % (below here, F isn't used, since almost always all rows match the above criterium,
 %  in all other cases the rows will be overwritten later on).
-    % CalculateCa:
-    % '       Riley, J. P. and Tongudai, M., Chemical Geology 2:263-269, 1967:
-    % '       this is .010285.*Sali./35
-    Ca = 0.02128./40.087.*(Sal./1.80655);% ' in mol/kg-SW
     % CalciteSolubility:
     % '       Mucci, Alphonso, Amer. J. of Science 283:781-799, 1983.
-    logKCa = -171.9065 - 0.077993.*TempK + 2839.319./TempK;
-    logKCa = logKCa + 71.595.*logTempK./log(10);
-    logKCa = logKCa + (-0.77712 + 0.0028426.*TempK + 178.34./TempK).*sqrSal;
-    logKCa = logKCa - 0.07711.*Sal + 0.0041249.*sqrSal.*Sal;
+    logKCa = -171.9065 - 0.077993.*TempKx(FF) + 2839.319./TempKx(FF);
+    logKCa = logKCa + 71.595.*logTempKx(FF)./log(10);
+    logKCa = logKCa + (-0.77712 + 0.0028426.*TempKx(FF) + 178.34./TempKx(FF)).*sqrSalx(FF);
+    logKCa = logKCa - 0.07711.*Sal(FF) + 0.0041249.*sqrSalx(FF).*Sal(FF);
     % '       sd fit = .01 (for Sal part, not part independent of Sal)
-    KCa = 10.^(logKCa);% ' this is in (mol/kg-SW)^2
+    KCa(FF) = 10.^(logKCa);% ' this is in (mol/kg-SW)^2
     % AragoniteSolubility:
     % '       Mucci, Alphonso, Amer. J. of Science 283:781-799, 1983.
-    logKAr = -171.945 - 0.077993.*TempK + 2903.293./TempK;
-    logKAr = logKAr + 71.595.*logTempK./log(10);
-    logKAr = logKAr + (-0.068393 + 0.0017276.*TempK + 88.135./TempK).*sqrSal;
-    logKAr = logKAr - 0.10018.*Sal + 0.0059415.*sqrSal.*Sal;
+    logKAr = -171.945 - 0.077993.*TempKx(FF) + 2903.293./TempKx(FF);
+    logKAr = logKAr + 71.595.*logTempKx(FF)./log(10);
+    logKAr = logKAr + (-0.068393 + 0.0017276.*TempKx(FF) + 88.135./TempKx(FF)).*sqrSalx(FF);
+    logKAr = logKAr - 0.10018.*Sal(FF) + 0.0059415.*sqrSalx(FF).*Sal(FF);
     % '       sd fit = .009 (for Sal part, not part independent of Sal)
-    KAr    = 10.^(logKAr);% ' this is in (mol/kg-SW)^2
+    KAr(FF)    = 10.^(logKAr);% ' this is in (mol/kg-SW)^2
     % PressureCorrectionForCalcite:
     % '       Ingle, Marine Chemistry 3:301-319, 1975
     % '       same as in Millero, GCA 43:1651-1661, 1979, but Millero, GCA 1995
     % '       has typos (-.5304, -.3692, and 10^3 for Kappa factor)
-    deltaVKCa = -48.76 + 0.5304.*TempC;
-    KappaKCa  = (-11.76 + 0.3692.*TempC)./1000;
-    lnKCafac  = (-deltaVKCa + 0.5.*KappaKCa.*Pbar).*Pbar./RT;
-    KCa       = KCa.*exp(lnKCafac);
+    deltaVKCa = -48.76 + 0.5304.*TempC(FF);
+    KappaKCa  = (-11.76 + 0.3692.*TempC(FF))./1000;
+    lnKCafac  = (-deltaVKCa + 0.5.*KappaKCa.*Pbarx(FF)).*Pbarx(FF)./RTx(FF);
+    KCa(FF)       = KCa(FF).*exp(lnKCafac);
     % PressureCorrectionForAragonite:
     % '       Millero, Geochemica et Cosmochemica Acta 43:1651-1661, 1979,
     % '       same as Millero, GCA 1995 except for typos (-.5304, -.3692,
     % '       and 10^3 for Kappa factor)
     deltaVKAr = deltaVKCa + 2.8;
     KappaKAr  = KappaKCa;
-    lnKArfac  = (-deltaVKAr + 0.5.*KappaKAr.*Pbar).*Pbar./RT;
-    KAr       = KAr.*exp(lnKArfac);
+    lnKArfac  = (-deltaVKAr + 0.5.*KappaKAr.*Pbarx(FF)).*Pbarx(FF)./RTx(FF);
+    KAr(FF)       = KAr(FF).*exp(lnKArfac);
 end
-F=(WhichKs==6 | WhichKs==7);
-if any(F)
-    %
-    % *** CalculateCaforGEOSECS:
-    % Culkin, F, in Chemical Oceanography, ed. Riley and Skirrow, 1965:
-    % (quoted in Takahashi et al, GEOSECS Pacific Expedition v. 3, 1982)
-    Ca(F) = 0.01026.*Sal(F)./35;
-    % Culkin gives Ca = (.0213./40.078).*(Sal./1.80655) in mol/kg-SW
-    % which corresponds to Ca = .01030.*Sal./35.
-    %
+FF=(WhichKs(F)==6 | WhichKs(F)==7);
+if any(FF)
     % *** CalculateKCaforGEOSECS:
     % Ingle et al, Marine Chemistry 1:295-307, 1973 is referenced in
     % (quoted in Takahashi et al, GEOSECS Pacific Expedition v. 3, 1982
     % but the fit is actually from Ingle, Marine Chemistry 3:301-319, 1975)
-    KCa(F) = 0.0000001.*(-34.452 - 39.866.*Sal(F).^(1./3) +...
-        110.21.*log(Sal(F))./log(10) - 0.0000075752.*TempK(F).^2);
+    KCa(FF) = 0.0000001.*(-34.452 - 39.866.*Sal(FF).^(1./3) +...
+        110.21.*log(Sal(FF))./log(10) - 0.0000075752.*TempKx(FF).^2);
     % this is in (mol/kg-SW)^2
     %
     % *** CalculateKArforGEOSECS:
     % Berner, R. A., American Journal of Science 276:713-730, 1976:
     % (quoted in Takahashi et al, GEOSECS Pacific Expedition v. 3, 1982)
-    KAr(F) = 1.45.*KCa(F);% ' this is in (mol/kg-SW)^2
+    KAr(FF) = 1.45.*KCa(FF);% ' this is in (mol/kg-SW)^2
     % Berner (p. 722) states that he uses 1.48.
     % It appears that 1.45 was used in the GEOSECS calculations
     %
@@ -1965,8 +2971,8 @@ if any(F)
     % but their paper is not even on this topic).
     % The fits appears to be new in the GEOSECS report.
     % I can't find them anywhere else.
-    KCa(F) = KCa(F).*exp((36   - 0.2 .*TempC(F)).*Pbar(F)./RT(F));
-    KAr(F) = KAr(F).*exp((33.3 - 0.22.*TempC(F)).*Pbar(F)./RT(F));
+    KCa(FF) = KCa(FF).*exp((36   - 0.2 .*TempC(FF)).*Pbarx(FF)./RTx(FF));
+    KAr(FF) = KAr(FF).*exp((33.3 - 0.22.*TempC(FF)).*Pbarx(FF)./RTx(FF));
 end
 % Added by JM Epitalon
 % For computing derivative with respect to KCa or KAr, one has to perturb the value of one K
@@ -1977,38 +2983,43 @@ if (~ isempty(PertK))
             KAr = KAr + Perturb;
         case {'KSPC'}   % for Calcite
             KCa = KCa + Perturb;
+        case {'CAL'}   % for calcium concentration
+            Ca  = Ca  + Perturb;
     end
 end
 
 % CalculateOmegasHere:
 H = 10.^(-pH);
-CO3 = TC.*K1.*K2./(K1.*H + H.*H + K1.*K2);
+CO3 = TC.*K1(F).*K2(F)./(K1(F).*H + H.*H + K1(F).*K2(F));
 varargout{1} = CO3.*Ca./KCa; % OmegaCa, dimensionless
 varargout{2} = CO3.*Ca./KAr; % OmegaAr, dimensionless
+varargout{3} = KCa ;
+varargout{4} = KAr ;
+varargout{5} = CAL ;
 end % end nested function
 
-
 function varargout=FindpHOnAllScales(pH)
-global pHScale K T TS KS TF KF fH ntps;
+global pHScale K T TS KS TF KF fH F ntps;
 % ' SUB FindpHOnAllScales, version 01.02, 01-08-97, written by Ernie Lewis.
 % ' Inputs: pHScale%, pH, K(), T(), fH
 % ' Outputs: pHNBS, pHfree, pHTot, pHSWS
 % ' This takes the pH on the given scale and finds the pH on all scales.
 %  TS = T(3); TF = T(2);
 %  KS = K(6); KF = K(5);% 'these are at the given T, S, P
-FREEtoTOT = (1 + TS./KS);% ' pH scale conversion factor
-SWStoTOT  = (1 + TS./KS)./(1 + TS./KS + TF./KF);% ' pH scale conversion factor
-factor=nan(ntps,1);
-F=pHScale==1;  %'"pHtot"
-factor(F) = 0;
-F=pHScale==2; % '"pHsws"
-factor(F) = -log(SWStoTOT(F))./log(0.1);
-F=pHScale==3; % '"pHfree"
-factor(F) = -log(FREEtoTOT(F))./log(0.1);
-F=pHScale==4;  %'"pHNBS"
-factor(F) = -log(SWStoTOT(F))./log(0.1) + log(fH(F))./log(0.1);
+TSx=TS(F); KSx=KS(F); TFx=TF(F); KFx=KF(F);fHx=fH(F);
+FREEtoTOT = (1 + TSx./KSx); % ' pH scale conversion factor
+SWStoTOT  = (1 + TSx./KSx)./(1 + TSx./KSx + TFx./KFx);% ' pH scale conversion factor
+factor=nan(sum(F),1);
+nF=pHScale(F)==1;  %'"pHtot"
+factor(nF) = 0;
+nF=pHScale(F)==2; % '"pHsws"
+factor(nF) = -log(SWStoTOT(nF))./log(0.1);
+nF=pHScale(F)==3; % '"pHfree"
+factor(nF) = -log(FREEtoTOT(nF))./log(0.1);
+nF=pHScale(F)==4;  %'"pHNBS"
+factor(nF) = -log(SWStoTOT(nF))./log(0.1) + log(fHx(nF))./log(0.1);
 pHtot  = pH    - factor;    % ' pH comes into this sub on the given scale
-pHNBS  = pHtot - log(SWStoTOT) ./log(0.1) + log(fH)./log(0.1);
+pHNBS  = pHtot - log(SWStoTOT) ./log(0.1) + log(fHx)./log(0.1);
 pHfree = pHtot - log(FREEtoTOT)./log(0.1);
 pHsws  = pHtot - log(SWStoTOT) ./log(0.1);
 varargout{1}=pHtot;
@@ -2017,12 +3028,19 @@ varargout{3}=pHfree;
 varargout{4}=pHNBS;
 end % end nested function
 
+
+%
+% errors for CO2SYSv3 -----------------------------------------------------
+%
+
 % errors()
 % This subroutine propagates uncertainties for the marine carbonate chemistry calculations
-% from errors (or uncertainties) on six input 
-%  - pair of carbonate system variables 
-%  - nutrients (silicate and phosphate concentrations)
+% from errors (or uncertainties) on inputs:
+%  - pair of carbonate system variables
+%  - nutrient (silicate and phosphate) concentrations
+%  - concentrations of ammonium and hydrogen sulfide
 %  - temperature and salinity
+%  - calcium concentration (optional)
 % plus errors in dissociation constants pK0, pK1, pK2, pKb, pKw, pKspa, and pKspc as well as total boron
 %
 % It calls derivnum, which computes numerical derivatives, and then
@@ -2030,35 +3048,44 @@ end % end nested function
 % The latter is a general technique to estimate the 2nd moment of a variable z
 % (variance or standard deviation) based on a 1st-order approximation to z.
 %
+% This subroutine has been modified from its original version (Orr et al.
+% 2018) to allow for input variables of CO2, HCO3, and CO3, the inclusion
+% of ammonium and hydrogen sulfide, compatibility with CO2SYS.m(v3), and am
+% optional input of calcium concentration uncertainty.
+%
 %**************************************************************************
 %
 %  **** SYNTAX:
-%  [err, headers, units] = errors(PAR1,PAR2,PAR1TYPE,PAR2TYPE,..  .
-%                                     SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,...
-%                                     ePAR1,ePAR2,eSAL,eTEMP,eSI,ePO4,epK,eBt,r,...
-%                                     pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS)
+%  [err, headers, units] = errors(PAR1,PAR2,PAR1TYPE,PAR2TYPE,...
+%                                 SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,...
+%                                 NH4,H2S,ePAR1,ePAR2,eSAL,eTEMP,eSI,ePO4,...
+%                                 eNH4,eH2S,epK,eBt,r,pHSCALEIN,K1K2CONSTANTS,...
+%                                 KSO4CONSTANT,KFCONSTANT,BORON,eCAL(optional))
 % 
 %  **** SYNTAX EXAMPLES:
-%  [Result]                = errors(2400,2200,1,2,35,10,10,0,0,15,1,2,2,0.01,0.01,0,0,0,0,0,1,4,1)
-%  [Result,Headers]        = errors(2400,   8,1,3,35,25,5,0,3000,15,1,2,0.001,0,0,0,0,0,0,0,1,4,1)
-%  [Result,Headers,Units]  = errors(500,    8,5,3,35,25,5,0,4000,15,1,2,0.001,0,0,0,0,'','',0,1,4,1)
-%  [A]                     = errors(2400,2000:10:2400,1,2,35,10,10,0,0,15,2,2,0,0,0,0,'','',0,1,1,4,1)
-%  [A]                     = errors(2400,2200,1,2,0:1:35,0,25,4200,0,15,1,2,2,0,0,0,0,'','',0,1,4,1)
+%  [Result]                = errors(2400,2200,1,2,35,10,10,0,0,15,1,0,0,2,2,0.01,0.01,0,0,0,0,0,0,0,1,4,1,1,1)
+%  [Result,Headers]        = errors(2400,   8,1,3,35,25,5,0,3000,15,1,0,0,2,0.001,0,0,0,0,0,0,0,0,0,1,4,1,1,1)
+%  [Result,Headers,Units]  = errors(500,    8,5,3,35,25,5,0,4000,15,1,0,0,2,0.001,0,0,0,0,0,0,'','',0,1,4,1,1,1)
+%  [A]                     = errors(2400,2000:10:2400,1,2,35,10,10,0,0,15,2,0,0,2,0,0,0,0,0,0,0,'','',0,1,4,1,1,1)
+%  [A]                     = errors(2400,2200,1,2,0:1:35,0,25,4200,0,15,1,0,0,2,2,0,0,0,0,0,0,'','',0,1,4,1,1,1)
 %  epK = [0.002, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02];
 %  eBt = 0.02;
-%  [A, hdr, units]   = errors(2400,2200,1,2,35,0,25,0:100:4200,0,15,1,2,2,0,0,0,0,epK,eBt,0,1,4,1)
+%  [A, hdr, units]         = errors(2400,2200,1,2,35,0,25,0:100:4200,0,15,1,0,0,2,2,0,0,0,0,0,0,epK,eBt,0,1,4,1,1,1)
 %  
 %**************************************************************************
 %
 % INPUT:
 %
-%   - ePAR1, ePAR2   :  uncertainty of PAR1 and PAR2 of input pair of CO2 system variables (same units as PAR1 & PAR2)
+%   - ePAR1, ePAR2   :  uncertainty of PAR1 and PAR2 of input pair of CO2 system variables
+%                       * Same units as PAR1 & PAR2
 %   - eS, eT         :  uncertainty of Salinity and Temperature (same units as S and T)
 %   - ePO4, eSI      :  uncertainty of Phosphate and Silicate total concentrations (same units as PO4 and SI [umol/kg])
+%   - eNH4, eH2S     :  uncertainty of Ammonia and Hydrogen Sulfide total concentrations (same units as NH4 and H2S [umol/kg])
 %   - epK            :  uncertainty of all seven dissociation constants (a vector) [pK units]
 %   - eBt            :  uncertainty of total boron, given as fractional relative error (eBt=0.02 is a 2% error)
 %   - r              :  correlation coefficient between PAR1 AND PAR2 (typicaly 0)
-%   - others         :  same as input for subroutine  CO2SYS() : scalar or vectors
+%   - others         :  same as input for subroutine  CO2SYS() (version 3, scalar or vectors)
+%   - eCAL           :  uncertainty of calcium [mmol/kg] determined by ratio with salinity
 %
 % All parameters may be scalars or vectors except epK and eBt.
 %   * epK must be vector of 7 values : errors of [pK0, pK1, pK2, pKb, pKw, pKspa, pKspc]. 
@@ -2079,10 +3106,12 @@ end % end nested function
 %     for TB, where the default is eBt=0.02. It is assumed to be the same
 %     for all rows of data.
 %
-% In constrast, ePAR1, ePAR2, eS, eT, ePO4 and eSI, 
+% In constrast, ePAR1, ePAR2, eS, eT, ePO4, eSI, eNH4, and eH2S
 %   - if vectors, are errors associated with each data point
 %   - if scalars, are one error value associated to all data points
-% The same for parameter "r".
+% The same for parameter 'r'.
+%
+% If no value is input for eCAL, it will not be evaluated.
 %
 % If 'r' is nonzero with a value between -1.0 and 1.0, it indicates the correlation 
 % between uncertainties of the input pair of carbonate system variables.
@@ -2119,60 +3148,59 @@ end % end nested function
 %           (one row per sample):
 %         *  a cell-array containing crudely formatted headers
 %
-%    POS  PARAMETER        UNIT
+%    POS  PARAMETER         UNIT
 %
-%    01 - TAlk                 (umol/kg)
-%    02 - TCO2                 (umol/kg)
-%    03   fCO2in               (uatm)
-%    04 - HCO3in               (umol/kg)
-%    05 - CO3in                (umol/kg)
-%    06 - CO2in                (umol/kg)
-%    07 - OmegaCAin            ()
-%    08 - OmegaARin            ()
-%    09 - xCO2in               (ppm)
-%    10 - Hout                 (nmol/kg)
-%    11 - pCO2out              (uatm)
-%    12 - fCO2out              (uatm)
-%    13 - HCO3out              (umol/kg)
-%    14 - CO3out               (umol/kg)
-%    15 - CO2out               (umol/kg)
-%    16 - OmegaCAout           ()
-%    17 - OmegaARout           ()
-%    18 - xCO2out              (ppm)
+%    01 - TAlk              (umol/kgSW)
+%    02 - TCO2              (umol/kgSW)
+%    03 - [H+] in           (nmol/kgSW)
+%    04 - pCO2 in           (uatm)
+%    05 - fCO2 in           (uatm)
+%    06 - HCO3 in           (umol/kgSW)
+%    07 - CO3 in            (umol/kgSW)
+%    08 - CO2 in            (umol/kgSW)
+%    09 - RF in             ()
+%    10 - OmegaCa in        ()
+%    11 - OmegaAr in        ()
+%    12 - xCO2 in           (ppm)
+%    13 - [H+] out          (nmol/kgSW)
+%    14 - pCO2 out          (uatm)
+%    15 - fCO2 out          (uatm)
+%    16 - HCO3 out          (umol/kgSW)
+%    17 - CO3 out           (umol/kgSW)
+%    18 - CO2 out           (umol/kgSW)
+%    19 - RF out            ()
+%    20 - OmegaCa out       ()
+%    21 - OmegaAr out       ()
+%    22 - xCO2 out          (ppm)
 %
-% NOTE: Only uncertainties for the output variables are provided.
-%       The 1st 2 columns will change as a function of PAR1TYPE and PAR2TYPE.
-%       In the case above, the input pair is pH-pCO2 (PAR1TYPE=3, PAR2TYPE=4).
-%       That is why the results in the first 2 columns are for the other 2
-%       possible input variables (TAlk and TCO2)
+% NOTE: User-specified uncertainties for the input arguments are provided
+%       in addition to uncertainties in output arguments at both input and
+%       output conditions.
 %
-% EXAMPLE: a nice way to see the headers & units along with the results
-%
-% [e, ehead, eunits] = errors (PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,...
-%                              ePAR1,ePAR2,eSAL,eTEMP,eSI,ePO4,epK,eBt,r,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
-%
-%  printf("%s   %s %s %s %s  %s %s %s %s \n", ehead{1:9});
-%  printf("%s   %s  %s    %s %s %s    %s      %s          %s \n", eunits{1:9});
-%  printf("%f  %f  %f  %f  %f %f  %f     %f     %f \n", e(1:9));
-  
+
 function [total_error, headers, units] = ...
         errors (PAR1, PAR2, PAR1TYPE, PAR2TYPE, SAL, TEMPIN, TEMPOUT, PRESIN, PRESOUT, SI, PO4,...
-                ePAR1, ePAR2, eSAL, eTEMP, eSI, ePO4, epK, eBt, r, ...
-                pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
+                NH4, H2S, ePAR1, ePAR2, eSAL, eTEMP, eSI, ePO4, eNH4, eH2S, epK, eBt, r, ...
+                pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANT,KFCONSTANT,BORON,eCAL)
 
-    global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi;
+    global K0 K1 K2 KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S E;
     
     % Input conditioning
     % ------------------
-
+    
+    % Handle optional calcium error input
+    if (nargin < 30), eCAL=0; end
+    
     % Determine lengths of input vectors
     veclengths=[length(PAR1) length(PAR2) length(PAR1TYPE)...
                 length(PAR2TYPE) length(SAL) length(TEMPIN)...
                 length(TEMPOUT) length(PRESIN) length(PRESOUT)...
-                length(SI) length(PO4) length(ePAR1) length(ePAR2)...
-                length(eSAL) length(eTEMP)...
-                length(eSI) length(ePO4) length(r) length(pHSCALEIN)...
-                length(K1K2CONSTANTS) length(KSO4CONSTANTS)];
+                length(SI) length(PO4) length(NH4) length(H2S)...
+                length(ePAR1) length(ePAR2) length(eSAL) length(eTEMP)...
+                length(eSI) length(ePO4) length(eNH4) length(eH2S)...
+                length(r) length(pHSCALEIN) length(K1K2CONSTANTS)...
+                length(KSO4CONSTANT) length(KFCONSTANT) length(BORON)...
+                length(eCAL)];
 
     if length(unique(veclengths))>2
             disp(' '); disp('*** INPUT ERROR: Input vectors must all be of same length, or of length 1. ***'); disp(' '); return
@@ -2190,17 +3218,24 @@ function [total_error, headers, units] = ...
     PRESOUT      =PRESOUT      (:);
     SI           =SI           (:);
     PO4          =PO4          (:);
+    NH4          =NH4          (:);
+    H2S          =H2S          (:);
     ePAR1        =ePAR1        (:);
     ePAR2        =ePAR2        (:);
     eSAL         =eSAL         (:);
     eTEMP        =eTEMP        (:);
     eSI          =eSI          (:);
     ePO4         =ePO4         (:);
+    eNH4         =eNH4         (:);
+    eH2S         =eH2S         (:);
     r            =r            (:);
     pHSCALEIN    =pHSCALEIN    (:);
     K1K2CONSTANTS=K1K2CONSTANTS(:);
-    KSO4CONSTANTS=KSO4CONSTANTS(:);
-
+    KSO4CONSTANT =KSO4CONSTANT (:);
+    KFCONSTANT   =KFCONSTANT   (:);
+    BORON        =BORON        (:);
+    eCAL         =eCAL         (:);
+    
     % Find the longest column vector:
     ntps = max(veclengths);
 
@@ -2216,17 +3251,27 @@ function [total_error, headers, units] = ...
     PRESOUT(1:ntps,1)       = PRESOUT(:)       ;
     SI(1:ntps,1)            = SI(:)            ;
     PO4(1:ntps,1)           = PO4(:)           ;
+    NH4(1:ntps,1)           = NH4(:)           ;
+    H2S(1:ntps,1)           = H2S(:)           ;
     ePAR1(1:ntps,1)         = ePAR1(:)         ;
     ePAR2(1:ntps,1)         = ePAR2(:)         ;
     eSAL(1:ntps,1)          = eSAL(:)          ;
     eTEMP(1:ntps,1)         = eTEMP(:)         ;
     eSI(1:ntps,1)           = eSI(:)           ;
     ePO4(1:ntps,1)          = ePO4(:)          ;
+    eNH4(1:ntps,1)          = eNH4(:)          ;
+    eH2S(1:ntps,1)          = eH2S(:)          ;
     r(1:ntps,1)             = r(:)             ;
     pHSCALEIN(1:ntps,1)     = pHSCALEIN(:)     ;
     K1K2CONSTANTS(1:ntps,1) = K1K2CONSTANTS(:) ;
-    KSO4CONSTANTS(1:ntps,1) = KSO4CONSTANTS(:) ;
+    KSO4CONSTANT(1:ntps,1)  = KSO4CONSTANT(:)  ;
+    KFCONSTANT(1:ntps,1)    = KFCONSTANT(:)    ;
+    BORON(1:ntps,1)         = BORON(:)         ;
+    eCAL(1:ntps,1)          = eCAL(:)          ;
 
+    % Exclude input variables equal to -999
+    E = (PAR1~=-999 & PAR2~=-999);
+    
     % Default values for epK
     if (isempty(epK))
         epK = [0.002, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02];
@@ -2256,7 +3301,7 @@ function [total_error, headers, units] = ...
 
     % Convert error on pH to error on [H+] concentration
     % in case where first input variable is pH
-    isH = (PAR1TYPE == 3);
+    isH = (E & PAR1TYPE == 3);
     
     pH = PAR1(isH);
     epH = ePAR1(isH);       % Error on pH
@@ -2273,47 +3318,52 @@ function [total_error, headers, units] = ...
     ePAR1(isH) = eH;
 
     % Same conversion for second variable
-    isH = (PAR2TYPE == 3);
+    isH = (E & PAR2TYPE == 3);
     pH = PAR2(isH);
     epH = ePAR2(isH);       % Error on pH
     H  = 10.^(-pH);         % H+ concentration
     r(isH) = -r(isH);       % Inverse sign of 'r' if PAR2 is pH
 
     eH =   log(10) * (H .* epH);
-    eH =  eH * 1e9             ;
+    eH =  eH * 1e9;
     ePAR2(isH) = eH;
+
+    % Convert calcium error from mmol/kg to mol/kg
+    eCAL = eCAL.*1e-3;
 
     % initialise total square error
     sq_err = zeros(ntps,1);
-        
+    
     % Contribution of PAR1 to squared standard error
-    if (any (ePAR1 ~= 0.0))
+    if (any(ePAR1 ~= 0.0))
         % Compute sensitivities (partial derivatives)
-        [deriv1, headers, units, headers_err, units_err] = derivnum ('PAR1',PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
-        %err = deriv1 .* ePAR1;
+        [deriv1(E,:),~,~,headers_err,units_err] = derivnum ('PAR1',...
+            PAR1(E),PAR2(E),PAR1TYPE(E),PAR2TYPE(E),SAL(E),TEMPIN(E),...
+            TEMPOUT(E),PRESIN(E),PRESOUT(E),SI(E),PO4(E),NH4(E),H2S(E),...
+            pHSCALEIN(E),K1K2CONSTANTS(E),KSO4CONSTANT(E),KFCONSTANT(E),BORON(E));
         err = bsxfun(@times,deriv1,ePAR1);
-	%sq_err = err*0. + sq_err;
-	sq_err = bsxfun(@plus,err*0., sq_err);
-        sq_err = sq_err + err .* err;
+	 sq_err = bsxfun(@plus,err*0., sq_err);
+     sq_err = sq_err + err .* err;
     end
 
     % Contribution of PAR2 to squared standard error
     if (any (ePAR2 ~= 0.0))
         % Compute sensitivities (partial derivatives)
-        [deriv2, headers, units, headers_err, units_err] = derivnum ('PAR2',PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
-        %err = deriv2 .* ePAR2;
+        [deriv2(E,:),~,~,headers_err,units_err] = derivnum ('PAR2',...
+            PAR1(E),PAR2(E),PAR1TYPE(E),PAR2TYPE(E),SAL(E),TEMPIN(E),...
+            TEMPOUT(E),PRESIN(E),PRESOUT(E),SI(E),PO4(E),NH4(E),H2S(E),...
+            pHSCALEIN(E),K1K2CONSTANTS(E),KSO4CONSTANT(E),KFCONSTANT(E),BORON(E));
         err = bsxfun(@times,deriv2,ePAR2);
-	%sq_err = err*0. + sq_err;
-	sq_err = bsxfun(@plus,err*0., sq_err);
-        sq_err = sq_err + err .* err;
+	 sq_err = bsxfun(@plus,err*0., sq_err);
+     sq_err = sq_err + err .* err;
     end
 
     % Contribution of covariance of PAR1 and PAR2 to squared standard error
+    covariance  = nan(ntps,1);
     if (any (r ~= 0.0) && any (ePAR1 ~= 0.0) && any (ePAR2 ~= 0.0))
         % Compute covariance from correlation coeff. & std deviations
-        covariance = r .* ePAR1 .* ePAR2;
+        covariance(E) = r(E) .* ePAR1(E) .* ePAR2(E);
         % Contribution to squared error
-        %err2 = 2 * deriv1 .* deriv2 .* covariance;
         err2 = bsxfun(@times,2 * deriv1 .* deriv2, covariance);
         sq_err = sq_err + err2;
     end
@@ -2323,13 +3373,13 @@ function [total_error, headers, units] = ...
     % Remark : does not compute error where SI = 0 
     %          because computation of sensitivity to SI fails in that case
     %
-    SI_valid = (SI ~= 0) & (eSI ~= 0);
+    SI_valid = (E & SI ~= 0 & eSI ~= 0);
     if (any (SI_valid))
         % Compute sensitivities (partial derivatives)
-        [deriv, headers, units, headers_err, units_err] = derivnum ('sil',PAR1(SI_valid),PAR2(SI_valid),PAR1TYPE(SI_valid),PAR2TYPE(SI_valid),...
+        [deriv, ~, ~, headers_err, units_err] = derivnum ('sil',PAR1(SI_valid),PAR2(SI_valid),PAR1TYPE(SI_valid),PAR2TYPE(SI_valid),...
                    SAL(SI_valid),TEMPIN(SI_valid),TEMPOUT(SI_valid),PRESIN(SI_valid),PRESOUT(SI_valid),...
-                   SI(SI_valid),PO4(SI_valid),pHSCALEIN(SI_valid),K1K2CONSTANTS(SI_valid),KSO4CONSTANTS(SI_valid));
-        %err = deriv .* eSI(SI_valid);
+                   SI(SI_valid),PO4(SI_valid),NH4(SI_valid),H2S(SI_valid),pHSCALEIN(SI_valid),K1K2CONSTANTS(SI_valid),KSO4CONSTANT(SI_valid),...
+                   KFCONSTANT(SI_valid),BORON(SI_valid));
         err = bsxfun(@times,deriv,eSI(SI_valid));
         new_size = [ntps size(err,2)];
 	sq_err = zeros(new_size) + sq_err;
@@ -2341,41 +3391,81 @@ function [total_error, headers, units] = ...
     % Remark : does not compute error where PO4 = 0 
     %          because computation of sensitivity to PO4 fails in that case
     %
-    PO4_valid = (PO4 ~= 0) & (ePO4 ~= 0);
+    PO4_valid = (E & PO4 ~= 0 & ePO4 ~= 0);
     if (any (PO4_valid))
         % Compute sensitivities (partial derivatives)
-        [deriv, headers, units, headers_err, units_err] = derivnum ('phos',PAR1(PO4_valid),PAR2(PO4_valid),PAR1TYPE(PO4_valid),PAR2TYPE(PO4_valid),...
+        [deriv, ~, ~, headers_err, units_err] = derivnum ('phos',PAR1(PO4_valid),PAR2(PO4_valid),PAR1TYPE(PO4_valid),PAR2TYPE(PO4_valid),...
                    SAL(PO4_valid),TEMPIN(PO4_valid),TEMPOUT(PO4_valid),PRESIN(PO4_valid),PRESOUT(PO4_valid),...
-                   SI(PO4_valid),PO4(PO4_valid),pHSCALEIN(PO4_valid),K1K2CONSTANTS(PO4_valid),KSO4CONSTANTS(PO4_valid));
-        %err = deriv .* ePO4(PO4_valid);
+                   SI(PO4_valid),PO4(PO4_valid),NH4(PO4_valid),H2S(PO4_valid),pHSCALEIN(PO4_valid),K1K2CONSTANTS(PO4_valid),KSO4CONSTANT(PO4_valid),...
+                   KFCONSTANT(PO4_valid),BORON(PO4_valid));
         err = bsxfun(@times,deriv,ePO4(PO4_valid));
         new_size = [ntps size(err,2)];
 	sq_err = zeros(new_size) + sq_err;
         sq_err(PO4_valid,:) = sq_err(PO4_valid,:) + err .* err;
     end
+    
+    % Contribution of Ammonia (total dissolved inorganic concentration) to squared standard error
+    %
+    % Remark : does not compute error where NH4 = 0 
+    %          because computation of sensitivity to SI fails in that case
+    %
+    NH4_valid = (E & NH4 ~= 0 & eNH4 ~= 0);
+    if (any (NH4_valid))
+        % Compute sensitivities (partial derivatives)
+        [deriv, ~, ~, headers_err, units_err] = derivnum ('amm',PAR1(NH4_valid),PAR2(NH4_valid),PAR1TYPE(NH4_valid),PAR2TYPE(NH4_valid),...
+                   SAL(NH4_valid),TEMPIN(NH4_valid),TEMPOUT(NH4_valid),PRESIN(NH4_valid),PRESOUT(NH4_valid),...
+                   SI(NH4_valid),PO4(NH4_valid),NH4(NH4_valid),H2S(NH4_valid),pHSCALEIN(NH4_valid),K1K2CONSTANTS(NH4_valid),KSO4CONSTANT(NH4_valid),...
+                   KFCONSTANT(NH4_valid),BORON(NH4_valid));
+        err = bsxfun(@times,deriv,eNH4(NH4_valid));
+        new_size = [ntps size(err,2)];
+	sq_err = zeros(new_size) + sq_err;
+        sq_err(NH4_valid,:) = sq_err(NH4_valid,:) + err .* err;
+    end
+
+    % Contribution of Hydrogen Sulfide (total dissoloved inorganic concentration) to squared standard error
+    %
+    % Remark : does not compute error where H2S = 0 
+    %          because computation of sensitivity to PO4 fails in that case
+    %
+    H2S_valid = (E & H2S ~= 0 & eH2S ~= 0);
+    if (any (H2S_valid))
+        % Compute sensitivities (partial derivatives)
+        [deriv, ~, ~, headers_err, units_err] = derivnum ('hyd',PAR1(H2S_valid),PAR2(H2S_valid),PAR1TYPE(H2S_valid),PAR2TYPE(H2S_valid),...
+                   SAL(H2S_valid),TEMPIN(H2S_valid),TEMPOUT(H2S_valid),PRESIN(H2S_valid),PRESOUT(H2S_valid),...
+                   SI(H2S_valid),PO4(H2S_valid),NH4(H2S_valid),H2S(H2S_valid),pHSCALEIN(H2S_valid),K1K2CONSTANTS(H2S_valid),KSO4CONSTANT(H2S_valid),...
+                   KFCONSTANT(H2S_valid),BORON(H2S_valid));
+        err = bsxfun(@times,deriv,eH2S(H2S_valid));
+        new_size = [ntps size(err,2)];
+	sq_err = zeros(new_size) + sq_err;
+        sq_err(H2S_valid,:) = sq_err(H2S_valid,:) + err .* err;
+    end
 
     % Contribution of T (temperature) to squared standard error
     if (any (eTEMP ~= 0.0))
         % Compute sensitivities (partial derivatives)
-        [deriv, headers, units, headers_err, units_err] = derivnum ('T',PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
-        %err = deriv .* eTEMP;
+        [deriv(E,:),~,~,headers_err,units_err] = derivnum ('T',...
+            PAR1(E),PAR2(E),PAR1TYPE(E),PAR2TYPE(E),SAL(E),TEMPIN(E),...
+            TEMPOUT(E),PRESIN(E),PRESOUT(E),SI(E),PO4(E),NH4(E),H2S(E),...
+            pHSCALEIN(E),K1K2CONSTANTS(E),KSO4CONSTANT(E),KFCONSTANT(E),BORON(E));
         err = bsxfun(@times,deriv,eTEMP);
-	sq_err = err*0. + sq_err;
-        sq_err = sq_err + err .* err;
+	 sq_err = err*0. + sq_err;
+     sq_err = sq_err + err .* err;
     end
 
     % Contribution of S (salinity) to squared standard error
     if (any (eSAL ~= 0.0))
         % Compute sensitivities (partial derivatives)
-        [deriv, headers, units, headers_err, units_err] = derivnum ('S',PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
-        %err = deriv .* eSAL;
+        [deriv(E,:),~,~,headers_err,units_err] = derivnum ('S',...
+            PAR1(E),PAR2(E),PAR1TYPE(E),PAR2TYPE(E),SAL(E),TEMPIN(E),...
+            TEMPOUT(E),PRESIN(E),PRESOUT(E),SI(E),PO4(E),NH4(E),H2S(E),...
+            pHSCALEIN(E),K1K2CONSTANTS(E),KSO4CONSTANT(E),KFCONSTANT(E),BORON(E));
         err = bsxfun(@times,deriv,eSAL);
-	sq_err = err*0. + sq_err;
-        sq_err = sq_err + err .* err;
+	 sq_err = err*0. + sq_err;
+     sq_err = sq_err + err .* err;
     end
 
     % Calculate dissociation constants
-    data = CO2SYS (PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
+    data = CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,NH4,H2S,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANT,KFCONSTANT,BORON);
         
     % Calculate [Ca++]
     % '       Riley, J. P. and Tongudai, M., Chemical Geology 2:263-269, 1967:
@@ -2390,73 +3480,113 @@ function [total_error, headers, units] = ...
             % Select Ki
             switch i
                 case 1
-                  Ki = data(:,53);   % K0
+                  Ki_in = data(:,63);    % K0in
+                  Ki_out = data(:,78);   % K0out
                 case 2
-                  Ki = data(:,54);   % K1
+                  Ki_in = data(:,64);    % K1in
+                  Ki_out = data(:,79);   % K1out
                 case 3
-                  Ki = data(:,55);   % K2
+                  Ki_in = data(:,65);    % K2in
+                  Ki_out = data(:,80);   % K2out
                 case 4
-                  Ki = data(:,59);   % KB
+                  Ki_in = data(:,69);    % KBin
+                  Ki_out = data(:,84);   % KBout
                 case 5
-                  Ki = data(:,58);   % KW
+                  Ki_in = data(:,68);    % KWin
+                  Ki_out = data(:,83);   % KWout
                 case 6
                   % Recompute KAr from OmegaAr and ions [Ca++] and [CO3--] concentrations
-                  OmegaAr = data(:,16);
+                  OmegaAr = data(:,18);
                   CO3 = data(:,7) * 1e-6;
-                  Ki = CO3.*Ca./OmegaAr;
+                  Ki_in = CO3.*Ca./OmegaAr;  % KspAin
+		          Ki_in(isnan(Ki_in)) = 0;
+                  OmegaAr = data(:,36);
+                  CO3 = data(:,25) * 1e-6;
+                  Ki_out = CO3.*Ca./OmegaAr; % KspAout
+		          Ki_out(isnan(Ki_out)) = 0;
                 case 7
                   % Recompute KCa from OmegaCa and ions [Ca++] and [CO3--] concentrations
-                  OmegaCa = data(:,15);
+                  OmegaCa = data(:,17);
                   CO3 = data(:,7) * 1e-6;
-                  Ki = CO3.*Ca./OmegaCa;
-                case 8
-                  Ki = data(:,79) * 1e-6 / log(10);  % TB   
-                  % TB (divide by log(10) to multiply by same just below
-                  % (not a pK value, unlike the others) 
+                  Ki_in = CO3.*Ca./OmegaCa;  % KspCin
+                  Ki_in(isnan(Ki_in)) = 0;
+                  OmegaCa = data(:,35);
+                  CO3 = data(:,25) * 1e-6;
+                  Ki_out = CO3.*Ca./OmegaCa; % KspCout
+                  Ki_out(isnan(Ki_out)) = 0;
             end
 
             % compute error on Ki from that on pKi
-            eKi = - epK(i) * Ki * log(10);
+            eKi_in  = - epK(i) * Ki_in * log(10);  % error on K at input conditions
+            eKi_out = - epK(i) * Ki_out * log(10); % error on K at output conditions
             % Compute sensitivities (partial derivatives)
-            [deriv, headers, units, headers_err, units_err] = derivnum (cell2mat(Knames(1,i)),PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
-            %err = deriv .* eKi;
-            err = bsxfun(@times, deriv, eKi);
-            %disp('deriv = '), disp(deriv);
-	    sq_err = err*0. + sq_err;
-            sq_err = sq_err + err .* err;
+            [deriv(E,:),~,~,headers_err,units_err] = derivnum (cell2mat(Knames(1,i)),...
+                       PAR1(E),PAR2(E),PAR1TYPE(E),PAR2TYPE(E),...
+                       SAL(E),TEMPIN(E),TEMPOUT(E),PRESIN(E),PRESOUT(E),...
+                       SI(E),PO4(E),NH4(E),H2S(E),pHSCALEIN(E),K1K2CONSTANTS(E),...
+                       KSO4CONSTANT(E),KFCONSTANT(E),BORON(E));
+            % Derivatives at input conditions are calculated with respect
+            % to constants at input conditions, and derivatives at output
+            % conditions are calculated with respect to constants at output
+            % conditions. So, error terms are calculated using absolute
+            % errors in K values at both input and output conditions.
+            err(:, 1:12) = bsxfun(@times, deriv(:, 1:12), eKi_in);
+            err(:, 13:22) = bsxfun(@times, deriv(:, 13:22), eKi_out);
+	     sq_err = err*0. + sq_err;
+         sq_err = sq_err + err .* err;
         end
     end
 
     % Contribution of Boron (total dissoloved boron concentration) to squared standard error
     if (eBt ~= 0)
         % Compute sensitivities (partial derivatives)
-        [deriv, headers, units, headers_err, units_err] = derivnum ('bor',PAR1,PAR2,PAR1TYPE,PAR2TYPE,...
-                   SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,...
-                   SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
-        eBt_abs = eBt  * data(:,79) * 1e-6 ;  % where TB = data(:,79) in umol B/kg
-        err = bsxfun(@times, deriv, eBt_abs);
-        new_size = [ntps size(err,2)];
+        [deriv(E,:),~,~,headers_err,units_err] = derivnum ('bor',...
+            PAR1(E),PAR2(E),PAR1TYPE(E),PAR2TYPE(E),SAL(E),TEMPIN(E),...
+            TEMPOUT(E),PRESIN(E),PRESOUT(E),SI(E),PO4(E),NH4(E),H2S(E),...
+            pHSCALEIN(E),K1K2CONSTANTS(E),KSO4CONSTANT(E),KFCONSTANT(E),BORON(E));
+     err = bsxfun(@times, deriv, (eBt*data(:,93)*1e-6)); % where TB = data(:,93) in umol B/kg
+     new_size = [ntps size(err,2)];
+	 sq_err = zeros(new_size) + sq_err;
+     sq_err = sq_err + err .* err;
+    end
+    
+    % Contribution of Calcium (total dissoloved calcium concentration) to squared standard error
+    CAL_valid = (E & eCAL ~= 0);
+    if (any (CAL_valid))
+        % Compute sensitivities (partial derivatives)
+        [deriv,~,~,headers_err,units_err] = derivnum ('cal',...
+            PAR1(CAL_valid),PAR2(CAL_valid),PAR1TYPE(CAL_valid),PAR2TYPE(CAL_valid),SAL(CAL_valid),TEMPIN(CAL_valid),...
+            TEMPOUT(CAL_valid),PRESIN(CAL_valid),PRESOUT(CAL_valid),SI(CAL_valid),PO4(CAL_valid),NH4(CAL_valid),H2S(CAL_valid),...
+            pHSCALEIN(CAL_valid),K1K2CONSTANTS(CAL_valid),KSO4CONSTANT(CAL_valid),KFCONSTANT(CAL_valid),BORON(CAL_valid));
+    err = bsxfun(@times,deriv,eCAL(CAL_valid));
+    new_size = [ntps size(err,2)];
 	sq_err = zeros(new_size) + sq_err;
-        sq_err = sq_err + err .* err;
+    sq_err(CAL_valid,:) = sq_err(CAL_valid,:) + err .* err;
     end
 
     % Compute and return resulting total error (or uncertainty)
     total_error = sqrt (sq_err);
-    
+    total_error(isnan(total_error))=-999;
     headers = strcat('u(',headers_err,')');
     units = strcat('(',units_err,')');
 end
 
-
+% 
+% derivnum ----------------------------------------------------------------
+%
 
 % derivnum()
 % This subroutine computes partial derivatives of output carbonate variables 
-% with respect to input variables (two), plus nutrients (two), temperature and salinity,
-% dissociation constants, and total boron.
+% with respect to input variables (two), plus nutrients (two), ammonium and hydrogen sulfide,
+% temperature and salinity, dissociation constants, and total boron.
 %
 % It uses central differences, introducing a small perturbation 
 % (plus and minus of a delta) in one INPUT variable and computes the
 % resulting induced change in each OUTPUT variable
+%
+% This subroutine has been modified from its original version (Orr et al.
+% 2018) to allow for input variables of CO2, HCO3, and CO3, the inclusion
+% of ammonium and hydrogen sulfide, and compatibility with CO2SYS.m(v3)
 %
 % After numerical tests, the small PERTURBATION (delta) is chosen
 % as a fraction of a reference value as follows:
@@ -2470,16 +3600,17 @@ end
 %  **** SYNTAX:
 %  [deriv, headers_der, units_der, headers_err, units_err]=...
 %                  derivnum(VARID,PAR1,PAR2,PAR1TYPE,PAR2TYPE,...
-%                          SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,...
-%                          SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS)
+%                           SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,...
+%                           SI,PO4,NH4,H2S,pHSCALEIN,K1K2CONSTANTS,...
+%                           KSO4CONSTANT,KFCONSTANT,BORON)
 % 
 %  **** SYNTAX EXAMPLES:
-%  [der, headers, units] = derivnum('par1',2400,2200,1,2,35,0,25,4200,0,15,1,1,4,1)
-%  [der, headers, units] = derivnum('sit', 2400,   8,1,3,35,0,25,4200,0,15,1,1,4,1)
-%  [deriv, headers]      = derivnum(  'T',  500,   8,5,3,35,0,25,4200,0,15,1,1,4,1)
-%  [deriv]               = derivnum('S',2400,2000:10:2400,1,2,35,0,25,4200,0,15,1,1,4,1)
-%  [deriv]               = derivnum('K0',2400,2200,1,2,0:1:35,0,25,4200,0,15,1,1,4,1)
-%  [deriv]               = derivnum('K1',2400,2200,1,2,35,0,25,0:100:4200,0,15,1,1,4,1)
+%  [der, headers, units] = derivnum('par1',2400,2200,1,2,35,0,25,4200,0,15,1,0,0,1,4,1,1,1)
+%  [der, headers, units] = derivnum('sit', 2400,   8,1,3,35,0,25,4200,0,15,1,0,0,1,4,1,1,1)
+%  [deriv, headers]      = derivnum(  'T',  500,   8,5,3,35,0,25,4200,0,15,1,0,0,1,4,1,1,1)
+%  [deriv]               = derivnum('S',2400,2000:10:2400,1,2,35,0,25,4200,0,15,1,0,0,1,4,1,1,1)
+%  [deriv]               = derivnum('K0',2400,2200,1,2,0:1:35,0,25,4200,0,15,1,0,0,1,4,1,1,1)
+%  [deriv]               = derivnum('K1',2400,2200,1,2,35,0,25,0:100:4200,0,15,1,0,0,1,4,1,1,1)
 %  
 %**************************************************************************
 %
@@ -2493,21 +3624,23 @@ end
 %                     case 'par2'  :  Parameter 2 of the input pair (This is TAlk if PAR2TYPE is 1)
 %                     case 'sil', 'silt', 'tsil', 'silicate', or 'sit'     : Silicate concentration
 %                     case 'phos', 'phost', 'tphos', 'phosphate', or 'pt'  : Phosphate concentration
+%                     case 'amm', 'nh4', 'NH4'                    : Ammonia concentration
+%                     case 'hyd', 'h2s', 'H2S'                    : Hydrogen Sulfide concentration
 %                     case 't', 'temp' or 'temperature'           : temperature
 %                     case 's', 'sal', or 'salinity'              : salinity
 %                     case 'K0','K1','K2','Kb','Kw','Kspa', 'Kspc': dissociation constants 
 %                     case 'bor': total boron
 %
-%   - all others :  same list of input parameters as in CO2SYS() subroutine (scalar or vectors)
+%   - all others :  same list of input parameters as in CO2SYS() subroutine (version 3, scalar or vectors)
 %
 %**************************************************************************%
 %
-% OUTPUT: 3 arrays
+% OUTPUT: 3 arrays	
 %         a) an array containing the derivative of the following parameter (one row per sample):
 %         b) the corresponding cell-array containing crudely formatted headers
 %         c) the corresponding cell-array containing the units
 %
-%    POS  PARAMETER        UNIT
+%    POS  PARAMETER         UNIT
 %
 %    01 - TAlk              (umol/kgSW)
 %    02 - TCO2              (umol/kgSW)
@@ -2517,48 +3650,40 @@ end
 %    06 - HCO3 in           (umol/kgSW)
 %    07 - CO3 in            (umol/kgSW)
 %    08 - CO2 in            (umol/kgSW)
-%    09 - OmegaCa in        ()
-%    10 - OmegaAr in        ()
-%    11 - xCO2 in           (ppm)
-%    12 - [H+] out          ()
-%    13 - pCO2 out          (uatm)
-%    14 - fCO2 out          (uatm)
-%    15 - HCO3 out          (umol/kgSW)
-%    16 - CO3 out           (umol/kgSW)
-%    17 - CO2 out           (umol/kgSW)
-%    18 - OmegaCa out       ()
-%    19 - OmegaAr out       ()
-%    20 - xCO2 out          (ppm)
+%    09 - RF in             ()
+%    10 - OmegaCa in        ()
+%    11 - OmegaAr in        ()
+%    12 - xCO2 in           (ppm)
+%    13 - [H+] out          ()
+%    14 - pCO2 out          (uatm)
+%    15 - fCO2 out          (uatm)
+%    16 - HCO3 out          (umol/kgSW)
+%    17 - CO3 out           (umol/kgSW)
+%    18 - CO2 out           (umol/kgSW)
+%    19 - RF out            ()
+%    20 - OmegaCa out       ()
+%    21 - OmegaAr out       ()
+%    22 - xCO2 out          (ppm)
 %
 % * 'in'  refers to INPUT  conditions (TEMPIN, PRESIN) as for CO2SYS
 %   'out' refers to OUTPUT conditions (TEMPOUT, PRESOUT)
 %
-% Note: derivnum does not take derivatives of the two CO2 system input vars.
-%       Hence 2 out of the first 5 results listed above will be omitted.
-%       The index (POS) will be shifted accordingly 
-%       (always beginning at 1 and ending at 18):
-%       * with the TAlk-TCO2 input pair, POS=1 corresponds to ([H+]in)';
-%       * with the TAlk-pCO2 pair, POS = 1,2,3 are (TCO2in)', ([H+]in)', (fCO2in)';
-%       * POS 18 is always for (xCO2out)'.
 %
-% CAUTION: derivnum.m is NOT designed to take partial derivatives of
-%          input vars, only computed variables relative to input
-%          variables. However, those partial derivatives of input vars are
-%          kept in the OUT conditions to maintain consistency
+% CAUTION: derivnum.m is NOT necessarily designed to take partial derivatives
+%          of input variables, only computed variables relative to input
+%          variables. However, those partial derivatives of input variables
+%          are kept in the OUT conditions to maintain consistency
 %          of the order of output between the different input pairs.
-%          Derivatives of input vars are included when pH, pCO2, or fCO2 is
-%          a member of the input pair (e.g., pH-Alk, pCO2-DIC, or
-%          pH-pCO2). These partial derivatives of input vars are
-%          not used by the "errors.m" function (for uncertainty propagation). 
 %          Generally, we advise not to use these derivatives of input
-%          variables: in some cases their results appear accurate
-%          while in other cases their results have been masked with
-%          a NaN. Use them at your own risk.  
+%          variables. However, in some cases their results appear accurate.
+%          Use them at your own risk.
 %
+
 function [derivatives, headers, units, headers_err, units_err] = ...
         derivnum (VARID,PAR1,PAR2,PAR1TYPE,PAR2TYPE, SAL,TEMPIN, ...
-                  TEMPOUT,PRESIN,PRESOUT,SI,PO4, ...
-                  pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
+                  TEMPOUT,PRESIN,PRESOUT,SI,PO4,NH4,H2S, ...
+                  pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANT, ...
+                  KFCONSTANT,BORON)
 
     % For computing derivative with respect to Ks, one has to call CO2sys with a perturbed K
     % Requested perturbation is passed through the following global variables
@@ -2573,8 +3698,10 @@ function [derivatives, headers, units, headers_err, units_err] = ...
     veclengths=[length(PAR1) length(PAR2) length(PAR1TYPE)...
                 length(PAR2TYPE) length(SAL) length(TEMPIN)...
                 length(TEMPOUT) length(PRESIN) length(PRESOUT)...
-                length(SI) length(PO4) length(pHSCALEIN)...
-                length(K1K2CONSTANTS) length(KSO4CONSTANTS)];
+                length(SI) length(PO4) length(NH4) length(H2S)...
+                length(pHSCALEIN) length(K1K2CONSTANTS)...
+                length(KSO4CONSTANT) length(KFCONSTANT)...
+                length(BORON)];
 
     if length(unique(veclengths))>2
             disp(' '); disp('*** INPUT ERROR: Input vectors must all be of same length, or of length 1. ***'); disp(' '); return
@@ -2592,9 +3719,13 @@ function [derivatives, headers, units, headers_err, units_err] = ...
     PRESOUT      =PRESOUT      (:);
     SI           =SI           (:);
     PO4          =PO4          (:);
+    NH4          =NH4          (:);
+    H2S          =H2S          (:);
     pHSCALEIN    =pHSCALEIN    (:);
     K1K2CONSTANTS=K1K2CONSTANTS(:);
-    KSO4CONSTANTS=KSO4CONSTANTS(:);
+    KSO4CONSTANT =KSO4CONSTANT (:);
+    KFCONSTANT   =KFCONSTANT   (:);
+    BORON        =BORON        (:);
 
     % Find the longest column vector:
     ntps = max(veclengths);
@@ -2611,60 +3742,69 @@ function [derivatives, headers, units, headers_err, units_err] = ...
     PRESOUT(1:ntps,1)       = PRESOUT(:)       ;
     SI(1:ntps,1)            = SI(:)            ;
     PO4(1:ntps,1)           = PO4(:)           ;
+    SI(1:ntps,1)            = SI(:)            ;
+    PO4(1:ntps,1)           = PO4(:)           ;
+    NH4(1:ntps,1)           = NH4(:)           ;
+    H2S(1:ntps,1)           = H2S(:)           ;
     pHSCALEIN(1:ntps,1)     = pHSCALEIN(:)     ;
     K1K2CONSTANTS(1:ntps,1) = K1K2CONSTANTS(:) ;
-    KSO4CONSTANTS(1:ntps,1) = KSO4CONSTANTS(:) ;
+    KSO4CONSTANT(1:ntps,1)  = KSO4CONSTANT(:)  ;
+    KFCONSTANT(1:ntps,1)    = KFCONSTANT(:)    ;
+    BORON(1:ntps,1)         = BORON(:)         ;
 
     % BASELINE:
     % --------
     
-    carb = CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
+    carb = CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,NH4,H2S,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANT,KFCONSTANT,BORON);
     % Compute [H+] in µmol/KgSW
     if (ndims(carb) == 2)
         Hin = 10.^(-carb(:,3)) * 1.e6;
-        Hout = 10.^(-carb(:,18)) * 1.e6;
-        carb = horzcat(carb(:,1:2), Hin, carb(:,3:17), Hout, carb(:,18:end));
+        Hout = 10.^(-carb(:,21)) * 1.e6;
+        carb = horzcat(carb(:,1:2), Hin, carb(:,3:20), Hout, carb(:,21:end));
     else
         Hin = 10.^(-carb(3)) * 1.e6;
-        Hout = 10.^(-carb(18)) * 1.e6;
-        carb = horzcat(carb(1:2), Hin, carb(3:17), Hout, carb(18:end));
+        Hout = 10.^(-carb(21)) * 1.e6;
+        carb = horzcat(carb(1:2), Hin, carb(3:20), Hout, carb(21:end));
     end    
 
     % Compute two slightly different values for input
     % -----------------------------------------------
 
     % Default values : not perturbed
-    % no change on PAR1 and PAR2
+    % no change in PAR1 and PAR2
     PAR11 = PAR1; PAR12 = PAR1;
     PAR21 = PAR2; PAR22 = PAR2;
     % no change in Sil total and Phos total (except for d/dSi, d/dPO4)
-    SI1 = SI; SI2 = SI;
+    SI1 = SI;    SI2 = SI;
     PO41  = PO4; PO42  = PO4;
-    % no change in S and T  (except for d/dS and d/dT, respectively)
-    SAL1 = SAL; SAL2 = SAL;
+    % no change in Amm total and H2S total (except for d/dAmm, d/dH2S)
+    NH41  = NH4; NH42 = NH4;
+    H2S1  = H2S; H2S2  = H2S;
+    % no change in T and S (except for d/dS and d/dT, respectively)
     TEMP1 = TEMPIN; TEMP2 = TEMPIN;
-    % no change in TEMPOUT except for d/dT (see why further below)
+    SAL1 = SAL; SAL2 = SAL;
+	% no change in TEMPOUT except for d/dT (see why further below)	
     TEMPOUT1 = TEMPOUT; TEMPOUT2 = TEMPOUT;
 
     % Create empty vector for abs_dx (absolute delta)
     abs_dx  = nan(ntps,1);
-    
+
     % Flag for dissociation constant as perturbed variable 
     flag_dissoc_K = 0;   % False
     % names of 7 dissociation constants and variable for total boron 
-    K_names = {'K0', 'K1', 'K2', 'KB', 'KW', 'KSPA', 'KSPC', 'BOR'};    
+    K_names = {'K0', 'K1', 'K2', 'KB', 'KW', 'KSPA', 'KSPC', 'BOR', 'CAL'};    
 
     % Units for derivatives and for errors
     units_at = {'umol';'umol';'nmol';'total scale';'uatm kg';'uatm kg';'umol';'umol';...
-                 'umol';'kg';'kg';'ppm kg';...
+                 'umol';'kg';'kg';'kg';'ppm kg';...
                  'nmol';'uatm kg';'uatm kg';'umol';'umol';...
-                 'umol';'kg';'kg';'ppm kg';
+                 'umol';'kg';'kg';'kg';'ppm kg';
                 };
  
     units_kg  = {'umol/kg';'umol/kg';'nmol/kg';'total scale';'uatm';'uatm';'umol/kg';'umol/kg';...
-                 'umol/kg';' ';' ';'ppm';...
+                 'umol/kg';' ';' ';' ';'ppm';...
                  'nmol/kg';'uatm';'uatm';'umol/kg';'umol/kg';...
-                 'umol/kg';' ';' ';'ppm';
+                 'umol/kg';' ';' ';' ';'ppm';
                 };
 
     units_k = units_kg;
@@ -2676,11 +3816,11 @@ function [derivatives, headers, units, headers_err, units_err] = ...
     switch VARID
         case K_names
             flag_dissoc_K = 1;
-            % Approximate values for K0, K1, K2, Kb, Kspa and Kspc
+            % Approximate values for K0, K1, K2, Kb, Kspa, Kspc, and CAL
             % They will be used to compute an absolute perturbation
             % value on these constants
             K = [0.034, 1.2e-06, 8.3e-10, 2.1e-09, 6.1e-14, 6.7e-07, ...
-                 4.3e-07, 0.0004157];
+                 4.3e-07, 0.0004157, 0.0103];
             % Choose value of absolute perturbation
             [is_in_K_names, index] = ismember(VARID, K_names);
             perturbation = K(index) * 1.e-3;   % 0.1 percent of Kx value
@@ -2693,103 +3833,90 @@ function [derivatives, headers, units, headers_err, units_err] = ...
             % Define a relative delta
             delta = 1.e-6;
           
-             switch PAR1TYPE(1)
-                case 1
-                  denom_headers = 'ALK';
-                  denom_units = 'umol';
-                  units = units_at;
-                  PAR1ref = 2300.; % umol/kg (global surface average, Orr et al., 2017)
-                case 2
-                  denom_headers = 'DIC';
-                  denom_units = 'umol';
-                  units = units_at;
-                  PAR1ref = 2000.; % umol/kg (global surface average, Orr et al., 2017)
-                case 3
-                  denom_headers = 'H';
-                  denom_units = 'nmol';
-                  units = units_at;
-                  PAR1ref = 1.0e-8 ; % mol/kg (equivalent to pH=8.0)
-                case 4
-                  denom_headers = 'pCO2';
-                  denom_units = 'uatm';
-                  units = units_pco2;
-                  PAR1ref = 400.;  % uatm
-                case 5
-                  denom_headers = 'fCO2';
-                  denom_units = 'uatm';
-                  units = units_pco2;
-                  PAR1ref = 400.; % uatm
-            end
+            PAR1ref = nan(size(PAR1TYPE));
+            units = units_kg;
+            denom_headers = '<PAR1>';
+            denom_units = '<PAR1 units>';
+                t1=PAR1TYPE==1;
+                  PAR1ref(t1) = 2300.; % umol/kg (global surface average, Orr et al., 2017)
+                t2=PAR1TYPE==2;
+                  PAR1ref(t2) = 2000.; % umol/kg (global surface average, Orr et al., 2017)
+                t3=PAR1TYPE==3;
+                  PAR1ref(t3) = 1.0e-8; % mol/kg (equivalent to pH=8.0)
+                t4=PAR1TYPE==4;
+                  PAR1ref(t4) = 400.;  % uatm
+                t5=PAR1TYPE==5;
+                  PAR1ref(t5) = 400.; % uatm
+                t6=PAR1TYPE==6;
+                  PAR1ref(t6) = 1790.; % umol/kg
+                t7=PAR1TYPE==7;
+                  PAR1ref(t7) = 200.; % umol/kg
+                t8=PAR1TYPE==8;
+                  PAR1ref(t8) = 10.; % umol/kg
       
            % cases where first input variable is pH
             F = (PAR1TYPE == 3);
-            H(F) = 10.^(-PAR1(F)) ; % [H+] in mol/kg
+            H = 10.^(-PAR1(F)) ; % [H+] in mol/kg
             % Change slightly [H+]
-            H1 = H(F) - PAR1ref*delta;
-            H2 = H(F) + PAR1ref*delta;
+            H1 = H - PAR1ref(F)*delta;
+            H2 = H + PAR1ref(F)*delta;
             PAR11(F) = -log10(H1) ;
             PAR12(F) = -log10(H2) ;
             abs_dx(F) = (H2 - H1) * 1e9; % now in nmol/kg
            
             G = ~F;
             % Change slightly PAR1
-            PAR11(G) = PAR1(G) - PAR1ref*delta;
-            PAR12(G) = PAR1(G) + PAR1ref*delta;
+            PAR11(G) = PAR1(G) - PAR1ref(G)*delta;
+            PAR12(G) = PAR1(G) + PAR1ref(G)*delta;
             abs_dx(G) = PAR12(G) - PAR11(G);
 
       case {'PAR2', 'VAR2'}    % PAR2 (second variable of input pair) is perturbed
             % Define a relative delta
             delta = 1.e-6;
-            switch PAR2TYPE(1)
-                case 1
-                  denom_headers = 'ALK';
-                  denom_units = 'umol';
-                  units = units_at;
-                  PAR2ref = 2300.; % umol/kg (global surface average, Orr et al., 2017)
-                case 2
-                  denom_headers = 'DIC';
-                  denom_units = 'umol';
-                  units = units_at;
-                  PAR2ref = 2000.; % umol/kg (global surface average, Orr et al., 2017)
-                case 3
-                  denom_headers = 'H';
-                  denom_units = 'nmol';
-                  units = units_at;
-                  PAR2ref = 1.0e-8 ; % mol/kg (equivalent to pH=8.0)
-                case 4
-                  denom_headers = 'pCO2';
-                  denom_units = 'uatm';
-                  units = units_pco2;
-                  PAR2ref = 400.; % uatm
-               case 5
-                  denom_headers = 'fCO2';
-                  denom_units = 'uatm';
-                  units = units_pco2;
-                  PAR2ref = 400.; % uatm
-           end
+            
+            PAR2ref = nan(size(PAR2TYPE));
+            units = units_kg;
+            denom_headers = '<PAR2>';
+            denom_units = '<PAR2 units>';
+                t1=PAR2TYPE==1;
+                  PAR2ref(t1) = 2300.; % umol/kg (global surface average, Orr et al., 2017)
+                t2=PAR2TYPE==2;
+                  PAR2ref(t2) = 2000.; % umol/kg (global surface average, Orr et al., 2017)
+                t3=PAR2TYPE==3;
+                  PAR2ref(t3) = 1.0e-8; % mol/kg (equivalent to pH=8.0)
+                t4=PAR2TYPE==4;
+                  PAR2ref(t4) = 400.;  % uatm
+                t5=PAR2TYPE==5;
+                  PAR2ref(t5) = 400.; % uatm
+                t6=PAR2TYPE==6;
+                  PAR2ref(t6) = 1790.; % umol/kg
+                t7=PAR2TYPE==7;
+                  PAR2ref(t7) = 200.; % umol/kg
+                t8=PAR2TYPE==8;
+                  PAR2ref(t8) = 10.; % umol/kg
             
             
             % cases where second input variable is pH
             F = (PAR2TYPE == 3);
-            H(F) = 10.^(-PAR2(F)) ; % H+ in mol/kg
+            H = 10.^(-PAR2(F)) ; % H+ in mol/kg
             % Change slightly [H+]
-            H1 = H(F) - PAR2ref*delta;
-            H2 = H(F) + PAR2ref*delta;
+            H1 = H - PAR2ref(F)*delta;
+            H2 = H + PAR2ref(F)*delta;
             PAR21(F) = -log10(H1) ;
             PAR22(F) = -log10(H2) ;
             abs_dx(F) = (H2 - H1) * 1e9;
 
             G = ~F;
             % Change slightly PAR2
-            PAR21(G) = PAR2(G) - PAR2ref*delta;
-            PAR22(G) = PAR2(G) + PAR2ref*delta;
+            PAR21(G) = PAR2(G) - PAR2ref(G)*delta;
+            PAR22(G) = PAR2(G) + PAR2ref(G)*delta;
             abs_dx(G) = PAR22(G) - PAR21(G);
 
        case {'SIL', 'TSIL', 'SILT', 'SILICATE', 'SIT'}    % Sil total
             % Define a relative delta
             delta = 1.e-3;
             SIref = 7.5; % umol/kg (global surface average, Orr et al., 2018)
-            % Change slightly temperature
+            % Change slightly SI
             SI1 = SI - SIref*delta;
             SI2 = SI + SIref*delta;
             abs_dx = SI2 - SI1;
@@ -2800,14 +3927,36 @@ function [derivatives, headers, units, headers_err, units_err] = ...
             % Define a relative delta
             delta = 1.e-3;
             PO4ref = 0.5; % umol/kg (global surface average, Orr et al., 2018)
-            % Change slightly temperature
+            % Change slightly PO4
             PO41 = PO4 - PO4ref*delta;
             PO42 = PO4 + PO4ref*delta;
             abs_dx = PO42 - PO41;
             denom_headers = 'Pt';
             denom_units = 'umol';
             units = units_at;
-        case {'T', 'TEMP', 'TEMPERATURE'}    % Temperature
+       case {'AMM','NH4'}    % Amm total
+            % Define a relative delta
+            delta = 1.e-3;
+            NH4ref = 1;
+            % Change slightly NH4
+            NH41 = NH4 - NH4ref*delta;
+            NH42 = NH4 + NH4ref*delta;
+            abs_dx = NH42 - NH41;
+            denom_headers = 'NH4t';
+            denom_units = 'umol';
+            units = units_at;
+       case {'HYD','H2S'}    % H2S total
+            % Define a relative delta
+            delta = 1.e-3;
+            H2Sref = 1;
+            % Change slightly H2S
+            H2S1 = H2S - H2Sref*delta;
+            H2S2 = H2S + H2Sref*delta;
+            abs_dx = H2S2 - H2S1;
+            denom_headers = 'H2St';
+            denom_units = 'umol';
+            units = units_at;
+       case {'T', 'TEMP', 'TEMPERATURE'}    % Temperature
             % Define a relative delta
             delta = 1.e-4;
             TEMPref = 18.; % global surface mean (C)
@@ -2815,19 +3964,19 @@ function [derivatives, headers, units, headers_err, units_err] = ...
             TEMP1 = TEMPIN - TEMPref*delta;
             TEMP2 = TEMPIN + TEMPref*delta;
             abs_dx = TEMP2 - TEMP1;
-            % When computing d/dT
-            % TEMPOUT changes must be the same as TEMPIN changes, e.g, for
-            % derivnum 'OUT' & 'IN' results to be the same when TEMPOUT=TEMPIN
-            TEMPOUT1 = TEMPOUT - TEMPref*delta;
+            % When computing d/dT	
+            % TEMPOUT changes must be the same as TEMPIN changes, e.g, for	
+            % derivnum 'OUT' & 'IN' results to be the same when TEMPOUT=TEMPIN	
+            TEMPOUT1 = TEMPOUT - TEMPref*delta;	
             TEMPOUT2 = TEMPOUT + TEMPref*delta;
             denom_headers = 'T';
             denom_units = 'C';
             units = units_kg;
-        case {'S', 'SAL', 'SALINITY'}    % Salinity
+       case {'S', 'SAL', 'SALINITY'}    % Salinity
             % Define a relative delta
             delta = 1.e-4;
             SALref = 35.;
-            % Change slightly temperature
+            % Change slightly salinity
             SAL1 = SAL - SALref*delta;
             SAL2 = SAL + SALref*delta;
             abs_dx = SAL2 - SAL1;
@@ -2846,16 +3995,16 @@ function [derivatives, headers, units, headers_err, units_err] = ...
         Perturb = -perturbation;
     end
     cdel1 = CO2SYS ( ...
-        PAR11,PAR21,PAR1TYPE,PAR2TYPE,SAL1,TEMP1,TEMPOUT1,PRESIN,PRESOUT,SI1,PO41,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
+        PAR11,PAR21,PAR1TYPE,PAR2TYPE,SAL1,TEMP1,TEMPOUT1,PRESIN,PRESOUT,SI1,PO41,NH41,H2S1,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANT,KFCONSTANT,BORON);
     % Compute [H+]
     if (ndims(cdel1) == 2)
         Hin = 10.^(-cdel1(:,3))   * 1.e9; % to show H+ results in nmol/kg
-        Hout = 10.^(-cdel1(:,18)) * 1.e9;
-        cdel1 = horzcat(cdel1(:,1:2), Hin, cdel1(:,3:17), Hout, cdel1(:,18:end));
+        Hout = 10.^(-cdel1(:,21)) * 1.e9;
+        cdel1 = horzcat(cdel1(:,1:2), Hin, cdel1(:,3:20), Hout, cdel1(:,21:end));
     else
         Hin = 10.^(-cdel1(3))     * 1.e9;
-        Hout = 10.^(-cdel1(18))   * 1.e9;
-        cdel1 = horzcat(cdel1(1:2), Hin, cdel1(3:17), Hout, cdel1(18:end));
+        Hout = 10.^(-cdel1(21))   * 1.e9;
+        cdel1 = horzcat(cdel1(1:2), Hin, cdel1(3:20), Hout, cdel1(21:end));
     end
 
     % Point 2: (one dissociation constant or PAR1, PAR2, T or S is somewhat bigger)
@@ -2865,18 +4014,18 @@ function [derivatives, headers, units, headers_err, units_err] = ...
         Perturb = perturbation;
     end
     cdel2 = CO2SYS ( ...
-        PAR12,PAR22,PAR1TYPE,PAR2TYPE,SAL2,TEMP2,TEMPOUT2,PRESIN,PRESOUT,SI2,PO42,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANTS);
+        PAR12,PAR22,PAR1TYPE,PAR2TYPE,SAL2,TEMP2,TEMPOUT2,PRESIN,PRESOUT,SI2,PO42,NH42,H2S2,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANT,KFCONSTANT,BORON);
     % Compute [H+]
     if (ndims(cdel2) == 2)
         % Computed variable H+ (does not affect other computed
         % variables, i.e., it is the numerator of the derivative)
         Hin = 10.^(-cdel2(:,3))   * 1.e9; % to show H+ results in nmol/kg 
-        Hout = 10.^(-cdel2(:,18)) * 1.e9;
-        cdel2 = horzcat(cdel2(:,1:2), Hin, cdel2(:,3:17), Hout, cdel2(:,18:end));
+        Hout = 10.^(-cdel2(:,21)) * 1.e9;
+        cdel2 = horzcat(cdel2(:,1:2), Hin, cdel2(:,3:20), Hout, cdel2(:,21:end));
     else
         Hin = 10.^(-cdel2(3))     * 1.e9;
-        Hout = 10.^(-cdel2(18))   * 1.e9;
-        cdel2 = horzcat(cdel2(1:2), Hin, cdel2(3:17), Hout, cdel2(18:end));
+        Hout = 10.^(-cdel2(21))   * 1.e9;
+        cdel2 = horzcat(cdel2(1:2), Hin, cdel2(3:20), Hout, cdel2(21:end));
     end
 
     % if perturbed variable is a dissociation constant
@@ -2895,26 +4044,27 @@ function [derivatives, headers, units, headers_err, units_err] = ...
     %    07 - HCO3 in           (umol/kgSW)
     %    08 - CO3 in            (umol/kgSW)
     %    09 - CO2 in            (umol/kgSW)
-    %    16 - OmegaCa in        ()
-    %    17 - OmegaAr in        ()
-    %    18 - xCO2 in           (ppm)
-    %    19 - [H+] out          (nmol/kgSW)  lastly added
-    %    21 - pCO2 out          (uatm)
-    %    22 - fCO2 out          (uatm)
-    %    23 - HCO3 out          (umol/kgSW)
-    %    24 - CO3 out           (umol/kgSW)
-    %    25 - CO2 out           (umol/kgSW)
-    %    32 - OmegaCa out       ()
-    %    33 - OmegaAr out       ()
-    %    34 - xCO2 out          (ppm)
-    keep = [1 2 3 5 6 7 8 9 16 17 18 19 21 22 23 24 25 32 33 34];
+    %    17 - RF in             ()
+    %    18 - OmegaCa in        ()
+    %    19 - OmegaAr in        ()
+    %    20 - xCO2 in           (ppm)
+    %    22 - [H+] out          (nmol/kgSW)  lastly added
+    %    24 - pCO2 out          (uatm)
+    %    25 - fCO2 out          (uatm)
+    %    26 - HCO3 out          (umol/kgSW)
+    %    27 - CO3 out           (umol/kgSW)
+    %    28 - CO2 out           (umol/kgSW)
+    %    36 - RF out            ()
+    %    37 - OmegaCa out       ()
+    %    38 - OmegaAr out       ()
+    %    39 - xCO2 out          (ppm)
+    keep = [1 2 3 5 6 7 8 9 17 18 19 20 22 24 25 26 27 28 36 37 38 39];
     
     % We will drop also some column headers
     headers = {'TAlk';'TCO2';'Hin';'pHin';'pCO2in';'fCO2in';'HCO3in';'CO3in';...
-        'CO2in';'OmegaCAin';'OmegaARin';'xCO2in';...
+        'CO2in';'RFin';'OmegaCAin';'OmegaARin';'xCO2in';...
         'Hout';'pCO2out';'fCO2out';'HCO3out';'CO3out';...
-        'CO2out';'OmegaCAout';'OmegaARout';'xCO2out';
-        };
+        'CO2out';'RFout';'OmegaCAout';'OmegaARout';'xCO2out'};
     headers_err = headers;
     %units = {'umol';'umol';'nmol';'total scale';'uatm';'uatm';'umol';'umol';...
     %    'umol';' ';' ';'ppm';...
@@ -2922,40 +4072,44 @@ function [derivatives, headers, units, headers_err, units_err] = ...
     %    'umol';' ';' ';'ppm';
     %    };
     % Initially, keep all headers except 'pHin'
-    keep_head =  [1:3 5:21];
+    keep_head =  [1:3 5:23];
 
-    % if all parameter PAR1 are of the same type
-    if all(PAR1TYPE == PAR1TYPE(1))
-        % Determine column number of PAR1
-        if PAR1TYPE(1) <= 3 % TAlk, TCO2 or pH
-            % By design of CO2sys, PARTYPE is equal to column number
-            col_number = PAR1TYPE(1);
-        else
-            % Because there is an extra column: [H+]
-            col_number = PAR1TYPE(1) + 1;
-        end
-        % Exclude input parameters PAR1
-        A = (keep ~= col_number);
-        keep = keep (A);
-        A = (keep_head ~= col_number);
-        keep_head = keep_head (A);
-    end
-    % if all parameter PAR2 are of the same type
-    if all(PAR2TYPE == PAR2TYPE(1))
-        % Determine column number of PAR1
-        if PAR2TYPE(1) <= 3 % TAlk, TCO2 or pH
-            % By design of CO2sys, PARTYPE is equal to column number
-            col_number = PAR2TYPE(1);
-        else
-            % Because there is an extra column: [H+]
-            col_number = PAR2TYPE(1) + 1;
-        end
-        % Exclude input parameters PAR2
-        A = (keep ~= col_number);
-        keep = keep (A);
-        A = (keep_head ~= col_number);
-        keep_head = keep_head (A);
-    end
+%     **** This was previously uncommented to eliminate partial derivatives
+%     **** of input variables
+%
+%     % if all parameter PAR1 are of the same type
+%     if all(PAR1TYPE == PAR1TYPE(1))
+%         % Determine column number of PAR1
+%         if PAR1TYPE(1) <= 3 % TAlk, TCO2 or pH
+%             % By design of CO2sys, PARTYPE is equal to column number
+%             col_number = PAR1TYPE(1);
+%         else
+%             % Because there is an extra column: [H+]
+%             col_number = PAR1TYPE(1) + 1;
+%         end
+%         % Exclude input parameters PAR1
+%         A = (keep ~= col_number);
+%         keep = keep (A);
+%         A = (keep_head ~= col_number);
+%         keep_head = keep_head (A);
+%     end
+%     % if all parameter PAR2 are of the same type
+%     if all(PAR2TYPE == PAR2TYPE(1))
+%         % Determine column number of PAR1
+%         if PAR2TYPE(1) <= 3 % TAlk, TCO2 or pH
+%             % By design of CO2sys, PARTYPE is equal to column number
+%             col_number = PAR2TYPE(1);
+%         else
+%             % Because there is an extra column: [H+]
+%             col_number = PAR2TYPE(1) + 1;
+%         end
+%         % Exclude input parameters PAR2
+%         A = (keep ~= col_number);
+%         keep = keep (A);
+%         A = (keep_head ~= col_number);
+%         keep_head = keep_head (A);
+%     end
+    
     cdel1 = cdel1(:,keep);
     cdel2 = cdel2(:,keep);
     
@@ -2966,7 +4120,6 @@ function [derivatives, headers, units, headers_err, units_err] = ...
     units_err = units_err(keep_head);
     
     % concatenate strings to give each header its proper form, a partial derivative
-    % headers_vars = headers;
     headers = strcat('d', headers, '/', 'd', denom_headers);
     % concatenate in an analogous way for the units
     units   = strcat('(',units, '/', denom_units,')');
@@ -2980,59 +4133,55 @@ function [derivatives, headers, units, headers_err, units_err] = ...
     else
         derivatives = bsxfun(@rdivide, dy, abs_dx);
     end
-
-    % Mask values that should not be used with NaN (e.g., dHout/dT when PAR1 or PAR2 is pH)
-    switch VARID
-        case {'T', 'TEMP', 'TEMPERATURE'}
-            % For PAR1TYPE or PAR2TYPE = 3 (pH is input) make dHout/dT value a NaN
-            F = (PAR1TYPE==3 | PAR2TYPE==3); % either CO2 system input variable is pH
-            [is_in_headers, idx] = ismember('dHout/dT', headers);
-            if any(is_in_headers)
-                derivatives(F,idx) = NaN ;
-            end
-            %
-            %% For PAR1TYPE or PAR2TYPE = 4 or 5 (pCO2 or fCO2 is input) make relevant d/dT values NaNs
-            %F = (PAR1TYPE==4 | PAR2TYPE==4 | PAR1TYPE==5 | PAR2TYPE==5); %when pCO2 or fCO2 is input var
-            %% masknan = {'dpCO2in/dT' 'dfCO2in/dT' 'dxCO2in/dT' 'dpCO2out/dT' 'dfCO2out/dT' 'dxCO2out/dT'};
-            %masknan = {'dpCO2out/dT' 'dfCO2out/dT'};
-            %[is_in_headers, idx] = ismember(masknan, headers);
-            %if any(is_in_headers)
-            %    derivatives(F,idx) = NaN ;
-            %end
-            %
-            % For PAR1TYPE or PAR2TYPE = 4 or 5 (pCO2 or fCO2 is input) make relevant d/dT values NaNs
-            F = (PAR1TYPE==4 | PAR2TYPE==4); %when pCO2 or fCO2 is input var
-            % masknan = {'dfCO2in/dT' 'dxCO2in/dT' 'dpCO2out/dT' 'dfCO2out/dT' 'dxCO2out/dT'};
-            masknan = {'dpCO2out/dT'};
-            [is_in_headers, idx] = ismember(masknan, headers);
-            if any(is_in_headers)
-                derivatives(F,idx) = NaN ;
-            end
-            %
-            % For PAR1TYPE or PAR2TYPE = 5 (fCO2 is input) make relevant d/dT values NaNs
-            F = (PAR1TYPE==5 | PAR2TYPE==5); %when fCO2 is input var
-            % masknan = {'dfCO2in/dT' 'dxCO2in/dT' 'dpCO2out/dT' 'dfCO2out/dT' 'dxCO2out/dT'};
-            masknan = {'dfCO2out/dT'};
-            [is_in_headers, idx] = ismember(masknan, headers);
-            if any(is_in_headers)
-                derivatives(F,idx) = NaN ;
-            end
-        case {'PAR1', 'VAR1'}
-            % For pH-pCO2 or pH-fCO2 pair (PAR1 is pH) 
-            F = (PAR1TYPE==3 & (PAR2TYPE==4 | PAR2TYPE==5));
-            masknan = {'dHout/dH' 'dpCO2out/dH' 'dfCO2out/dH'};
-            [is_in_headers, idx] = ismember(masknan, headers);
-            if any(is_in_headers)
-                derivatives(F,idx) = NaN ;
-            end
-        case {'PAR2', 'VAR2'}
-            % For pCO2-pH or fCO2-pH pair (PAR2 is pH)
-            F = ((PAR1TYPE==4 | PAR1TYPE==5) & PAR2TYPE==3);
-            masknan = {'dHout/dH' 'dpCO2out/dH' 'dfCO2out/dH'};
-            [is_in_headers, idx] = ismember(masknan, headers);
-            if any(is_in_headers)
-                derivatives(F,idx) = NaN ;        
-            end
-    end
-
+    
+%     **** This was previously uncommented to mask derivatives of
+%     **** parameters that are directly related to input variables
+%
+%     % Mask values that should not be used with NaN (e.g., dHout/dT when PAR1 or PAR2 is pH)
+%     switch VARID
+%         case {'T', 'TEMP', 'TEMPERATURE'}
+%             % For PAR1TYPE or PAR2TYPE = 3 (pH is input) make dHout/dT value a NaN
+%             F = (PAR1TYPE==3 | PAR2TYPE==3); % either CO2 system input variable is pH
+%             [is_in_headers, idx] = ismember('dHout/dT', headers);
+%             if any(is_in_headers)
+%                 derivatives(F,idx) = NaN ;
+%             end
+%             
+%             % For PAR1TYPE or PAR2TYPE = 4 or 5 (pCO2 or fCO2 is input) make relevant d/dT values NaNs
+%             F = (PAR1TYPE==4 | PAR2TYPE==4); %when pCO2 or fCO2 is input var
+%             % masknan = {'dfCO2in/dT' 'dxCO2in/dT' 'dpCO2out/dT' 'dfCO2out/dT' 'dxCO2out/dT'};
+%             masknan = {'dpCO2out/dT'};
+%             [is_in_headers, idx] = ismember(masknan, headers);
+%             if any(is_in_headers)
+%                 derivatives(F,idx) = NaN ;
+%             end
+%             
+%             % For PAR1TYPE or PAR2TYPE = 5 (fCO2 is input) make relevant d/dT values NaNs
+%             F = (PAR1TYPE==5 | PAR2TYPE==5); %when fCO2 is input var
+%             % masknan = {'dfCO2in/dT' 'dxCO2in/dT' 'dpCO2out/dT' 'dfCO2out/dT' 'dxCO2out/dT'};
+%             masknan = {'dfCO2out/dT'};
+%             [is_in_headers, idx] = ismember(masknan, headers);
+%             if any(is_in_headers)
+%                 derivatives(F,idx) = NaN ;
+%             end
+%         
+%         case {'PAR1', 'VAR1'}
+%             % For pH-pCO2 or pH-fCO2 pair (PAR1 is pH) 
+%             F = (PAR1TYPE==3 & (PAR2TYPE==4 | PAR2TYPE==5));
+%             masknan = {'dHout/dH' 'dpCO2out/dH' 'dfCO2out/dH'};
+%             [is_in_headers, idx] = ismember(masknan, headers);
+%             if any(is_in_headers)
+%                 derivatives(F,idx) = NaN ;
+%             end
+%         
+%         case {'PAR2', 'VAR2'}
+%             % For pCO2-pH or fCO2-pH pair (PAR2 is pH)
+%             F = ((PAR1TYPE==4 | PAR1TYPE==5) & PAR2TYPE==3);
+%             masknan = {'dHout/dH' 'dpCO2out/dH' 'dfCO2out/dH'};
+%             [is_in_headers, idx] = ismember(masknan, headers);
+%             if any(is_in_headers)
+%                 derivatives(F,idx) = NaN ;
+%             end
+%     end
+    
 end

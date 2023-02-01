@@ -31,8 +31,8 @@ function [est,obs,iflag] = QUODcarbV3(obs,sys)
     warning('on');
     C = C(1:nv,1:nv);
     y = z(1:nv);
-    sigy = real( sqrt(diag(C)) );
-    keyboard
+    sigy = sqrt(diag(C));
+    %keyboard
     % populate est
     [est] = parse_output(z,sigy,obs,sys);
 
@@ -52,7 +52,7 @@ function [g,H] = grad_limpco2(obs,z,y,w,sys)
     end
     g = real( g(:) );
     % [ g, test_g ]
-    keyboard
+    %keyboard
 end
 
 % ---------------------------------------------------------------------------------
@@ -187,7 +187,7 @@ function [f,g] = limpco2(obs,z,y,w,sys)
         c = [  M * q( x ); ...
                (-K * x) + zpK  ] ; 
     end
-
+    
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers
         
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
@@ -217,7 +217,7 @@ function [f,g] = limpco2(obs,z,y,w,sys)
         for row = (nr+1):(nr+nrk)
             gg = gg + lam(row)*(-zggpK((row-nr),:,:)); % ggpK
         end
-        if (ismember('hf',sys.variables))
+        if (ismember('phf',sys.variables))
             dhfdx2 = zeros(nc,nc);
             ii = [sys.iKs,sys.iTS];
             dhfdx2(ii,ii) = sys.ggf2t(x);
@@ -685,19 +685,19 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         if (~isfield(obs, 'TCal'))
             if obs.cK1K2 == 6 || obs.cK1K2 == 7
             % Calculate Ca for GEOSECS, Riley and Skirrow 1965
-                obs.TCal = (0.01026 .* obs.sal ./ 35) ;
-                yobs(sys.iTCal) = p(obs.TCal); % convt µmol/kg to mol/kg
+                obs.TCal = (0.01026 .* obs.sal ./ 35) * 1e6 ;
+                yobs(sys.iTCal) = p(obs.TCal*1e-6); % convt µmol/kg to mol/kg
             else
             % Calculate Ca, Riley and Tongdui 1967
                 % this is 0.010285.*obs.sal./35;
-                obs.TCal = (0.02128./40.087.*(obs.sal./1.80655)) ; % convt to umol/kg
-                yobs(sys.iTCal) = p(obs.TCal); % convert back to mol/kg
+                obs.TCal = (0.02128./40.087.*(obs.sal./1.80655)) * 1e6 ; % convt to umol/kg
+                yobs(sys.iTCal) = p(obs.TCal*1e-6); % convert back to mol/kg
             end
         else
-            yobs(sys.iTCal) = p(obs.TCal); % assume user input of umol/kg
+            yobs(sys.iTCal) = p(obs.TCal*1e-6); % assume user input of umol/kg
         end
         if (~isfield(obs, 'eTCal'))
-            obs.eTCal = (6e-5); % mol/kg, from Riley and Tongdui 1967
+            obs.eTCal = (6e-5)*1e6; % umol/kg, from Riley and Tongdui 1967
             wobs(sys.iTCal) = w(obs.TCal,obs.eTCal);
         else
             wobs(sys.iTCal) = w(obs.TCal,obs.eTCal);
@@ -743,19 +743,19 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
         pKh2s = pK(13); pp2f = pK(14); pKar  = pK(15); pKca  = pK(16);     
         
-        % calculate Hydrogen free (hf)
+        % calculate Hydrogen free (phf)
         % (copied from CO2SYS)
         if obs.cK1K2 == 7
             % Peng et al, Tellus 39B: 439-458, 1987:
-            obs.m(i).hf = 1.29 - 0.00204.*(obs.m(i).T+273.15) + ...
+            obs.m(i).phf = p( 1.29 - 0.00204.*(obs.m(i).T+273.15) + ...
                 (0.00046 - (0.00000148*(obs.m(i).T+273.15))) * ...
-                (obs.sal).^2 ; 
+                (obs.sal).^2 ) ; 
         else
             % Takahashi et al, Chapter 3 in GEOSECS Pacific Expedition,
             % v. 3, 1982 (p. 80);
-            obs.m(i).hf = 1.2948 - 0.002036.*(obs.m(i).T+273.15) + ...
+            obs.m(i).phf = p( 1.2948 - 0.002036.*(obs.m(i).T+273.15) + ...
                 (0.0004607 - (0.000001475*(obs.m(i).T+273.15))) * ...
-                (obs.sal).^2 ;
+                (obs.sal).^2 ) ;
         end
 
         %
@@ -883,7 +883,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             if (isgood(obs.m(i).ph))
                 if ( (obs.m(i).phscale >= 1) && (obs.m(i).phscale <= 4) )
                     pHall = phscales(obs.m(i).ph,obs.m(i).phscale, ...
-                        obs.TS, q(pKs), obs.TF, q(pKf), obs.m(i).hf);
+                        obs.TS, q(pKs), obs.TF, q(pKf), obs.m(i).phf);
                     yobs(sys.m(i).iph) = pHall(1); % use total scale
                 else 
                     fprintf('Warning: Must input correct pH scale.\n');
@@ -1006,7 +1006,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             if (isgood(obs.m(i).phf))
                 yobs(sys.m(i).iphf) = obs.m(i).phf; % hydrogen free
             else
-                yobs(sys.m(i).iphf) = p(obs.m(i).hf); % from CO2SYS
+                yobs(sys.m(i).iphf) = obs.m(i).phf; % from CO2SYS
                 obs.m(i).phf = nan;
             end
             if (isgood(obs.m(i).ephf))
@@ -1378,8 +1378,8 @@ function [est] = parse_output(z,sigy,obs,sys)
         est.eTH2S = ebar(sys.iTH2S)*1e6;
     end
     if ismember('solubility', sys.abr)
-        est.TCal = q(z(sys.iTCal));
-        est.eTCal = ebar(sys.iTCal);
+        est.TCal = q(z(sys.iTCal))*1e6;
+        est.eTCal = ebar(sys.iTCal)*1e6;
     end
     
     nTP = length(obs.m);
@@ -1579,7 +1579,8 @@ function z0 = init(yobs,sys);
         h = 0.5*( ( gam - 1 ) * K1 + ( ( 1 - gam )^2 * K1^2 - 4 * K1 * K2 * ( 1 - 2 * gam ) ).^0.5 ) ;    
         hco3 =  h * alk / (h + 2 * K2 );
         co2st = h * hco3 / K1 ;
-        co3 = 0.5 * ( alk - hco3 ) ;
+        %co3 = 0.5 * ( alk - hco3 ) ;
+        co3 = dic*K1*K2/(K1*h + h*h + K1*K2) ;
         fco2 = co2st/K0;
         pco2 = fco2/p2f;
     
