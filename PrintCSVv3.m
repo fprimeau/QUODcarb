@@ -42,8 +42,7 @@ function out = PrintCSVv3(varargin)
             if ( ( i == 1 ) || ( i == 2 ) )
                 fprintf(fid,'%s, ', '(PSU)');
                 fprintf(fid,'%s, ', '(PSU)');
-            elseif ( (i == 9 ) || ( i == 10 ) || ... % TS in mol/kg
-                    ( i == 21 ) || ( i == 22 ) )     % TCal in mol/kg
+            elseif ( (i == 9 ) || ( i == 10 ) ) % TS in mol/kg
                 fprintf(fid,'%s, ', '(mol/kg)');
                 fprintf(fid,'%s, ', '(mol/kg)');
             else
@@ -214,10 +213,10 @@ function out = PrintCSVv3(varargin)
                     fprintf(fid, '%s, ', '  ');
                 elseif ( (strcmp(fnm(i),'ca')) )
                     % ca and eca ( = TCal)
-                    fprintf(fid, '%s, ', '(mol/kg)');
-                    fprintf(fid, '%s, ', '(mol/kg)');
-                    fprintf(fid, '%s, ', '(mol/kg)');
-                    fprintf(fid, '%s, ', '(mol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
                 end
             end
         end
