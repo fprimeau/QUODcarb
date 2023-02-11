@@ -1,4 +1,4 @@
-function [pK,gpK] = local_pKv3(obs,T,S,P)
+function [pK,gpK] = local_pKv4(obs,T,S,P)
 % base equations COPIED FROM co2sys.m Orr et al. (2018)  Github
 % Originally from  van Heuven et al. (2011)
 % Original co2sys is from Lewis and Wallace (1998)
@@ -18,6 +18,7 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
     RT_T = Rgas;
     
     Pbar = P / 10; % convert from dbar to bar
+    Pbar_P = 1 / 10;
     ions   = @(S) 19.924 * S / ( 1000 - 1.005 * S); % from DOE handbook
     ions_S = @(S) 19.924 / ( 1000 - 1.005 * S ) + ...
              1.005 * 19.924 * S / ( 1000 -1.005 * S )^2 ; 
@@ -37,44 +38,64 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
     Ka   = @(T,b) ( b(1) + b(2) * T ) / 1000;
     Ka_T = @(T,b) b(2) / 1000;
     ppfac   = @(T,Pbar,a,b)... 
-              -( -dV(T,a)   * Pbar   + 0.5 * Ka(T,b)   * Pbar^2 )      / ( RT   * LOG10 );
+              -(( -dV(T,a)   * Pbar   + 0.5 * Ka(T,b)   * Pbar^2 ) / RT )   / ( LOG10 );
     ppfac_T = @(T,Pbar,a,b)... 
               -( -dV_T(T,a) * Pbar   + 0.5 * Ka_T(T,b) * Pbar^2 )      / ( RT   * LOG10 ) ...
-              -( -dV(T,a)   * Pbar   + 0.5 * Ka(T,b)   * Pbar^2 ) * (-RT_T / ( RT^2 * LOG10 ));
+              -( -dV(T,a)   * Pbar   + 0.5 * Ka(T,b)   * Pbar^2 ) * (RT_T / ( RT^2 * LOG10 ));
     ppfac_P = @(T,Pbar,a,b)... 
               -( -dV(T,a)         +       Ka(T,b)   * Pbar ) / (10 * RT * LOG10 ) ;
     
 
     % compute the pK's and their derivatives w.r.t. T,P,and S -------------
-    [pp2f    , gpp2f    ] = calc_p2f(T,RT,RT_T); 
+    [pp2f    , gpp2f    ] = calc_p2f(T,RT,RT_T,Pbar); 
     [pKs     , gpKs     ] = calc_pKs(obs,T,S,Pbar); 
     [pKf     , gpKf     ] = calc_pKf(obs,T,S,Pbar); 
     [pSWS2tot, gpSWS2tot, pFREE2tot, gpFREE2tot] = calc_pSWS2tot(S,pKs,gpKs,pKf,gpKf);
     [phf     , gphf     ] = calc_phf(obs,T,S);
-    [pK0     , gpK0     ] = calc_pK0(T,S); 
+    [pK0     , gpK0     ] = calc_pK0(T,S,Pbar); 
     [pKb     , gpKb     ] = calc_pKb(obs,T,S,Pbar,pSWS2tot,gpSWS2tot,phf,gphf); 
     [pKw     , gpKw     ] = calc_pKw(obs,T,S,Pbar); 
-    [pK1p    , gpK1p    ] = calc_pK1p(obs,T,S,Pbar); 
+    [pK1p    , gpK1p    ] = calc_pK1p(obs,T,S,Pbar,phf,gphf); 
     [pK2p    , gpK2p    ] = calc_pK2p(obs,T,S,Pbar,phf,gphf); 
     [pK3p    , gpK3p    ] = calc_pK3p(obs,T,S,Pbar,phf,gphf); 
     [pKsi    , gpKsi    ] = calc_pKsi(obs,T,S,Pbar,phf,gphf); 
     [pK1     , gpK1     ] = calc_pK1(obs,T,S,Pbar,phf,gphf,pSWS2tot,gpSWS2tot); 
     [pK2     , gpK2     ] = calc_pK2(obs,T,S,Pbar,phf,gphf,pSWS2tot,gpSWS2tot);
-    [pKnh4   , gpKnh4   ] = calc_pKnh4(T,S,Pbar);
-    [pKh2s   , gpKh2s   ] = calc_pKh2s(T,S,Pbar);
+    [pKnh4   , gpKnh4   ] = calc_pKnh4(T,S,Pbar,pSWS2tot,gpSWS2tot);
+    [pKh2s   , gpKh2s   ] = calc_pKh2s(T,S,Pbar,pSWS2tot,gpSWS2tot);
     [pKar    , gpKar    ] = calc_pKar(obs,T,S,Pbar,phf,gphf);
-    [pKca    , gpKca    ] = calc_pKca(obs,T,S,Pbar,phf,gphf); %??
+    [pKca    , gpKca    ] = calc_pKca(obs,T,S,Pbar,phf,gphf);
 
-    % convert from SWS to pH total scale ----------------------------------
-    pK1  = pK1  + pSWS2tot;  gpK1  = gpK1  + gpSWS2tot;
-    pK2  = pK2  + pSWS2tot;  gpK2  = gpK2  + gpSWS2tot;
-    pKw  = pKw  + pSWS2tot;  gpKw  = gpKw  + gpSWS2tot;
-    pK1p = pK1p + pSWS2tot;  gpK1p = gpK1p + gpSWS2tot;
-    pK2p = pK2p + pSWS2tot;  gpK2p = gpK2p + gpSWS2tot;
-    pK3p = pK3p + pSWS2tot;  gpK3p = gpK3p + gpSWS2tot;
-    pKsi = pKsi + pSWS2tot;  gpKsi = gpKsi + gpSWS2tot;
-    pKar = pKar + pSWS2tot;  gpKar = gpKar + gpSWS2tot;
-    pKca = pKca + pSWS2tot;  gpKca = gpKca + gpSWS2tot;
+    % find pH scale conversion factor -------------------------------------
+    if obs.phscale == 1 % pHtotal
+        phfac = pSWS2tot;
+        gphfac = gpSWS2tot;
+    elseif obs.phscale == 2 % pHSWS, they are all on this now
+        phfac = 0;
+        gphfac = 0;
+    elseif obs.phscale == 3 % pHfree
+        phfac = pSWS2tot - pFREE2tot;
+        gphfac = gpSWS2tot - gpFREE2tot;
+    elseif obs.phscale == 4 % pHNBS
+        phfac = phf;
+        gphfac = gphf;
+    else 
+        error('Need to input valid pH scale 1-4');
+    end
+
+    % convert from SWS to chosen pH scale ---------------------------------    
+    pK1   = pK1   + phfac;  gpK1   = gpK1   + gphfac;
+    pK2   = pK2   + phfac;  gpK2   = gpK2   + gphfac;
+    pKw   = pKw   + phfac;  gpKw   = gpKw   + gphfac;
+    pKb   = pKb   + phfac;  gpKb   = gpKb   + gphfac;
+    pK1p  = pK1p  + phfac;  gpK1p  = gpK1p  + gphfac;
+    pK2p  = pK2p  + phfac;  gpK2p  = gpK2p  + gphfac;
+    pK3p  = pK3p  + phfac;  gpK3p  = gpK3p  + gphfac;
+    pKsi  = pKsi  + phfac;  gpKsi  = gpKsi  + gphfac;
+    pKnh4 = pKnh4 + phfac;  gpKnh4 = gpKnh4 + gphfac;
+    pKh2s = pKh2s + phfac;  gpKh2s = gpKh2s + gphfac;
+    % pKar, pKca, pKs, and pKf are not converted in CO2SYS
+
 
     %
     % output
@@ -90,7 +111,7 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
     % subfunctions
     %
  
-    function [pp2f,gpp2f] = calc_p2f(T,RT,RT_T)
+    function [pp2f,gpp2f] = calc_p2f(T,RT,RT_T,Pbar)
     % pCO2 to fCO2 conversion (Weiss 1974) valid to within 0.1% -----------
         TK = T + 273.15; % convert to Kelvin
         Pstd = 1.01325;
@@ -102,16 +123,27 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
         f  = @(T,a) a(1) + a(2) * T +     a(3) * T^2 +     a(4) * T^3;
         df = @(T,a)        a(2)     + 2 * a(3) * T   + 3 * a(4) * T^2;
   
-        pp2f   = -( ( f(TK,a) + 2 * delC ) * Pstd / RT ) / LOG10;
-        pp2f_T = -( ( df(TK,a) + 2 * delC_T ) * Pstd / RT - ...
+        %if Pbar <= Pstd
+            % FugFac at 1 atm
+            pp2f   = -( ( f(TK,a) + 2 * delC ) * Pstd / RT ) / LOG10;
+            pp2f_T = -( ( df(TK,a) + 2 * delC_T ) * Pstd / RT - ...
                     ( f(TK,a) + 2 * delC ) * Pstd * RT_T / RT^2 ) / LOG10;
-        pp2f_S = 0;
-        pp2f_P = 0;
+            pp2f_S = 0;
+            pp2f_P = 0;
+
+        %else
+        %    % FugFac at in situ pressure
+        %    pp2f   = -( ( f(TK,a) + 2 * delC ) * (Pstd+Pbar) / RT ) / LOG10;
+        %    pp2f_T = -( ( df(TK,a) + 2 * delC_T ) * (Pstd+Pbar) / RT - ...
+        %            ( f(TK,a) + 2 * delC ) * (Pstd+Pbar) * RT_T / RT^2 ) / LOG10;
+        %    pp2f_S = 0;
+        %    pp2f_P = -( ( f(TK,a) + 2 * delC ) / (10*RT) ) / LOG10;
+        %end
         
         gpp2f = [pp2f_T, pp2f_S, pp2f_P]; % gradient of p(p2f);
     end
     
-    function [pK0,gpK0] = calc_pK0(T,S)
+    function [pK0,gpK0] = calc_pK0(T,S,Pbar)
     % calculate K0 (Weiss 1974)--------------------------------------------
         TK = T + 273.15; % convert to Kelvin
         TK100 = TK./100;
@@ -130,7 +162,21 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
         pK0_T = -( df(TK100,a) + dg(TK100,b) * S ) * TK100_T / LOG10;
         pK0_S = -(                g(TK100,b)     ) / LOG10;
         
-        gpK0 = [pK0_T, pK0_S, 0];
+        pK0_P = 0; % no pressure correction at 1atm
+
+%         if Pbar > 1.013  % 1.01325 Bar = 1 atm
+%             vCO2 = 32.3; % partial molal volume of CO2 (cm3 / mol)
+%                          % from Weiss (1974, Appendix, paragraph 3)
+% 
+%             % pressure correction at in situ pressure
+%             ppfacK0 = - ( ((-Pbar)*vCO2) / RT ) / LOG10 ;
+%             ppfacK0_P = - ( (-vCO2 / (10*RT) ) ) / LOG10;
+% 
+%             pK0 = pK0 + ppfacK0 ;
+%             pK0_P = pK0_P + ppfacK0_P ;
+%         end
+
+        gpK0 = [pK0_T, pK0_S, pK0_P];
     end
     
     function [pKs,gpKs] = calc_pKs(obs,T,S,Pbar)
@@ -284,29 +330,31 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
             pKb_T = -0.01;
             pKb_S = -0.00886;
 
-        % convert pKb from NBS scale to SWS scale, then SWS to total
+        % convert pKb from NBS scale to SWS scale
             pKb = pKb - phf ;
-            pKb = pKb + pSWS2tot;
-            pKb_T = pKb_T - gphf(1) + gpSWS2tot(1);
-            pKb_S = pKb_S - gphf(2) + gpSWS2tot(2);
+            pKb_T = pKb_T - gphf(1);
+            pKb_S = pKb_S - gphf(2);
 
         else
         % calculate Kb (Dickson 1990)--------------------------------------
-            a1 = [ -8966.9;    -2890.53;     -77.942;   1.728; -0.0996 ];
-            a2 = [   148.0248;   137.1942;     1.62142; 0.0;    0.0    ];
-            a3 = [   -24.4344;   -25.085;     -0.2474;  0.0;    0.0    ];
-            a4 = [     0.0;        0.053105;   0.0;     0.0;    0.0    ];
+            a1 = [  -8966.9; -2890.53; -77.942; 1.728; -0.0996 ];
+            a2 = [ 148.0248; 137.1942; 1.62142;  0.0 ;    0.0  ];
+            a3 = [ -24.4344;  -25.085; -0.2474;  0.0 ;    0.0  ];
+            a4 = [   0.0   ; 0.053105;   0.0  ;  0.0 ;    0.0  ];
 
-            f  = @(S,a) a(1)      + a(2) * S^(0.5)  + a(3) * S +       a(4) * S^(1.5) +     a(5) * S^2;
-            df = @(S,a)       0.5 * a(2) * S^(-0.5) + a(3)     + 1.5 * a(4) * S^(0.5) + 2 * a(5) * S;
+            f  = @(S,a) a(1) + a(2) .* sqrt(S) + a(3) .* S + a(4) .* S.^(1.5) + a(5) .* (S.^2);
+            df = @(S,a)  0.5 .* a(2) .* S^(-0.5) + a(3) + 1.5 .* a(4) .* sqrt(S) + 2 .* a(5) .* S;
 
-            pKb   = -(  f(S,a1) / TK +  f(S,a2)  +  f(S,a3) * log(TK)  +  f(S,a4) * TK ) / LOG10;
-            pKb_T = -( -f(S,a1) / TK^2           +  f(S,a3) / TK       +  f(S,a4)      ) / LOG10;
-            pKb_S = -( df(S,a1) / TK + df(S,a2)  + df(S,a3) * log(TK)  + df(S,a4) * TK ) / LOG10;
+            pKb   = -(  (f(S,a1) ./ TK) + f(S,a2) + (f(S,a3) .* log(TK)) + (f(S,a4) .* TK) ) ./ LOG10;
+            pKb   = pKb - pSWS2tot; % convert from total to SWS pH scale
+            pKb_T = -( (-f(S,a1) ./ (TK.^2) ) + ( f(S,a3) ./ TK ) +  f(S,a4) ) ./ LOG10;
+            pKb_T = pKb_T - gpSWS2tot(1);
+            pKb_S = -( ( df(S,a1) ./ TK ) + df(S,a2) + (df(S,a3) .* log(TK)) + (df(S,a4) .* TK) ) ./ LOG10;
+            pKb_S = pKb_S - gpSWS2tot(2);
         end
         % pressure correction
         a = [ -29.48; 0.1622; -0.002608 ];
-        b = [ -2.84; 0];
+        b = [  -2.84;   0.0 ];
         
         pKb = pKb + ppfac(T,Pbar,a,b);
         pKb_T = pKb_T + ppfac_T(T,Pbar,a,b);
@@ -367,16 +415,16 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
         gpKw = [pKw_T,pKw_S,pKw_P];
     end
     
-    function [pK1p,gpK1p] = calc_pK1p(obs,T,S,Pbar)
+    function [pK1p,gpK1p] = calc_pK1p(obs,T,S,Pbar,phf,gphf)
     TK = T + 273.15; % convert to Kelvin
         if obs.cK1K2 == 7
         % calculate K1p----------------------------------------------------
         % Peng et al don't include the contribution from this term,
         % but it is so small it doesn't contribute. It needs to be kept
         % so that the routines work ok. (From Orr's code)
-            pK1p = p(0.02);
-            pK1p_T = 0; 
-            pK1p_S = 0;        
+            pK1p = p(0.02) - phf; % convert NBS to SWS pH scale
+            pK1p_T = 0 - gphf(1); 
+            pK1p_S = 0 - gphf(2);        
         else
         % calculate K1p (Yao and Millero 1995)-----------------------------       
             a1 = [ -4576.752;    115.54;  -18.453 ];
@@ -931,7 +979,7 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
         gpK2 = [pK2_T, pK2_S, pK2_P]; 
     end
     
-    function [pKnh4, gpKnh4] = calc_pKnh4(T,S,Pbar)
+    function [pKnh4, gpKnh4] = calc_pKnh4(T,S,Pbar,pSWS2tot,gpSWS2tot)
     % Ammonia, added by Sharp et al 2021, from Clegg and Whitfield (1995)
         TK = T + 273.15; % convert to Kelvin
         a = 9.244605; b = -2729.33; c = 1/298.15; d = 0.04203362; g = -11.24742; 
@@ -939,30 +987,33 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
         f  = @(T,a) a(1)  + a(2) * sqrt(T) + a(3) * T + a(4) / T;
         df = @(T,a)    0.5 *a(2) / sqrt(T) + a(3)     - a(4) / T^2;
 
-        a1 = [ -13.6416;      1.176949;     -0.02860785;   545.4834       ];
-        a2 = [  -0.1462507;    0.0090226468; -0.0001471361;  10.5425      ];
-        a3 = [   0.004669309; -0.0001691742;  0;             -0.5677934   ];
-        a4 = [  -2.354039e-05; 0;             0;              0.009698623 ];
+        a1 = [ -13.6416     ; 1.176949     ; -0.02860785  ; 545.4834    ];
+        a2 = [ -0.1462507   ; 0.0090226468 ; -0.0001471361; 10.5425     ];
+        a3 = [ 0.004669309  ; -0.0001691742;   0.0        ; -0.5677934  ];
+        a4 = [ -2.354039e-05;   0.0        ;   0.0        ; 0.009698623 ];
 
-        pKnh4 = a + b * (c - 1 / TK) + (d + g / TK) * S^(0.25) + ...
+        pKnh4 = a + b * (c - (1 / TK)) + (d + (g / TK)) * S^(0.25) + ...
                 f(TK,a1) * S^0.5 + ...
                 f(TK,a2) * S^1.5 + ...
                 f(TK,a3) * S^2   + ...
                 f(TK,a4) * S^2.5 + ...
-                + p(1 - 0.001005 * S); 
+                + p(1 - 0.001005 * S) ...
+                - pSWS2tot; % convert from total scale to SWS pH scale 
         
         pKnh4_T = b / (TK^2) - g / (TK^2) * S^(0.25) + ...
                   df(TK,a1) * S^0.5 + ...
                   df(TK,a2) * S^1.5 + ...
                   df(TK,a3) * S^2   + ...
-                  df(TK,a4) * S^2.5;
+                  df(TK,a4) * S^2.5 ...
+                  - gpSWS2tot(1); % convert from total scale to SWS pH scale
 
         pKnh4_S = 0.25 * (d + g / TK) * S^(-0.75) + ...
                   f(TK,a1) * 0.5 * S^-0.5 + ...
                   f(TK,a2) * 1.5 * S^0.5 + ...
                   f(TK,a3) * 2.0 * S   + ...
                   f(TK,a4) * 2.5 * S^1.5 - ...
-                  0.001005 * dpdx(1 - 0.001005 * S); 
+                  0.001005 * dpdx(1 - 0.001005 * S) ...
+                  - gpSWS2tot(2); % convert from total scale to SWS pH scale 
         
         % pressure correction
         a = [ -26.43; 0.0889; -0.000905 ];
@@ -975,15 +1026,18 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
         gpKnh4 = [pKnh4_T, pKnh4_S, pKnh4_P];
     end
     
-    function [pKh2s,gpKh2s] = calc_pKh2s(T,S,Pbar)
+    function [pKh2s,gpKh2s] = calc_pKh2s(T,S,Pbar,pSWS2tot,gpSWS2tot)
     % hydrogen sulfide, added by Sharp et al 2021, from Millero et al (1988)
         TK = T + 273.15; % convert to Kelvin
         a = 225.838; b = -13275.3; c = -34.6435;
         d = 0.3449; h = -0.0274;
-        pKh2s = - (a + b./TK + c.*log(TK) + d.*sqrt(S) + ...
-                   h.*S) ./ LOG10;
-        pKh2s_T = - (-b./(TK.^2) + c./TK ) ./ LOG10;
-        pKh2s_S = - (0.5.*d./sqrt(S) + h) ./ LOG10;
+        
+        pKh2s = (- (a + b./TK + c.*log(TK) + d.*sqrt(S) + h.*S) ./ LOG10 ) ...
+                   - pSWS2tot; % convert from total scale to SWS pH scale
+        pKh2s_T = (- (-b./(TK.^2) + c./TK ) ./ LOG10 ) ...
+                   - gpSWS2tot(1); % convert from total scale to SWS pH scale
+        pKh2s_S = (- (0.5.*d./sqrt(S) + h) ./ LOG10 ) ...
+                   - gpSWS2tot(2); % convert from total scale to SWS pH scale
         
         % pressure correction
         a = [ -11.07; -0.009; -0.000942 ];
@@ -1165,6 +1219,7 @@ function [pK,gpK] = local_pKv3(obs,T,S,P)
             gphf_S = dpdx(phf) * 2 * (0.0004607 - (0.000001475 * (TK))) * S ;
         end
         gphf = [gphf_T, gphf_S, 0];
+        % assumed independent of pressure
     end  
 %     LOG10 = log(10);
 %     p = @(x) -log10(x);

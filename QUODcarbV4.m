@@ -1,7 +1,7 @@
 % QUODcarbV3
 % updating with CO2SYS v3 updates (Sharp version)
 
-function [est,obs,iflag] = QUODcarbV3(obs,sys)
+function [est,obs,iflag] = QUODcarbV4(obs,sys)
 % [est,obs,iflag] = QUODcarb(obs,sys);
 %
 % OUTPUT:
@@ -107,7 +107,7 @@ function [f,g] = limpco2(obs,z,y,w,sys)
     zgpK = zeros(nrk,nv);
     f2t = [];
     for i = 1:nTP
-        [pK, gpK] = local_pKv3(obs, x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
+        [pK, gpK] = local_pKv4(obs, x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
         iTSP = [ sys.m(i).iT, sys.isal, sys.m(i).iP];
         if (ismember('carbonate',sys.abr))
             zpK(sys.m(i).kK0)          = pK(1); 
@@ -737,7 +737,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         wobs(sys.m(i).iT) = obs.m(i).eT;
         wobs(sys.m(i).iP) = obs.m(i).eP;
         
-        [pK,gpK] = local_pKv3(obs, obs.m(i).T, obs.sal, obs.m(i).P );
+        [pK,gpK] = local_pKv4(obs, obs.m(i).T, obs.sal, obs.m(i).P );
         pK0   = pK(1);  pK1  = pK(2);  pK2   = pK(3);  pKb   = pK(4);  
         pKw   = pK(5);  pKs  = pK(6);  pKf   = pK(7);  pK1p  = pK(8);  
         pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
@@ -745,18 +745,18 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         
         % calculate Hydrogen free (phf)
         % (copied from CO2SYS)
-        if obs.cK1K2 == 7
-            % Peng et al, Tellus 39B: 439-458, 1987:
-            obs.m(i).phf = p( 1.29 - 0.00204.*(obs.m(i).T+273.15) + ...
-                (0.00046 - (0.00000148*(obs.m(i).T+273.15))) * ...
-                (obs.sal).^2 ) ; 
-        else
-            % Takahashi et al, Chapter 3 in GEOSECS Pacific Expedition,
-            % v. 3, 1982 (p. 80);
-            obs.m(i).phf = p( 1.2948 - 0.002036.*(obs.m(i).T+273.15) + ...
-                (0.0004607 - (0.000001475*(obs.m(i).T+273.15))) * ...
-                (obs.sal).^2 ) ;
-        end
+%         if obs.cK1K2 == 7
+%             % Peng et al, Tellus 39B: 439-458, 1987:
+%             obs.m(i).phf = p( 1.29 - 0.00204.*(obs.m(i).T+273.15) + ...
+%                 (0.00046 - (0.00000148*(obs.m(i).T+273.15))) * ...
+%                 (obs.sal).^2 ) ; 
+%         else
+%             % Takahashi et al, Chapter 3 in GEOSECS Pacific Expedition,
+%             % v. 3, 1982 (p. 80);
+%             obs.m(i).phf = p( 1.2948 - 0.002036.*(obs.m(i).T+273.15) + ...
+%                 (0.0004607 - (0.000001475*(obs.m(i).T+273.15))) * ...
+%                 (obs.sal).^2 ) ;
+%         end
 
         %
         % add "observations" for the equilibrium constants 
@@ -881,13 +881,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
                 obs.m(i).efco2 = nan;
             end %
             if (isgood(obs.m(i).ph))
-                if ( (obs.m(i).phscale >= 1) && (obs.m(i).phscale <= 4) )
-                    pHall = phscales(obs.m(i).ph,obs.m(i).phscale, ...
-                        obs.TS, q(pKs), (obs.TF*1e-6), q(pKf), obs.m(i).phf);
-                    yobs(sys.m(i).iph) = pHall(1); % use total scale
-                else 
-                    fprintf('Warning: Must input correct pH scale.\n');
-                end
+                yobs(sys.m(i).iph) = obs.m(i).ph ;
+%                 if ( (obs.m(i).phscale >= 1) && (obs.m(i).phscale <= 4) )
+%                     pHallic = phscales(obs.m(i).ph,obs.m(i).phscale, ...
+%                         obs.TS, q(pKs), (obs.TF*1e-6), q(pKf), obs.m(i).phf);
+%                     yobs(sys.m(i).iph) = pHallic(2); % use SWS scale
+%                 else 
+%                     fprintf('Warning: Must input correct pH scale.\n');
+%                 end
             else
                 yobs(sys.m(i).iph) = nan;
                 obs.m(i).ph = nan;
@@ -1006,7 +1007,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             if (isgood(obs.m(i).phf))
                 yobs(sys.m(i).iphf) = obs.m(i).phf; % hydrogen free
             else
-                yobs(sys.m(i).iphf) = obs.m(i).phf; % from CO2SYS
+                yobs(sys.m(i).iphf) = nan; % from CO2SYS
                 obs.m(i).phf = nan;
             end
             if (isgood(obs.m(i).ephf))
@@ -1389,8 +1390,12 @@ function [est] = parse_output(z,sigy,obs,sys)
         est.m(i).eT = sigy(sys.m(i).iT);
         est.m(i).P  = z(sys.m(i).iP);        
         est.m(i).eP = sigy(sys.m(i).iP);
-        % chemical equilibrium & errorbar
         est.m(i).ph      = z(sys.m(i).iph);
+        %pHalloc = phscales(est.m(i).ph, 2, est.TS, ... % 2 for input pH SWS
+        %    q(z(sys.m(i).iKs)), (est.TF*1e-6), q(z(sys.m(i).iKf)), ...
+        %    z(sys.m(i).iphf) );
+        % can use 'phscales' function to output on all scales
+        %est.m(i).ph      = pHalloc(obs.m(i).phscale); % reset output to input pH scale
         est.m(i).eph     = sigy(sys.m(i).iph);
         est.m(i).fco2    = q(z(sys.m(i).ifco2))*1e6; % convt atm to µatm
         est.m(i).efco2   = ebar(sys.m(i).ifco2)*1e6;
@@ -1520,7 +1525,7 @@ end
 
 function pHall = phscales(phin,scalein,TS,Ks,TF,Kf,phf)
     % convert input pH to all scales
-    
+    q = @(x) 10.^(-x);
     % input TS, Ks, TF, Kf
     free2tot = (1 + TS./Ks);
     sws2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
@@ -1601,7 +1606,8 @@ function z0 = init(yobs,sys);
         if (ismember('borate',sys.abr));
             Kb = q(y0(sys.m(i).iKb));
             TB = q(yobs(sys.iTB));
-            boh4 = TB / ( 1 + h / Kb );
+            %boh4 = TB / ( 1 + h / Kb );
+            boh4 = TB * Kb / (Kb + h) ;
             boh3 = TB - boh4;        
             y0(sys.iTB)   = p(TB);
             y0(sys.m(i).iboh3) = p(boh3);
