@@ -1,4 +1,4 @@
-% compare to co2sys with QUODcarb output loaded
+% compare to co2sys with QUODcarb output
 
 function [A] = compare(varargin)    % (obs,pair,est,fid)
 
@@ -30,6 +30,7 @@ function [A] = compare(varargin)    % (obs,pair,est,fid)
         [A] = ' ';
 
     else
+        format long
         obs = varargin{1};
         pair = varargin{2};
         est = varargin{3};
@@ -223,7 +224,8 @@ function [A] = compare(varargin)    % (obs,pair,est,fid)
         fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,',out.OmegaCa,out.eOmegaCa,est.m(2).OmegaCa,est.m(2).eOmegaCa);
         fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,',out.CAL, est.TCal, est.eTCal);
         fprintf(fid,'\n');
-%keyboard
+        
+        %keyboard
     end
 
 end

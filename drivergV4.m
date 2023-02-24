@@ -2,7 +2,7 @@
 % implementing CO2SYS v3 changes
 
 % driver for GOMECC data
-
+format long
 % take GOMECC data and put into QUODcarbV4
 
 LOG10 = log(10);

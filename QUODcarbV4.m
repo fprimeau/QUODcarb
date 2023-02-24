@@ -107,7 +107,7 @@ function [f,g] = limpco2(obs,z,y,w,sys)
     zgpK = zeros(nrk,nv);
     f2t = [];
     for i = 1:nTP
-        [pK, gpK] = local_pKv4(obs, x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
+        [pK, gpK] = local_pKv5(obs, x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
         iTSP = [ sys.m(i).iT, sys.isal, sys.m(i).iP];
         if (ismember('carbonate',sys.abr))
             zpK(sys.m(i).kK0)          = pK(1); 
@@ -737,7 +737,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         wobs(sys.m(i).iT) = obs.m(i).eT;
         wobs(sys.m(i).iP) = obs.m(i).eP;
         
-        [pK,gpK] = local_pKv4(obs, obs.m(i).T, obs.sal, obs.m(i).P );
+        [pK,gpK] = local_pKv5(obs, obs.m(i).T, obs.sal, obs.m(i).P );
         pK0   = pK(1);  pK1  = pK(2);  pK2   = pK(3);  pKb   = pK(4);  
         pKw   = pK(5);  pKs  = pK(6);  pKf   = pK(7);  pK1p  = pK(8);  
         pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
