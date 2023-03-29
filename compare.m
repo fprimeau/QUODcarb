@@ -67,7 +67,7 @@ function [A] = compare(varargin)    % (obs,pair,est,fid)
         po4 = obs.TP; % phosphate of sample
         epo4 = obs.eTP; % error PO4
         pHscale = 1; % pH(total scale)
-        k1k2c = 4; % Mehrbach refit
+        k1k2c = 17; 
         epK = [0.002,0.01,0.02,0.01,0.01,0.04,0.039]; % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02]
         kso4c = 1; % 1 or 3 is Dickson 1990
         %eBt = q(wobs(sys.iTB))^(-1/2)*1e6; % error total boron, 0.02

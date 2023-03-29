@@ -1,4 +1,4 @@
-% QUODcarbV3
+% QUODcarbV4
 % updating with CO2SYS v3 updates (Sharp version)
 
 function [est,obs,iflag] = QUODcarbV4(obs,sys)
@@ -706,8 +706,8 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             if (isgood(obs.m(i).epK1))
                 wobs(sys.m(i).iK1) = (obs.m(i).epK1)^(-2);
             else
-                obs.m(i).epK1 = 0.01;
-                wobs(sys.m(i).iK1) = (obs.m(i).epK1)^(-2);  % wK1 = 1/(1 + (0.01/pKsys(2)))^2 ;
+                obs.m(i).epK1 = 0.012;
+                wobs(sys.m(i).iK1) = (obs.m(i).epK1)^(-2);
             end
             if (isgood(obs.m(i).pK1))
                 yobs(sys.m(i).iK1) = obs.m(i).pK1;
@@ -719,7 +719,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             if (isgood(obs.m(i).epK2))
                 wobs(sys.m(i).iK2) = (obs.m(i).epK2)^(-2);
             else
-                obs.m(i).epK2 = 0.02;
+                obs.m(i).epK2 = 0.022;
                 wobs(sys.m(i).iK2) = (obs.m(i).epK2)^(-2);  % wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
             end
             
