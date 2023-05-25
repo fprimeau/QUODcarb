@@ -133,7 +133,7 @@ function [f,g] = limpco2(obs,z,y,w,sys)
         end    
         g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
     end
-    %     
+    keyboard
     if ( nargout > 2 ) % compute the Hessian
         ddq =  diag( sys.d2qdx2( x ) ); % q"
         [nr,nc] = size(M);

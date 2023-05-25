@@ -312,7 +312,7 @@ for i = 1:nD
     obs.TA = nan; obs.eTA = nan;
     obs.m(3).pco2 = nan; obs.m(3).epco2 = nan;
     [est,obs,iflag] = QUODcarbV4(obs,sys);
-    est16K10(i) = est;
+    est16K04(i) = est;
 %     if i == 1
 %         PrintCSVv3(sys,est,fid16);
 %     end
@@ -337,7 +337,7 @@ for i = 1:nD
     obs.m(2).co3 = nan; obs.m(2).eco3 = nan;
     obs.m(2).ph = nan; obs.m(2).eph = nan;
     [est,obs,iflag] = QUODcarbV4(obs,sys);
-    est21K04;
+    est21K04(i) = est;
 %     if i == 1
 %         PrintCSVv3(sys,est,fid21);
 %     end
