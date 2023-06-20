@@ -34,9 +34,9 @@ function out = PrintCSVv6(varargin)
         for j = 1:nTP
             for i = 1:4:8 % until pH
                 fnj = fieldnames(est.m(j));
-                fprintf(fid,'obs_%s_m(%g), ', fnj{i},j);
+                fprintf(fid,'obs_%s, ', fnj{i});
                 fprintf(fid,'obs_e%s, ', fnj{i}); % error
-                fprintf(fid,'est_%s_m(%g), ', fnj{i},j);
+                fprintf(fid,'est_%s, ', fnj{i});
                 fprintf(fid,'est_e%s, ', fnj{i}); % error
             end
             fprintf(fid,'obs_ph, '); % obs_ph

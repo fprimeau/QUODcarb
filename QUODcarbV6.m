@@ -33,9 +33,10 @@ function [est,obs,iflag] = QUODcarbV6(obs,opt)
         gun = @(z) grad_limpco2(z,yobs(i,:),wobs(i,:),sys,opt);
         z0 = init(yobs(i,:),sys,opt);
         tol = 1e-7;
+        % tol = 5e-8; % for TReX
 
         [z,J,iflag(i)] = newtn(z0,gun,tol);
-        if (iflag(i) ~=0) && (opt.printmes ~= 2)
+        if (iflag(i) ~=0) && (opt.printmes ~= 0)
             fprintf('Newton''s method iflag = %i\n',iflag(i));
         end
         % posterior uncertainty
@@ -185,32 +186,32 @@ end
 function [opt] = check_opt(opt)
     % check opt
     if opt.K1K2 > 18 || opt.K1K2 < 1 
-        if opt.printmes ~= 2
+        if opt.printmes ~= 0
             fprintf('No K1K2 formulation chosen. Assuming opt.K1K2 = 4');
         end
         opt.K1K2 = 4; % default K1K2 setting
     end
     if opt.KSO4 > 3 || opt.KSO4 < 1
-        if opt.printmes ~= 2
+        if opt.printmes ~= 0
             fprintf('No KSO4 formulation chosen. Assuming opt.KSO4 = 1');
         end
         opt.KSO4 = 1; % default opt.KSO4 setting
     end
     if opt.KF > 2 || opt.KF < 1 
-        if opt.printmes ~= 2
+        if opt.printmes ~= 0
             fprintf('No KF formulation chosen. Assuming opt.KF = 2');
         end
         opt.KF = 2;
     end
     if opt.TB > 2 || opt.TB < 1
-        if opt.printmes ~= 2
+        if opt.printmes ~= 0
             fprintf('No TB formulation chosen. Assuming opt.TB = 2');
         end
         opt.TB = 2;
     end
     if ~isempty(opt.co2press)  % isfield('co2press',opt)
-        if opt.printmes ~= 2
-            if opt.co2press > 2 || opt.co2press < 0
+        if opt.printmes ~= 0
+            if opt.co2press > 1 || opt.co2press < 0
                 fprintf('Invalid opt.co2press input, reset to default')
                 opt.co2press = 0; % default co2press
             end
@@ -219,7 +220,7 @@ function [opt] = check_opt(opt)
         opt.co2press = 0; % default co2press
     end
     if (strcmp(opt.abr,""))
-        if opt.printmes ~= 2
+        if opt.printmes ~= 0
             fprintf('No acid base system chosen. Assuming opt.abr = {''all''}')
         end
         opt.abr = {'all'}; % default acid/base system = 'all'
@@ -249,7 +250,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
 
         % make sure all the required fields in the obs struct exist
         if (~isfield(obs(i), 'sal'))
-            if opt.printmes ~= 2
+            if opt.printmes ~= 0
                 error('Need to provide salinity measurement.');
             end
         else
@@ -258,7 +259,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         if (~isfield(obs(i), 'esal'))
             obs(i).esal = 0.002; % std = 0.002 PSU
             wobs(i,sys.isal) = (obs(i).esal)^(-2);
-            if opt.printmes ~= 2
+            if opt.printmes ~= 0
                 fprintf('Warning: Assuming salinity uncertainty is 0.002 PSU');
             end
         else
@@ -289,7 +290,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.iTA) = w(obs(i).TA,obs(i).eTA); % std e -> w
         end
         if (~isfield(obs(i),'m'))
-            if opt.printmes ~= 2
+            if opt.printmes ~= 0
                 error('Need to provide temperature and pressure measurement.')
             end
         end
@@ -548,7 +549,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).eTP = 1e-3; % µmol/kg
                 wobs(i,sys.iTP) = w(obs(i).TP,obs(i).eTP);
             else
-                if ((obs(i).TP) == 0)
+                if ((obs(i).eTP) == 0)
                     obs(i).eTP = 1e-3; % umol/kg, reset minimum if zero
                 end
                 wobs(i,sys.iTP) = w(obs(i).TP,obs(i).eTP);
@@ -599,7 +600,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).eTSi = 1e-3; % µmol/kg
                 wobs(i,sys.iTSi) = w(obs(i).TSi,obs(i).eTSi);
             else
-                if ((obs(i).TSi) == 0)
+                if ((obs(i).eTSi) == 0)
                     obs(i).eTSi = 1e-3; % umol/kg, reset minimum to 1 nanomolar
                 end
                 wobs(i,sys.iTSi) = w(obs(i).TSi,obs(i).eTSi);

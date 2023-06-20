@@ -1,4 +1,4 @@
-function [x,J,iflag] = newtn(x0, F, tol,vararin)
+function [x,J,iflag] = newtn(x0, F, tol)
 %[x,J,iflag] = newt(x0,F,tol);
 % Simple function that applies Newton's method to find the root of
 
@@ -16,7 +16,7 @@ function [x,J,iflag] = newtn(x0, F, tol,vararin)
 %                      tolerance
 %        1 ==> Newton's method did not converge 
     iprint = 1;
-    MAXIT = 80;
+    MAXIT = 50;
     x = x0;
     if (nargin==4)
         [F0,iJ] = F(x);
@@ -24,7 +24,7 @@ function [x,J,iflag] = newtn(x0, F, tol,vararin)
         [F0, J] = F(x);
     end
     iflag = 0; itno = 0;
-    while (((norm(F0) > tol) & (itno<MAXIT)) )
+    while (((norm(F0) > tol) && (itno<MAXIT)) )
         if (nargin==4)            
             dx = -iJ(F0);
             x = x + dx;
@@ -42,8 +42,15 @@ function [x,J,iflag] = newtn(x0, F, tol,vararin)
         end
     end
     if (itno>=MAXIT)
-        iflag = 1;
-        fprintf('Warning Newton''s Method did not converge.\n')
+        if norm(F0(1:end-1)) < tol*1e1
+            iflag = 2;
+            fprintf('Warniing Newton''s Method did not converge.\n ')
+            fprintf('At max iteration, value was one order of magnitude more than tolerance...\n')
+            fprintf('Consider keeping. \n')
+        else
+            iflag = 1;
+            fprintf('Warning Newton''s Method did not converge.\n')
+        end
     end
     if (nargin==4)
         J = iJ;

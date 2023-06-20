@@ -2,244 +2,240 @@
 
 % comparev2.m for drivergV6 and QUODcarbV6
 
-function [A] = compare2(varargin) % obs,est,opt,tp,pair,fid
+function [A] = compare2(obs,est,opt,tp,pair,fid)
 
         p = @(x) -log10(x); % use p as in "pH" to denote the negative log base 10 function
         q = @(x) 10.^(-x);  % use q, i.e., a backward p
 
-    if (nargin == 1)
-        % 
-        % Print Column Headers
-        %
-        fid = varargin{1};
+        nD = length(obs);
 
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cTA', 'eTA', 'qTA', 'eTA' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cTC', 'eTC', 'qTC', 'eTC' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cph', 'eph', 'qph', 'eph' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpCO2', 'epCO2', 'qpCO2', 'epCO2' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cCO3', 'eCO3', 'qCO3', 'eCO3' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK0', 'epK0', 'qpK0', 'epK0' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK1', 'epK1', 'qpK1', 'epK1' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK2', 'epK2', 'qpK2', 'epK2' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKw', 'epKw', 'qpKw', 'epKw' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKb', 'epKb', 'qpKb', 'epKb' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKs', 'qpKs', 'cpKf', 'qpKf' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK1p', 'qpK1p', 'cpK2p', 'qpK2p' ); % no error for CO2SYS K1p thru KH2S
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpK3p', 'qpK3p', 'cpKsi', 'qpKsi' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKNH4', 'qpKNH4', 'cpKH2S', 'qpKH2S' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cpKar', 'qpKar', 'cpKca', 'qpKca' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cOmegaAr', 'eOmegaAr', 'qOmegaAr', 'eOmegaAr' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cOmegaCa', 'eOmegaCa', 'qOmegaCa', 'eOmegaCa' );
-        fprintf(fid,'%s, %s, %s, %s, %s ', 'cCAL', 'qTCal','eqTCal',' ');
-        fprintf(fid, '\n');
-        [A] = ' ';
+        for i = 1:nD
+            if i == 1
+                % print column headers
+                fid = fopen(fid,'w');
 
-    else  % obs,est,opt,tp,pair,fid
-        format long
-        obs = varargin{1};
-        est = varargin{2};
-        opt = varargin{3};
-        tp = varargin{4};
-        pair = varargin{5};
-        fid = varargin{6};
+                fprintf(fid, '%s, ','C_ = CO2SYS');
+                fprintf(fid, '%s, ','Q_ = QUODcarb');
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_TA', 'C_eTA', 'Q_TA', 'Q_eTA' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_TC', 'C_eTC', 'Q_TC', 'Q_eTC' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_ph', 'C_eph', 'Q_ph', 'Q_eph' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pCO2', 'C_epCO2', 'Q_pCO2', 'Q_epCO2' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_CO3', 'C_eCO3', 'Q_CO3', 'Q_eCO3' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pK0', 'C_epK0', 'Q_pK0', 'Q_epK0' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pK1', 'C_epK1', 'Q_pK1', 'Q_epK1' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pK2', 'C_epK2', 'Q_pK2', 'Q_epK2' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pKw', 'C_epKw', 'Q_pKw', 'Q_epKw' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pKb', 'C_epKb', 'Q_pKb', 'Q_epKb' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pKs', 'Q_pKs', 'C_pKf', 'Q_pKf' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pK1p', 'Q_pK1p', 'C_pK2p', 'Q_pK2p' ); % no error for CO2SYS K1p thru KH2S
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pK3p', 'Q_pK3p', 'C_pKsi', 'Q_pKsi' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pKNH4', 'Q_pKNH4', 'C_pKH2S', 'Q_pKH2S' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pKar', 'Q_pKar', 'C_pKca', 'Q_pKca' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_OmegaAr', 'C_eOmegaAr', 'Q_OmegaAr', 'Q_eOmegaAr' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_OmegaCa', 'C_eOmegaCa', 'Q_OmegaCa', 'Q_eOmegaCa' );
+                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_CAL', 'Q_TCal','Q_eTCal',' ');
+                fprintf(fid, '\n');
+                [A] = ' ';
+            end
 
-        par1type = 1; % alkalinity
-        par1 = obs.TA; % TA umol/kg
-        epar1 = obs.eTA; % error alkalinity
-        par2type = 2; % DIC
-        par2 = obs.TC; % DIC_in µmol/kg
-        epar2 = obs.eTC; % error DIC
-        par3type = 3; % pH
-        par3 = obs.m(2).ph; % pH(total)
-        epar3 = obs.m(2).eph; % error pH
-        par4 = est.m(2).pco2;  % pCO2 converted to pH's temp
-        epar4 = est.m(2).epco2; %
-        par4type = 4;
-        par5 = obs.m(2).co3; % CO3
-        epar5 = obs.m(2).eco3;
-        par5type = 7;
+            par1type = 1; % alkalinity
+            par1 = obs(i).TA; % TA umol/kg
+            epar1 = obs(i).eTA; % error alkalinity
+            par2type = 2; % DIC
+            par2 = obs(i).TC; % DIC_in µmol/kg
+            epar2 = obs(i).eTC; % error DIC
+            par3type = 3; % pH
+            par3 = obs(i).m(2).ph; % pH(total)
+            epar3 = obs(i).m(2).eph; % error pH
+            par4 = est(i).m(2).pco2;  % pCO2 converted to pH's temp
+            epar4 = est(i).m(2).epco2; %
+            par4type = 4;
+            par5 = obs(i).m(2).co3; % CO3
+            epar5 = obs(i).m(2).eco3;
+            par5type = 7;
 
-        sal = obs.sal; % salinity of sample
-        esal = obs.esal; % salinity error
-        tempin = obs.m(tp).T; % temp of sample at tp chosen
-        etemp = obs.m(tp).eT; % error temp
-        presin = obs.m(tp).P; % pressure of sample (dbars)
-        tempout = obs.m(tp).T;
-        presout = obs.m(tp).P;
-        sil = obs.TSi; % total Si of sample
-        esi = obs.eTSi; % error Si
-        po4 = obs.TP; % phosphate of sample
-        epo4 = obs.eTP; % error PO4
-        pHscale = 1; % pH(total scale)
-        k1k2c = opt.K1K2;
-        epK = [0.002,0.01,0.02,0.01,0.01,0.04,0.039]; % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02]
-        kso4c = 1; % 1 or 3 is Dickson 1990
-        eBt = 0.0373;
-        r = 0; % correlation coefficient
-        nh4 = 1e-3;
-        enh4 = 1e-3;
-        h2s = 1e-3;
-        eh2s = 1e-3;
-        kfc = opt.KF;
-        tbc = opt.TB;
-        ecal = 0.06; % 60 umol/kg = 6e-5 mol/kg = 0.06 mmol/kg
-        X = opt.co2press; % calls for 'co2press,1' not just '1'
+            sal = obs(i).sal; % salinity of sample
+            esal = obs(i).esal; % salinity error
+            tempin = obs(i).m(tp).T; % temp of sample at tp chosen
+            etemp = obs(i).m(tp).eT; % error temp
+            presin = obs(i).m(tp).P; % pressure of sample (dbars)
+            tempout = obs(i).m(tp).T;
+            presout = obs(i).m(tp).P;
+            sil = obs(i).TSi; % total Si of sample
+            esi = obs(i).eTSi; % error Si
+            po4 = obs(i).TP; % phosphate of sample
+            epo4 = obs(i).eTP; % error PO4
+            pHscale = 1; % pH(total scale)
+            k1k2c = opt.K1K2;
+            epK = [0.002,0.01,0.02,0.01,0.01,0.04,0.039]; % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02]
+            kso4c = 1; % 1 or 3 is Dickson 1990
+            %eBt = q(wobs(sys.iTB))^(-1/2)*1e6; % error total boron, 0.02
+            eBt = 0.0373;
+            r = 0; % correlation coefficient
+            nh4 = 1e-3;
+            enh4 = 1e-3;
+            h2s = 1e-3;
+            eh2s = 1e-3;
+            kfc = opt.KF;
+            tbc = opt.TB;
+            ecal = 0.06; % 60 umol/kg = 6e-5 mol/kg = 0.06 mmol/kg
+            X = opt.co2press; % calls for 'co2press,1' not just '1'
+            
 
-
-        % par1 = alk, par2 = dic, par3 = ph, par4 = pco2; par5 = co3
-        if pair == 1 % TA TC
-            OUT = CO2SYS(par1,par2,par1type,par2type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par1,par2,par1type,par2type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar1,epar2,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
-        elseif pair == 2 % TC pH
-            OUT = CO2SYS(par2,par3,par2type,par3type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par2,par3,par2type,par3type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar2,epar3,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
-        elseif pair == 3 % TA pH
-            OUT = CO2SYS(par1,par3,par1type,par3type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par1,par3,par1type,par3type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar1,epar3,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
-        elseif pair == 4 % pH pCO2
-            OUT = CO2SYS(par3,par4,par3type,par4type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par3,par4,par3type,par4type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar3,epar4,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
-        elseif pair == 5 % pCO2 CO3
-            OUT = CO2SYS(par4,par5,par4type,par5type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par4,par5,par4type,par5type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar4,epar5,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
-        elseif pair == 6 % TC CO3
-            OUT = CO2SYS(par2,par5,par2type,par5type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par2,par5,par2type,par5type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar2,epar5,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
-        elseif pair == 7 % TC pCO2
-            OUT = CO2SYS(par2,par4,par2type,par4type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par2,par4,par2type,par4type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar2,epar4,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
-        elseif pair == 8 % TA pCO2
-            OUT = CO2SYS(par1,par4,par1type,par4type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par1,par4,par1type,par4type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar1,epar4,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
-        elseif pair == 9 % TA CO3
-            OUT = CO2SYS(par1,par5,par1type,par5type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par1,par5,par1type,par5type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar1,epar5,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
-        elseif pair == 10 % pH CO3
-            OUT = CO2SYS(par3,par5,par3type,par5type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
-            err = errors(par3,par5,par3type,par5type,sal,tempin,tempout, ...
-                presin,presout,sil,po4,nh4,h2s,epar3,epar5,esal,etemp,esi, ...
-                epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
             % par1 = alk, par2 = dic, par3 = ph, par4 = pco2; par5 = co3
+            if pair == 1 % TA TC
+                OUT = CO2SYS(par1,par2,par1type,par2type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par1,par2,par1type,par2type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar1,epar2,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+            elseif pair == 2 % TC pH
+                OUT = CO2SYS(par2,par3,par2type,par3type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par2,par3,par2type,par3type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar2,epar3,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+            elseif pair == 3 % TA pH
+                OUT = CO2SYS(par1,par3,par1type,par3type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par1,par3,par1type,par3type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar1,epar3,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+            elseif pair == 4 % pH pCO2
+                OUT = CO2SYS(par3,par4,par3type,par4type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par3,par4,par3type,par4type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar3,epar4,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+            elseif pair == 5 % pCO2 CO3
+                OUT = CO2SYS(par4,par5,par4type,par5type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par4,par5,par4type,par5type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar4,epar5,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+            elseif pair == 6 % TC CO3
+                OUT = CO2SYS(par2,par5,par2type,par5type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par2,par5,par2type,par5type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar2,epar5,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+            elseif pair == 7 % TC pCO2
+                OUT = CO2SYS(par2,par4,par2type,par4type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par2,par4,par2type,par4type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar2,epar4,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+            elseif pair == 8 % TA pCO2
+                OUT = CO2SYS(par1,par4,par1type,par4type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par1,par4,par1type,par4type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar1,epar4,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+            elseif pair == 9 % TA CO3
+                OUT = CO2SYS(par1,par5,par1type,par5type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par1,par5,par1type,par5type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar1,epar5,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal); 
+            elseif pair == 10 % pH CO3
+                OUT = CO2SYS(par3,par5,par3type,par5type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
+                err = errors(par3,par5,par3type,par5type,sal,tempin,tempout, ...
+                    presin,presout,sil,po4,nh4,h2s,epar3,epar5,esal,etemp,esi, ...
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+                % par1 = alk, par2 = dic, par3 = ph, par4 = pco2; par5 = co3
+            end
+
+
+            % exit struct
+            out.TA = OUT(1);
+            out.eTA = err(1); % sigma, not precision
+            out.TC = OUT(2);
+            out.eTC = err(2);
+            out.ph = OUT(43); % total scale
+            out.eh = (err(13)*1e-9); % was nano units
+            out.eph = (out.eh/(10^(-out.ph)))*(1/log(10)); % dph = (-1/ln(10))*(dH/H) from Orr's 'errors'
+            out.pco2 = OUT(22);
+            out.epco2 = err(14);
+            out.co3 = OUT(25);
+            out.eco3 = err(17);
+            out.pK0 = p(OUT(78));
+            out.epK0 = (0.002);
+            out.pK1 = p(OUT(79));
+            out.epK1 = (0.01);
+            out.pK2 = p(OUT(80));
+            out.epK2 = (0.02);
+            out.pKw = p(OUT(83));
+            out.epKw = (0.01);
+            out.pKb = p(OUT(84));
+            out.epKb = (0.01);
+            out.pKs = p(OUT(86));
+            out.pKf = p(OUT(85));
+            out.pK1p = p(OUT(87));
+            out.pK2p = p(OUT(88));
+            out.pK3p = p(OUT(89));
+            out.pKSi = p(OUT(90));
+            out.pKnh4 = p(OUT(91));
+            out.pKh2s = p(OUT(92));
+            out.pKar = p(OUT(94));
+            out.pKca = p(OUT(93));
+            out.OmegaAr = OUT(36);
+            out.eOmegaAr = err(21);
+            out.OmegaCa = OUT(35);
+            out.eOmegaCa = err(20);
+            out.CAL = OUT(102)*1e-6;
+
+            % exit matrix at CTD temp
+            A = [];
+
+            fprintf(fid,'%s,',' ');
+            fprintf(fid,'%s,',' ');
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... 
+                out.TA,   out.eTA,           est(i).TA,      est(i).eTA);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... 
+                out.TC,   out.eTC,           est(i).TC,      est(i).eTC);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... 
+                out.ph,   out.eph,     est(i).m(tp).ph,   est(i).m(tp).eph);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... 
+                out.pco2, out.epco2, est(i).m(tp).pco2, est(i).m(tp).epco2);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.co3,  out.eco3,   est(i).m(tp).co3,  est(i).m(tp).eco3);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pK0,  out.epK0,   obs(i).m(tp).pK0,  obs(i).m(tp).epK0);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pK1,  out.epK1,   obs(i).m(tp).pK1,  obs(i).m(tp).epK1);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pK2,  out.epK2,   obs(i).m(tp).pK2,  obs(i).m(tp).epK2);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pKw,  out.epKw,   obs(i).m(tp).pKw,  obs(i).m(tp).epKw);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pKb,  out.epKb,   obs(i).m(tp).pKb,  obs(i).m(tp).epKb);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pKs,   obs(i).m(tp).pKs, ...
+                out.pKf,   obs(i).m(tp).pKf);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pK1p,  obs(i).m(tp).pK1p, ...
+                out.pK2p,  obs(i).m(tp).pK2p);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pK3p,  obs(i).m(tp).pK3p, ...
+                out.pKSi,  obs(i).m(tp).pKsi);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pKnh4, obs(i).m(tp).pKnh4, ...
+                out.pKh2s, obs(i).m(tp).pKh2s);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.pKar,  obs(i).m(tp).pKar, ...
+                out.pKca,  obs(i).m(2).pKca);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
+                out.OmegaAr,          out.eOmegaAr, ...
+                est(i).m(tp).OmegaAr, est(i).m(tp).eOmegaAr);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... 
+                out.OmegaCa,          out.eOmegaCa, ...
+                est(i).m(tp).OmegaCa, est(i).m(tp).eOmegaCa);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... 
+                out.CAL, est(i).TCal, est(i).eTCal);
+            fprintf(fid,'\n');
+
         end
-
-
-        % exit struct
-        out.TA = OUT(1);
-        out.eTA = err(1); % sigma, not precision
-        out.TC = OUT(2);
-        out.eTC = err(2);
-        out.ph = OUT(43); % total scale
-        out.eh = (err(13)*1e-9); % was nano units
-        out.eph = (out.eh/(10^(-out.ph)))*(1/log(10)); % dph = (-1/ln(10))*(dH/H) from Orr's 'errors'
-        out.pco2 = OUT(22);
-        out.epco2 = err(14);
-        out.co3 = OUT(25);
-        out.eco3 = err(17);
-        out.pK0 = p(OUT(78));
-        out.epK0 = (0.002);
-        out.pK1 = p(OUT(79));
-        out.epK1 = (0.01);
-        out.pK2 = p(OUT(80));
-        out.epK2 = (0.02);
-        out.pKw = p(OUT(83));
-        out.epKw = (0.01);
-        out.pKb = p(OUT(84));
-        out.epKb = (0.01);
-        out.pKs = p(OUT(86));
-        out.pKf = p(OUT(85));
-        out.pK1p = p(OUT(87));
-        out.pK2p = p(OUT(88));
-        out.pK3p = p(OUT(89));
-        out.pKSi = p(OUT(90));
-        out.pKnh4 = p(OUT(91));
-        out.pKh2s = p(OUT(92));
-        out.pKar = p(OUT(94));
-        out.pKca = p(OUT(93));
-        out.OmegaAr = OUT(36);
-        out.eOmegaAr = err(21);
-        out.OmegaCa = OUT(35);
-        out.eOmegaCa = err(20);
-        out.CAL = OUT(102)*1e-6;
-
-        % exit matrix at CTD temp
-        A = [];
-
-        fprintf(fid,'%s,',' ');
-        fprintf(fid,'%s,',' ');
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.TA,   out.eTA,           est.TA,      est.eTA);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.TC,   out.eTC,           est.TC,      est.eTC);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.ph,   out.eph,     est.m(tp).ph,   est.m(tp).eph);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pco2, out.epco2, est.m(tp).pco2, est.m(tp).epco2);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.co3,  out.eco3,   est.m(tp).co3,  est.m(tp).eco3);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pK0,  out.epK0,   obs.m(tp).pK0,  obs.m(tp).epK0);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pK1,  out.epK1,   obs.m(tp).pK1,  obs.m(tp).epK1);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pK2,  out.epK2,   obs.m(tp).pK2,  obs.m(tp).epK2);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pKw,  out.epKw,   obs.m(tp).pKw,  obs.m(tp).epKw);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pKb,  out.epKb,   obs.m(tp).pKb,  obs.m(tp).epKb);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pKs,   obs.m(tp).pKs, ...
-            out.pKf,   obs.m(tp).pKf);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pK1p,  obs.m(tp).pK1p, ...
-            out.pK2p,  obs.m(tp).pK2p);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pK3p,  obs.m(tp).pK3p, ...
-            out.pKSi,  obs.m(tp).pKsi);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pKnh4, obs.m(tp).pKnh4, ...
-            out.pKh2s, obs.m(tp).pKh2s);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.pKar,  obs.m(tp).pKar, ...
-            out.pKca,  obs.m(2).pKca);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.OmegaAr,          out.eOmegaAr, ...
-            est.m(tp).OmegaAr, est.m(tp).eOmegaAr);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.OmegaCa,          out.eOmegaCa, ...
-            est.m(tp).OmegaCa, est.m(tp).eOmegaCa);
-        fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-            out.CAL, est.TCal, est.eTCal);
-        fprintf(fid,'\n');
-
-    end
 end
 
 
