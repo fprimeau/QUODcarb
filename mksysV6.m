@@ -4,7 +4,15 @@ function sys = mksysV6(obs,abr)
 %
 % Private function for QUODcarb.m
 % it creates the K amd M matrices and if necessary the free2tot function
+%  
+% OUTPUT:
+%   sys  := struct with indexing for co2-system solver (initialized using mksys.m)
+% 
+% INPUT:
+%   obs  := co2-system measured quantities with precisions 
+%   abr  := opt.abr put in by user, requested acid/base reactions
 %
+
 % utility functions and constants
     LOG10 = log(10);
     p = @(x) -log10( x );  % inverse of q    

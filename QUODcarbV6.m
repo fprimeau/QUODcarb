@@ -1,22 +1,106 @@
 
 % QUODcarbV6
 
-% QUODcarbV4 updates to get ready for publishing 
 
 function [est,obs,iflag] = QUODcarbV6(obs,opt)
-% [est,obs,iflag] = QUODcarb(obs,opt);
 %
 % OUTPUT:
 %   est := posterior estimates of co2-system variables, equilibrium constants, and precisions
 %   obs := same as input except that the pK's have been added
 % iflag := 0 if solver converged to specified accuracy 
 %          1 after reaching maximum number of iterations without convergging
-%  (CSV := optional CSV output, if turned on in options)
+%   CSV := optional CSV output, if turned on in options
 %
 % INPUT:
 %   obs  := co2-system measured quantities with precisions 
-%   sys  := struct with indexing for co2-system solver (initialized using mksys.m)
 %   opt  := solver options input by user 
+%
+% -------------------------------------------------------------------------
+%
+% SYNTAX example:
+%   obs.sal         = salinity;     (PSU)           
+%   obs.esal        = sal_error;    (±sigma)        
+%   obs.TC          = total_c;      (umol/kg-SW)    
+%   obs.eTC         = TC_error;     (±sigma)        
+%   obs.TA          = total_alk;    (umol/kg-SW)    
+%   obs.eTA         = alk_error;    (±sigma)        
+%   obs.m(1).T      = temp;         (deg C)         
+%   obs.m(1).eT     = temp_error;   (±sigma)        
+%   obs.m(1).P      = pressure;     (dbar)          
+%   obs.m(1).eP     = pres_error;   (±sigma)     
+%   obs.m(1).ph     = pH_meas;      
+%   obs.m(1).eph    = ph_error;     (±sigma)
+%
+%   opt.K1K2        = 10;           (Lueker et al 2000)
+%   opt.KSO4        = 1;            (Dickson et al 1990a) 
+%   opt.KF          = 2;            (Perez and Fraga 1987
+%   opt.TB          = 2;            (Lee et al. 2010)
+%   opt.phscale     = 1;            (1=tot, 2=free, 3=sws, 4=nbs)
+%   opt.printcsv    = 1;            (1=on, 0=off)
+%   opt.fid         = 'output.csv'; (CSV filename)
+%   opt.printmes    = 1;            (1=on, 0=off)
+%   opt.co2press    = 1;            (1=on, 0=off)
+%   opt.abr         = 'all';        {'borate','sulfate','fluoride',...
+%                                       'phosphate','silicate','ammonia', ...
+%                                       'sulfide','solubility'}
+%
+%--------------------------------------------------------------------------
+% 
+% INPUT OPTIONS:
+%   opt.K1K2  -> choice of K1 and K2 formulation
+%           1 = Roy et al, 1993
+%           2 = Goyet & Poisson, 1989
+%           3 = Hansson, 1973          REFIT by Dickson and Millero, 1987
+%           4 = Mehrbach et al., 1973  REFIT by Dickson and Millero, 1987
+%           5 = Hansson, 1973 and Mehrbach, 1973 
+%                                      REFIT by Dickson and Millero, 1987
+%           6 = GEOSECS                ~NOT AVAILABLE IN QUODCARB~
+%           7 = Peng                   ~NOT AVAILABLE IN QUODCARB~
+%           8 = Millero, 1979          ~NOT AVAILABLE IN QUODCARB~
+%           9 = Cai and Wang, 1998
+%          10 = Lueker et al., 2000    (DEFAULT)
+%          11 = Mojica Prieto and Millero, 2002
+%          12 = Millero et al., 2000
+%          13 = Millero et al., 2002
+%          14 = Millero et al., 2006
+%          15 = Waters, Millero, and Woosley, 2014
+%          16 = Sulpis et al., 2020
+%          17 = Schockman and Byrne, 2021
+%
+%   opt.KSO4  -> choice of KSO4 formulation
+%           1 = Dickson (1990a)         (DEFAULT)
+%           2 = Khoo et al., 1977
+%           3 = Waters and Millero, 2013
+%
+%   opt.KF    -> choice of KF formulation
+%           1 = Dickson and Riley, 1979
+%           2 = Perez and Fraga, 1987  (DEFAULT)
+%
+%   opt.TB    -> choice of total borate formulation
+%           1 = Uppstrom, 1979
+%           2 = Lee et al., 2010       (DEFAULT)
+%
+%--------------------------------------------------------------------------
+%
+% OUTPUT:
+%   est     ->   'est' structure with best estimate contains:
+%               1. p(value) and p(error) where p(x) = -log10(x)
+%               2. value and average error about the value in 'q'
+%                   where q(x) = x^(-10)
+%               3. upper and lower bounds in 'q' space, not symmetric
+%                   about the value in 'q' space
+%   csv     ->   csv file with most of est populated in a spreadsheet, 
+%                 contains column headers with labels and units                 
+%                    -does not include upper and lower errors
+%
+%--------------------------------------------------------------------------
+%
+% Changes? -> the only things you may want to change are: 
+%               1. tolerance level of Newton solver -> line 117
+%               2. Max Iteration number -> MAXIT in newtn.m
+%
+%--------------------------------------------------------------------------
+
 
     opt = check_opt(opt); % check opt structure
 
@@ -33,7 +117,6 @@ function [est,obs,iflag] = QUODcarbV6(obs,opt)
         gun = @(z) grad_limpco2(z,yobs(i,:),wobs(i,:),sys,opt);
         z0 = init(yobs(i,:),sys,opt);
         tol = 1e-7;
-        % tol = 5e-8; % for TReX
 
         [z,J,iflag(i)] = newtn(z0,gun,tol);
         if (iflag(i) ~=0) && (opt.printmes ~= 0)
@@ -47,6 +130,9 @@ function [est,obs,iflag] = QUODcarbV6(obs,opt)
         y = z(1:nv);
         sigy = sqrt(diag(C));
 
+        if (sum(isnan(sigy)) > 0) && (opt.printmes ~= 0)
+            fprintf('NaN found in output means faulty run.')
+        end
         % populate est
         [est(i)] = parse_output(z,sigy,opt,sys);
 
