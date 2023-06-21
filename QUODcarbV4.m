@@ -1,4 +1,4 @@
-% QUODcarbV3
+% QUODcarbV4
 % updating with CO2SYS v3 updates (Sharp version)
 
 function [est,obs,iflag] = QUODcarbV4(obs,sys)
@@ -52,7 +52,7 @@ function [g,H] = grad_limpco2(obs,z,y,w,sys)
     end
     g = real( g(:) );
     % [ g, test_g ]
-    %keyboard
+    % keyboard
 end
 
 % ---------------------------------------------------------------------------------
@@ -80,6 +80,7 @@ function [f,g] = limpco2(obs,z,y,w,sys)
     q = sys.q;
     M = sys.M;
     K = sys.K;
+    nrk = size(K,1);
     nv = size(M,2);
     nlam = size(M,1)+size(K,1);
     nTP = length(sys.m);
@@ -98,85 +99,11 @@ function [f,g] = limpco2(obs,z,y,w,sys)
     
     % Build a matrix that Picks out the measured components of x
     I = eye(nv); % for chain rule
-    %keyboard
     PP = I(i,:); % picking/pick out the measured ones
-    e = PP*x - y;
+    e = PP*x - y; % calculated - measured (minus)
     
-    nrk = size(K,1);
-    zpK = zeros(nrk,1);
-    zgpK = zeros(nrk,nv);
-    f2t = [];
-    for i = 1:nTP
-        [pK, gpK] = local_pKv4(obs, x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
-        iTSP = [ sys.m(i).iT, sys.isal, sys.m(i).iP];
-        if (ismember('carbonate',sys.abr))
-            zpK(sys.m(i).kK0)          = pK(1); 
-            zgpK(sys.m(i).kK0, iTSP )  = gpK(1,:); % ∂T, ∂S, ∂P
-        
-            zpK(sys.m(i).kK1)          = pK(2);  
-            zgpK(sys.m(i).kK1, iTSP )  = gpK(2,:); % ∂T, ∂S, ∂P       
-        
-            zpK(sys.m(i).kK2)          = pK(3); 
-            zgpK(sys.m(i).kK2, iTSP )  = gpK(3,:); % ∂T, ∂S, ∂P  
-        
-            zpK(sys.m(i).kp2f)         = pK(14); 
-            zgpK(sys.m(i).kp2f, iTSP ) = gpK(14,:); % ∂T, ∂S, ∂P 
-        end
-    
-        if (ismember('borate',sys.abr))
-            zpK(sys.m(i).kKb)          = pK(4); 
-            zgpK(sys.m(i).kKb, iTSP ) = gpK(4,:); % ∂T, ∂S, ∂P
-        end
-
-        if (ismember('water',sys.abr))
-            zpK(sys.m(i).kKw)          = pK(5); 
-            zgpK(sys.m(i).kKw, iTSP )  = gpK(5,:); % ∂T, ∂S, ∂P  
-        end
-
-        if (ismember('sulfate',sys.abr))
-            zpK(sys.m(i).kKs)          = pK(6); 
-            zgpK(sys.m(i).kKs, iTSP )  = gpK(6,:); % ∂T, ∂S, ∂P  
-            f2t = [f2t;sys.m(i).f2t(x)];
-        end
-        
-        if (ismember('fluoride',sys.abr))
-            zpK(sys.m(i).kKf)          = pK(7); 
-            zgpK(sys.m(i).kKf, iTSP )  = gpK(7,:); % ∂T, ∂S, ∂P
-        end
-        
-        if (ismember('phosphate',sys.abr))
-            zpK(sys.m(i).kK1p)         = pK(8); 
-            zgpK(sys.m(i).kK1p, iTSP ) = gpK(8,:); % ∂T, ∂S, ∂P 
-            
-            zpK(sys.m(i).kK2p)         = pK(9); 
-            zgpK(sys.m(i).kK2p,iTSP )  = gpK(9,:); % ∂T, ∂S, ∂P 
-            
-            zpK(sys.m(i).kK3p)         = pK(10); 
-            zgpK(sys.m(i).kK3p, iTSP ) = gpK(10,:); % ∂T, ∂S, ∂P 
-        end
-
-        if (ismember('silicate',sys.abr))
-            zpK(sys.m(i).kKsi)         = pK(11); 
-            zgpK(sys.m(i).kKsi, iTSP ) = gpK(11,:); % ∂T, ∂S, ∂P 
-        end
-
-        if (ismember('ammonia',sys.abr))
-            zpK(sys.m(i).kKnh4)         = pK(12); 
-            zgpK(sys.m(i).kKnh4, iTSP ) = gpK(12,:); % ∂T, ∂S, ∂P  
-        end
-
-        if (ismember('sulfide',sys.abr))
-            zpK(sys.m(i).kKh2s)         = pK(13); 
-            zgpK(sys.m(i).kKh2s, iTSP ) = gpK(13,:); % ∂T, ∂S, ∂P 
-        end
-
-        if (ismember('solubility',sys.abr))
-            zpK(sys.m(i).kKar)         = pK(15);
-            zgpK(sys.m(i).kKar, iTSP ) = gpK(15,:); % ∂T, ∂S, ∂P 
-            zpK(sys.m(i).kKca)         = pK(16);
-            zgpK(sys.m(i).kKca, iTSP ) = gpK(16,:); % ∂T, ∂S, ∂P  
-        end
-    end
+    % fill zpK and zgpK with associated caluclated pK and gpK values
+    [zpK, zgpK, f2t] = parse_zpK(obs,x,sys);
     
     % constraint equations
     if (ismember('sulfate',sys.abr))  
@@ -188,9 +115,9 @@ function [f,g] = limpco2(obs,z,y,w,sys)
                (-K * x) + zpK  ] ; 
     end
     
-    f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers
-        
+    f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers    
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
+    
     if ( nargout > 1 ) % compute the gradient
         if (ismember('sulfate',sys.abr))
             gf2t = zeros(nTP,nv);
@@ -206,7 +133,7 @@ function [f,g] = limpco2(obs,z,y,w,sys)
         end    
         g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
     end
-    %     
+    
     if ( nargout > 2 ) % compute the Hessian
         ddq =  diag( sys.d2qdx2( x ) ); % q"
         [nr,nc] = size(M);
@@ -737,7 +664,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
         wobs(sys.m(i).iT) = obs.m(i).eT;
         wobs(sys.m(i).iP) = obs.m(i).eP;
         
-        [pK,gpK] = local_pKv4(obs, obs.m(i).T, obs.sal, obs.m(i).P );
+        [pK,gpK] = local_pKv5(obs, obs.m(i).T, obs.sal, obs.m(i).P );
         pK0   = pK(1);  pK1  = pK(2);  pK2   = pK(3);  pKb   = pK(4);  
         pKw   = pK(5);  pKs  = pK(6);  pKf   = pK(7);  pK1p  = pK(8);  
         pK2p  = pK(9);  pK3p = pK(10); pKsi  = pK(11); pKnh4 = pK(12); 
@@ -779,8 +706,8 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             if (isgood(obs.m(i).epK1))
                 wobs(sys.m(i).iK1) = (obs.m(i).epK1)^(-2);
             else
-                obs.m(i).epK1 = 0.01;
-                wobs(sys.m(i).iK1) = (obs.m(i).epK1)^(-2);  % wK1 = 1/(1 + (0.01/pKsys(2)))^2 ;
+                obs.m(i).epK1 = 0.012;
+                wobs(sys.m(i).iK1) = (obs.m(i).epK1)^(-2);
             end
             if (isgood(obs.m(i).pK1))
                 yobs(sys.m(i).iK1) = obs.m(i).pK1;
@@ -792,7 +719,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys)
             if (isgood(obs.m(i).epK2))
                 wobs(sys.m(i).iK2) = (obs.m(i).epK2)^(-2);
             else
-                obs.m(i).epK2 = 0.02;
+                obs.m(i).epK2 = 0.022;
                 wobs(sys.m(i).iK2) = (obs.m(i).epK2)^(-2);  % wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
             end
             
@@ -1521,6 +1448,95 @@ function [est] = parse_output(z,sigy,obs,sys)
     end
 end
 
+% -------------------------------------------------------------------------
+
+function [zpK, zgpK, f2t] = parse_zpK(obs,x,sys)
+% assigning proper calculated values to zpK and zgpK
+
+% zpK  := equilibrium constants, aka pK's
+% zgpK := first derivative of equilibrium constants, aka gpK's
+
+    nTP = length(sys.m);
+    M = sys.M;
+    K = sys.K;
+    nv = size(M,2);
+    nrk = size(K,1);
+    zpK = zeros(nrk,1);
+    zgpK = zeros(nrk,nv);
+    f2t = [];
+
+    for i = 1:nTP
+        [pK, gpK] = local_pKv5(obs, x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
+        iTSP = [ sys.m(i).iT, sys.isal, sys.m(i).iP];
+        if (ismember('carbonate',sys.abr))
+            zpK(sys.m(i).kK0)          = pK(1); 
+            zgpK(sys.m(i).kK0, iTSP )  = gpK(1,:); % ∂T, ∂S, ∂P
+        
+            zpK(sys.m(i).kK1)          = pK(2);  
+            zgpK(sys.m(i).kK1, iTSP )  = gpK(2,:); % ∂T, ∂S, ∂P       
+        
+            zpK(sys.m(i).kK2)          = pK(3); 
+            zgpK(sys.m(i).kK2, iTSP )  = gpK(3,:); % ∂T, ∂S, ∂P  
+        
+            zpK(sys.m(i).kp2f)         = pK(14); 
+            zgpK(sys.m(i).kp2f, iTSP ) = gpK(14,:); % ∂T, ∂S, ∂P 
+        end
+    
+        if (ismember('borate',sys.abr))
+            zpK(sys.m(i).kKb)          = pK(4); 
+            zgpK(sys.m(i).kKb, iTSP )  = gpK(4,:); % ∂T, ∂S, ∂P
+        end
+
+        if (ismember('water',sys.abr))
+            zpK(sys.m(i).kKw)          = pK(5); 
+            zgpK(sys.m(i).kKw, iTSP )  = gpK(5,:); % ∂T, ∂S, ∂P  
+        end
+
+        if (ismember('sulfate',sys.abr))
+            zpK(sys.m(i).kKs)          = pK(6); 
+            zgpK(sys.m(i).kKs, iTSP )  = gpK(6,:); % ∂T, ∂S, ∂P  
+            f2t = [f2t;sys.m(i).f2t(x)];
+        end
+        
+        if (ismember('fluoride',sys.abr))
+            zpK(sys.m(i).kKf)          = pK(7); 
+            zgpK(sys.m(i).kKf, iTSP )  = gpK(7,:); % ∂T, ∂S, ∂P
+        end
+        
+        if (ismember('phosphate',sys.abr))
+            zpK(sys.m(i).kK1p)         = pK(8); 
+            zgpK(sys.m(i).kK1p, iTSP ) = gpK(8,:); % ∂T, ∂S, ∂P 
+            
+            zpK(sys.m(i).kK2p)         = pK(9); 
+            zgpK(sys.m(i).kK2p,iTSP )  = gpK(9,:); % ∂T, ∂S, ∂P 
+            
+            zpK(sys.m(i).kK3p)         = pK(10); 
+            zgpK(sys.m(i).kK3p, iTSP ) = gpK(10,:); % ∂T, ∂S, ∂P 
+        end
+
+        if (ismember('silicate',sys.abr))
+            zpK(sys.m(i).kKsi)         = pK(11); 
+            zgpK(sys.m(i).kKsi, iTSP ) = gpK(11,:); % ∂T, ∂S, ∂P 
+        end
+
+        if (ismember('ammonia',sys.abr))
+            zpK(sys.m(i).kKnh4)         = pK(12); 
+            zgpK(sys.m(i).kKnh4, iTSP ) = gpK(12,:); % ∂T, ∂S, ∂P  
+        end
+
+        if (ismember('sulfide',sys.abr))
+            zpK(sys.m(i).kKh2s)         = pK(13); 
+            zgpK(sys.m(i).kKh2s, iTSP ) = gpK(13,:); % ∂T, ∂S, ∂P 
+        end
+
+        if (ismember('solubility',sys.abr))
+            zpK(sys.m(i).kKar)         = pK(15);
+            zgpK(sys.m(i).kKar, iTSP ) = gpK(15,:); % ∂T, ∂S, ∂P 
+            zpK(sys.m(i).kKca)         = pK(16);
+            zgpK(sys.m(i).kKca, iTSP ) = gpK(16,:); % ∂T, ∂S, ∂P  
+        end
+    end
+end
 % ---------------------------------------------------------------------------------
 
 function pHall = phscales(phin,scalein,TS,Ks,TF,Kf,phf)

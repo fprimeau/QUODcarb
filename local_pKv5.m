@@ -1,4 +1,4 @@
-function [pK,gpK] = local_pKv4(obs,T,S,P)
+function [pK,gpK] = local_pKv5(obs,T,S,P)
 % base equations COPIED FROM co2sys.m Orr et al. (2018)  Github
 % Originally from  van Heuven et al. (2011)
 % Original co2sys is from Lewis and Wallace (1998)
@@ -29,7 +29,6 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
     dpdx = @(x) -1 / (x * LOG10);     % p'
     dqdx = @(x) -LOG10 * 10.^( -x );  % q'
     
-    
     % corrections for pressure---------------------------------------------
     % Millero 1995, 1992, 1982, 1979; Takahashi et al. 1982;
     %   Culberson & Pytkowicz 1968; Edmond & Gieskes 1970.
@@ -44,8 +43,8 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
               -( -dV(T,a)   * Pbar   + 0.5 * Ka(T,b)   * Pbar^2 ) * (RT_T / ( RT^2 * LOG10 ));
     ppfac_P = @(T,Pbar,a,b)... 
               -( -dV(T,a)         +       Ka(T,b)   * Pbar ) / (10 * RT * LOG10 ) ;
-    
 
+    
     % compute the pK's and their derivatives w.r.t. T,P,and S -------------
     [pp2f    , gpp2f    ] = calc_p2f(T,RT,RT_T,Pbar); 
     [pKs     , gpKs     ] = calc_pKs(obs,T,S,Pbar); 
@@ -66,7 +65,137 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
     [pKar    , gpKar    ] = calc_pKar(obs,T,S,Pbar,phf,gphf);
     [pKca    , gpKca    ] = calc_pKca(obs,T,S,Pbar,phf,gphf);
 
+
+
+    % pressure correction for Ks (Millero, 1995) --------------------------
+    a = [ -18.03; 0.0466; 0.000316 ];
+    b = [-4.53; 0.09 ];
+        
+    pKs = pKs + ppfac(T,Pbar,a,b);
+    pKs_T = pKs_T + ppfac_T(T,Pbar,a,b);
+    pKs_P = ppfac_P(T,Pbar,a,b);
+    gpKs(1) = pKs_T;
+    gpKs(3) = pKs_P;
+
+    % pressure correction for Kf (Millero, 1995) --------------------------
+    a = [ -9.78; -0.009; -0.000942 ];
+    b = [ -3.91; 0.054 ];
+        
+    pKf = pKf + ppfac(T,Pbar,a,b);
+    pKf_T = pKf_T + ppfac_T(T,Pbar,a,b);
+    pKf_P = ppfac_P(T,Pbar,a,b);
+    gpKf(1) = pKf_T;
+    gpKf(3) = pKf_P;
+
+    % pressure correction for Kb (Millero, 1979) --------------------------
+    a = [ -29.48; 0.1622; -0.002608 ];
+    b = [  -2.84;   0.0 ];
+        
+    pKb = pKb + ppfac(T,Pbar,a,b);
+    pKb_T = pKb_T + ppfac_T(T,Pbar,a,b);
+    pKb_P = ppfac_P(T,Pbar,a,b);
+    gpKb(1) = pKb_T;
+    gpKb(3) = pKb_P;
+
+    % pressure correction for Kw (Millero, 1983) --------------------------
+    a = [ -20.02; 0.1119; -0.001409];
+    b = [ -5.13; 0.0794 ];
+
+    pKw   = pKw + ppfac(T,Pbar,a,b);
+    pKw_T = pKw_T + ppfac_T(T,Pbar,a,b);
+    pKw_P = ppfac_P(T,Pbar,a,b);
+    gpKw(1) = pKw_T;
+    gpKw(3) = pKw_P;
+
+    % pressure correction for K1p (Millero, 1995; same as Millero, 1983) --
+    a = [ -14.51; 0.1211; -0.000321 ];
+    b = [  -2.67; 0.0427 ];
+
+    pK1p = pK1p + ppfac(T,Pbar,a,b);
+    pK1p_T = pK1p_T + ppfac_T(T,Pbar,a,b);
+    pK1p_P = ppfac_P(T,Pbar,a,b);
+    gpK1p(1) = pK1p_T;
+    gpK1p(3) = pK1p_P;
+        
+    % pressure correction for K2p (Millero, 1995; same as Millero, 1983) --
+    a = [ -23.12; 0.1758; -0.002647 ];
+    b = [ -5.15; 0.09 ]; 
+
+    pK2p = pK2p + ppfac(T,Pbar,a,b);
+    pK2p_T = pK2p_T + ppfac_T(T,Pbar,a,b);
+    pK2p_P = pK2p_P + ppfac_P(T,Pbar,a,b);
+    gpK2p(1) = pK2p_T;
+    gpK2p(3) = pK2p_P;
+        
+    % pressure correction for K3p (Millero, 1995; same as Millero, 1983) --
+    a = [ -26.57; 0.202; -0.003042 ];
+    b = [ -4.08; 0.0714 ];
+
+    pK3p = pK3p + ppfac(T,Pbar,a,b);
+    pK3p_T = pK3p_T + ppfac_T(T,Pbar,a,b);
+    pK3p_P = pK3p_P + ppfac_P(T,Pbar,a,b);
+    gpK3p(1) = pK3p_T;
+    gpK3p(3) = pK3p_P;
+
+    % pressure correction for Ksi (Millero, 1995; used the values from
+    % boric acid)
+    a = [ -29.48; 0.1622; -0.002608 ];
+    b =[ -2.84; 0];
+        
+    pKsi = pKsi + ppfac(T,Pbar,a,b);
+    pKsi_T = pKsi_T + ppfac_T(T,Pbar,a,b);
+    pKsi_P = ppfac_P(T,Pbar,a,b);
+    gpKsi(1) = pKsi_T;
+    gpKsi(3) = pKsi_P;
+
+    % pressure correction for K1 (Millero, 1995) --------------------------
+    % only for obs.cK1K2 ~=6 & ~=7 & ~=8
+    a = [-25.5; 0.1271; 0];
+    b = [ -3.08; 0.0877 ];
+
+    pK1   = pK1 + ppfac(T,Pbar,a,b);
+    pK1_T = pK1_T + ppfac_T(T,Pbar,a,b);
+    pK1_P = ppfac_P(T,Pbar,a,b);
+    gpK1(1) = pK1_T;
+    gpK1(3) = pK1_P;
+
+    % pressure correction for K2 (Millero, 1995) --------------------------
+    % only for obs.cK1K2 ~=6 & ~=7 & ~=8
+    a = [ -15.82; -0.0219; 0 ];
+    b = [ 1.13; -0.1475 ];
+        
+    pK2 = pK2 + ppfac(T,Pbar,a,b);
+    pK2_T = pK2_T + ppfac_T(T,Pbar,a,b);
+    pK2_P = ppfac_P(T,Pbar,a,b);
+    gpK2(1) = pK2_T;
+    gpK2(3) = pK2_P;
+
+    % pressure correction for Knh4 (added to CO2SYSv3 by J. Sharp) --------
+    a = [ -26.43; 0.0889; -0.000905 ];
+    b = [ -5.03; 0.0814 ];
+
+    pKnh4 = pKnh4 + ppfac(T,Pbar,a,b);
+    pKnh4_T = pKnh4_T + ppfac_T(T,Pbar,a,b);
+    pKnh4_P = ppfac_P(T,Pbar,a,b);
+    gpKnh4(1) = pKnh4_T;
+    gpKnh4(3) = pKnh4_P;
+        
+    % pressure correction for Kh2s (added to CO2SYSv3 by J. Sharp) --------
+    a = [ -11.07; -0.009; -0.000942 ];
+    b = [ -2.89;  0.054 ];
+        
+    pKh2s = pKh2s + ppfac(T,Pbar,a,b);
+    pKh2s_T = pKh2s_T + ppfac_T(T,Pbar,a,b);
+    pKh2s_P = ppfac_P(T,Pbar,a,b);
+    gpKh2s(1) = pKh2s_T;
+    gpKh2s(3) = pKh2s_P;
+        
+    % correct pH scale conversion factors for pressure --------------------
+    [pSWS2tot, gpSWS2tot, pFREE2tot, gpFREE2tot] = calc_pSWS2tot(S,pKs,gpKs,pKf,gpKf);
+
+
     % find pH scale conversion factor -------------------------------------
+    % (pressure corrected)
     if obs.phscale == 1 % pHtotal
         phfac = pSWS2tot;
         gphfac = gpSWS2tot;
@@ -97,9 +226,9 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
     % pKar, pKca, pKs, and pKf are not converted in CO2SYS
 
 
-    %
+    % ---------------------------------------------------------------------
     % output
-    %
+    % ---------------------------------------------------------------------
     pK = [pK0;    pK1;  pK2;  pKb;  pKw;  pKs;  pKf;  pK1p;  pK2p; ...
           pK3p;  pKsi;  pKnh4;  pKh2s;  pp2f; pKar; pKca];
     gpK = [gpK0; gpK1; gpK2; gpKb; gpKw; gpKs; gpKf; gpK1p; gpK2p; ...
@@ -107,10 +236,11 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
     
 
     
-    %
+    % ---------------------------------------------------------------------
     % subfunctions
-    %
+    % ---------------------------------------------------------------------
  
+
     function [pp2f,gpp2f] = calc_p2f(T,RT,RT_T,Pbar)
     % pCO2 to fCO2 conversion (Weiss 1974) valid to within 0.1% -----------
         TK = T + 273.15; % convert to Kelvin
@@ -269,15 +399,7 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
             pKs_T = (-logKS0_T - logKSK0_T) ;
             pKs_S = (-logKSK0_S) - 0.001005 * dpdx(1-0.001005*S);
         end
-        
-        % pressure correction
-        a = [ -18.03; 0.0466; 0.000316 ];
-        b = [-4.53; 0.09 ];
-        
-        pKs = pKs + ppfac(T,Pbar,a,b);
-        pKs_T = pKs_T + ppfac_T(T,Pbar,a,b);
-        pKs_P = ppfac_P(T,Pbar,a,b);
-     
+        pKs_P = 0.0;
         gpKs = [pKs_T, pKs_S, pKs_P];
     end
     
@@ -305,15 +427,7 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
             pKf_T = -(-a/(TK.^2) ) / LOG10; 
             pKf_S =  -c * (-0.5/sqrt(S)) / LOG10 ;  
         end
-
-        % pressure correction
-        a = [ -9.78; -0.009; -0.000942 ];
-        b = [ -3.91; 0.054 ];
-        
-        pKf = pKf + ppfac(T,Pbar,a,b);
-        pKf_T = pKf_T + ppfac_T(T,Pbar,a,b);
-        pKf_P = ppfac_P(T,Pbar,a,b);
-        
+        pKf_P = 0.0;
         gpKf = [pKf_T, pKf_S, pKf_P];
     end
     
@@ -352,15 +466,8 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
             pKb_S = -( ( df(S,a1) ./ TK ) + df(S,a2) + (df(S,a3) .* log(TK)) + (df(S,a4) .* TK) ) ./ LOG10;
             pKb_S = pKb_S - gpSWS2tot(2);
         end
-        % pressure correction
-        a = [ -29.48; 0.1622; -0.002608 ];
-        b = [  -2.84;   0.0 ];
-        
-        pKb = pKb + ppfac(T,Pbar,a,b);
-        pKb_T = pKb_T + ppfac_T(T,Pbar,a,b);
-        pKb_P = ppfac_P(T,Pbar,a,b);
-        
-        gpKb = [pKb_T, pKb_S, pKb_P];
+
+        gpKb = [pKb_T, pKb_S];
     end
     
     function [pKw,gpKw] = calc_pKw(obs,T,S,Pbar)
@@ -404,15 +511,7 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
             pKw_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
         end 
 
-        % pressure correction
-        a = [ -20.02; 0.1119; -0.001409];
-        b = [ -5.13; 0.0794 ];
-
-        pKw   = pKw + ppfac(T,Pbar,a,b);
-        pKw_T = pKw_T + ppfac_T(T,Pbar,a,b);
-        pKw_P = ppfac_P(T,Pbar,a,b);
-        
-        gpKw = [pKw_T,pKw_S,pKw_P];
+        gpKw = [pKw_T,pKw_S];
     end
     
     function [pK1p,gpK1p] = calc_pK1p(obs,T,S,Pbar,phf,gphf)
@@ -438,16 +537,8 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
             pK1p_T = -( df(TK,a1) + df(TK,a2) * sqrt(S)       + df(TK,a3) * S ) / LOG10;
             pK1p_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
         end
-        
-        % pressure correction       
-        a = [ -14.51; 0.1211; -0.000321 ];
-        b = [  -2.67; 0.0427 ];
 
-        pK1p = pK1p + ppfac(T,Pbar,a,b);
-        pK1p_T = pK1p_T + ppfac_T(T,Pbar,a,b);
-        pK1p_P = ppfac_P(T,Pbar,a,b);
-
-        gpK1p = [pK1p_T,pK1p_S,pK1p_P];
+        gpK1p = [pK1p_T,pK1p_S];
     end
     
     function [pK2p,gpK2p] = calc_pK2p(obs,T,S,Pbar,phf,gphf)
@@ -476,16 +567,8 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
             pK2p_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
             pK2p_P = 0 ;
         end
-
-        % pressure correction
-        a = [ -23.12; 0.1758; -0.002647 ];
-        b = [ -5.15; 0.09 ]; 
-
-        pK2p = pK2p + ppfac(T,Pbar,a,b);
-        pK2p_T = pK2p_T + ppfac_T(T,Pbar,a,b);
-        pK2p_P = pK2p_P + ppfac_P(T,Pbar,a,b);
         
-        gpK2p = [pK2p_T, pK2p_S, pK2p_P];
+        gpK2p = [pK2p_T, pK2p_S];
     end
     
     function [pK3p,gpK3p] = calc_pK3p(obs,T,S,Pbar,phf,gphf)
@@ -514,15 +597,8 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
             pK3p_P = 0 ;
           
         end
-        % pressure correction
-        a = [ -26.57; 0.202; -0.003042 ];
-        b = [ -4.08; 0.0714 ];
-
-        pK3p = pK3p + ppfac(T,Pbar,a,b);
-        pK3p_T = pK3p_T + ppfac_T(T,Pbar,a,b);
-        pK3p_P = pK3p_P + ppfac_P(T,Pbar,a,b);
         
-        gpK3p = [pK3p_T, pK3p_S, pK3p_P]; 
+        gpK3p = [pK3p_T, pK3p_S]; 
     end
 
     
@@ -563,15 +639,8 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
                     f(TK,a4) * 2 * IonS_S * IonS) / LOG10 ...
                     -0.001005 * dpdx(1 - 0.001005 * S);
         end
-        % pressure correction
-        a = [ -29.48; 0.1622; -0.002608 ];
-        b =[ -2.84; 0];
         
-        pKsi = pKsi + ppfac(T,Pbar,a,b);
-        pKsi_T = pKsi_T + ppfac_T(T,Pbar,a,b);
-        pKsi_P = ppfac_P(T,Pbar,a,b);
-        
-        gpKsi = [pKsi_T, pKsi_S, pKsi_P]; % gradient pKsi
+        gpKsi = [pKsi_T, pKsi_S]; 
     end
     
     function [pK1,gpK1] = calc_pK1(obs,T,S,Pbar,phf,gphf,pSWS2tot,gpSWS2tot)
@@ -693,9 +762,9 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
         elseif obs.cK1K2 == 13
         % Millero 2006 work from titrations, S = 1 - 50, T = 0 - 50  ------
         % Millero, Graham, Huang, Bustos-Serrano, Pierrot, 2006
-            a1 = [-126.3404;  13.4191; 0.0331; -5.33e-5] ;
-            a2 = [ 6320.813; -530.123; -6.103;    0.0  ] ;
-            a3 = [19.568224; -2.06950;   0.0 ;    0.0  ] ;
+            a1 = [-126.34048;  13.4191; 0.0331; -5.33e-5] ;
+            a2 = [  6320.813; -530.123; -6.103;    0.0  ] ;
+            a3 = [ 19.568224; -2.06950;   0.0 ;    0.0  ] ;
             
             f  = @(S,a) a(1) + a(2) .* sqrt(S) + a(3) .* S + a(4) .* (S.^2);
             df = @(S,a)  0.5 .* a(2)./ sqrt(S) + a(3) + 2 .* a(4) .* S ;
@@ -759,16 +828,7 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
 
         end
 
-        % pressure correction for obs.cK1K2 ~=6 & ~=7 & ~=8
-        a = [-25.5; 0.1271; 0];
-        b = [ -3.08; 0.0877 ];
-
-        pK1   = pK1 + ppfac(T,Pbar,a,b);
-        pK1_T = pK1_T + ppfac_T(T,Pbar,a,b);
-        pK1_P = ppfac_P(T,Pbar,a,b);
-
-        gpK1 = [pK1_T, pK1_S, pK1_P];
-        
+        gpK1 = [pK1_T, pK1_S];     
     end
     
     function [pK2,gpK2] = calc_pK2(obs,T,S,Pbar,phf,gphf,pSWS2tot,gpSWS2tot)
@@ -903,9 +963,9 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
         elseif obs.cK1K2 == 13
         % Millero 2006 work from titrations, S = 1 - 50, T = 0 - 50  ------
         % Millero, Graham, Huang, Bustos-Serrano, Pierrot, 2006
-            a1 = [ -90.1833;  21.0894;  0.1248; -3.687e-4 ] ;
-            a2 = [ 5143.692; -772.483; -20.051;    0.0    ] ;
-            a3 = [14.613358;  -3.3336;    0.0 ;    0.0    ] ;
+            a1 = [ -90.18333;  21.0894;  0.1248; -3.687e-4 ] ;
+            a2 = [  5143.692; -772.483; -20.051;    0.0    ] ;
+            a3 = [ 14.613358;  -3.3336;    0.0 ;    0.0    ] ;
             
             f  = @(S,a) a(1) + a(2) .* sqrt(S) + a(3) .* S + a(4) .* (S.^2);
             df = @(S,a)  0.5 .* a(2)./ sqrt(S) + a(3) + 2 .* a(4) .* S ;
@@ -930,7 +990,7 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
 
         elseif obs.cK1K2 == 15
         % Waters, Millero, and Woosley, 2014 ------------------------------
-            a1 = [  -90.1833;  21.225890; 0.12450870; -3.7243e-4] ;
+            a1 = [  -90.18333;  21.225890; 0.12450870; -3.7243e-4] ;
             a2 = [  5143.692;  -779.3444;  -19.91739;    0.0    ] ;
             a3 = [ 14.613358; -3.3534679;     0.0   ;    0.0    ] ;
 
@@ -968,15 +1028,7 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
 
         end
         
-        % pressure correction for obs.cK1K2 ~=6 & ~=7 & ~=8
-        a = [ -15.82; -0.0219; 0 ];
-        b = [ 1.13; -0.1475 ];
-        
-        pK2 = pK2 + ppfac(T,Pbar,a,b);
-        pK2_T = pK2_T + ppfac_T(T,Pbar,a,b);
-        pK2_P = ppfac_P(T,Pbar,a,b);
-        
-        gpK2 = [pK2_T, pK2_S, pK2_P]; 
+        gpK2 = [pK2_T, pK2_S]; 
     end
     
     function [pKnh4, gpKnh4] = calc_pKnh4(T,S,Pbar,pSWS2tot,gpSWS2tot)
@@ -1015,15 +1067,7 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
                   0.001005 * dpdx(1 - 0.001005 * S) ...
                   - gpSWS2tot(2); % convert from total scale to SWS pH scale 
         
-        % pressure correction
-        a = [ -26.43; 0.0889; -0.000905 ];
-        b = [ -5.03; 0.0814 ];
-
-        pKnh4 = pKnh4 + ppfac(T,Pbar,a,b);
-        pKnh4_T = pKnh4_T + ppfac_T(T,Pbar,a,b);
-        pKnh4_P = ppfac_P(T,Pbar,a,b);
-        
-        gpKnh4 = [pKnh4_T, pKnh4_S, pKnh4_P];
+        gpKnh4 = [pKnh4_T, pKnh4_S];
     end
     
     function [pKh2s,gpKh2s] = calc_pKh2s(T,S,Pbar,pSWS2tot,gpSWS2tot)
@@ -1039,15 +1083,7 @@ function [pK,gpK] = local_pKv4(obs,T,S,P)
         pKh2s_S = (- (0.5.*d./sqrt(S) + h) ./ LOG10 ) ...
                    - gpSWS2tot(2); % convert from total scale to SWS pH scale
         
-        % pressure correction
-        a = [ -11.07; -0.009; -0.000942 ];
-        b = [ -2.89;  0.054 ];
-        
-        pKh2s = pKh2s + ppfac(T,Pbar,a,b);
-        pKh2s_T = pKh2s_T + ppfac_T(T,Pbar,a,b);
-        pKh2s_P = ppfac_P(T,Pbar,a,b);
-        
-        gpKh2s = [pKh2s_T, pKh2s_S, pKh2s_P];
+        gpKh2s = [pKh2s_T, pKh2s_S];
     end
     
     function [pKar, gpKar] = calc_pKar(obs,T,S,Pbar,phf,gphf)
