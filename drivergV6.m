@@ -132,7 +132,7 @@ for i = 1:nD
     obs(i).TA = nan;        obs(i).eTA = nan;
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est11   = est;
 
 
@@ -143,7 +143,7 @@ for i = 1:nD
     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est12   = est;
 
 
@@ -154,7 +154,7 @@ for i = 1:nD
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est13   = est;
 
 % TA pCO2 (Q2)(fid14)
@@ -164,7 +164,7 @@ for i = 1:nD
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est14   = est;
 
 
@@ -175,7 +175,7 @@ for i = 1:nD
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est15   = est;
 
 
@@ -186,7 +186,7 @@ for i = 1:nD
     obs(i).TA = nan; obs(i).eTA = nan;
     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est16   = est;
 
 
@@ -196,7 +196,7 @@ for i = 1:nD
     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est20   = est;
 
 
@@ -206,7 +206,7 @@ for i = 1:nD
     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est21   = est;
 
 
@@ -216,7 +216,7 @@ for i = 1:nD
     obs(i).m(3).pco2 = nan; obs(i).m(2).epco2 = nan;
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est22   = est;
 
 
@@ -226,7 +226,7 @@ for i = 1:nD
     obs(i).TA = nan;        obs(i).eTA = nan;
     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est23   = est;
 
 
@@ -236,7 +236,7 @@ for i = 1:nD
     obs(i).TA = nan;        obs(i).eTA = nan;
     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est24   = est;
 
 
@@ -246,7 +246,7 @@ for i = 1:nD
     obs(i).TA = nan;        obs(i).eTA = nan;
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est25   = est;
 
 
@@ -256,7 +256,7 @@ for i = 1:nD
     obs(i).TC = nan;        obs(i).eTC = nan;
     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est26   = est;
 
 
@@ -266,7 +266,7 @@ for i = 1:nD
     obs(i).TC = nan;        obs(i).eTC = nan;
     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est27   = est;
 
 
@@ -276,7 +276,7 @@ for i = 1:nD
     obs(i).TC = nan;        obs(i).eTC = nan;
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est28   = est;
 
 
@@ -286,7 +286,7 @@ for i = 1:nD
     obs(i).TA = nan;    obs(i).eTA = nan;
     obs(i).TC = nan;    obs(i).eTC = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est29   = est;
 
 
@@ -295,7 +295,7 @@ obs = obs_backup;
 for i = 1:nD
     obs(i).m(2).co3 = nan; obs(i).m(2).eco3 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est30   = est;
 
 
@@ -304,7 +304,7 @@ obs = obs_backup;
 for i = 1:nD
     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est31   = est;
 
 
@@ -313,7 +313,7 @@ obs = obs_backup;
 for i = 1:nD
     obs(i).m(2).ph = nan; obs(i).m(2).eph = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est32   = est;
 
 
@@ -322,7 +322,7 @@ obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan; obs(i).eTA = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est33   = est;
 
 
@@ -331,7 +331,7 @@ obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan; obs(i).eTC = nan;
 end
-[est,obs,iflag] = QUODcarbV6(obs,sys);
+[est,obs,iflag] = QUODcarbV6(obs,opt);
 est34  = est;
 
 

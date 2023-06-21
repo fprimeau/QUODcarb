@@ -8,7 +8,9 @@ function [est,obs,iflag] = QUODcarbV6(obs,opt)
 %   est := posterior estimates of co2-system variables, equilibrium constants, and precisions
 %   obs := same as input except that the pK's have been added
 % iflag := 0 if solver converged to specified accuracy 
-%          1 after reaching maximum number of iterations without convergging
+%          1 after reaching maximum number of iterations without converging
+%          2 if it was one order of magnitude away from converging at
+%               maximum iteration
 %   CSV := optional CSV output, if turned on in options
 %
 % INPUT:
@@ -351,25 +353,25 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         else
             wobs(i,sys.isal) = (obs(i).esal)^(-2); % std e -> w
         end
-        if (~isfield(obs(i),'TC'))
+        if (~isfield(obs(i),'TC')) || (~isgood(obs(i).TC))
             obs(i).TC = [];
             yobs(i,sys.iTC) = nan;
         else
             yobs(i,sys.iTC) = p((obs(i).TC)*1e-6); % convt to mol/kg
         end
-        if (~isfield(obs(i),'eTC'))
+        if (~isfield(obs(i),'eTC')) || (~isgood(obs(i).eTC))
             obs(i).eTC = [];
             wobs(i,sys.iTC) = nan;
         else
             wobs(i,sys.iTC) = w(obs(i).TC,obs(i).eTC); % std e -> w
         end
-        if(~isfield(obs(i),'TA'))
+        if(~isfield(obs(i),'TA'))  || (~isgood(obs(i).TA))
             obs(i).TA = [];
             yobs(i,sys.iTA) = nan;
         else
             yobs(i,sys.iTA) = p((obs(i).TA)*1e-6); % convt to mol/kg
         end
-        if (~isfield(obs(i),'eTA'))
+        if (~isfield(obs(i),'eTA'))  || (~isgood(obs(i).eTA))
             obs(i).eTA = [];
             wobs(i,sys.iTA) = nan;
         else
