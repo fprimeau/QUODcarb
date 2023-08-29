@@ -231,17 +231,16 @@ function [f,g] = limpco2(z,y,w,sys,opt)
     
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers    
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
-    %keyboard
+    
     if ( nargout > 1 ) % compute the gradient
         if (ismember('sulfate',opt.abr))
             gf2t = zeros(nTP,nv);
             for i = 1:nTP
                 gf2t(i,[ sys.m(i).iph, sys.m(i).iKs, sys.iTS, sys.m(i).iphf ] ) = sys.m(i).gf2t(x);
-                % gf2t(i,[ sys.m(i).iKs, sys.iTS ] ) = sys.m(i).gf2t(x);
             end
             dcdx = [ M * diag( sys.dqdx( x ) ); ...
-                     (-K + zgpK) ;... % constraint eqns wrt -log10(concentrations)
-                     gf2t ]; 
+                     (-K + zgpK) ;...
+                     gf2t ]; % constraint eqns wrt -log10(concentrations)
         else
             dcdx = [ M * diag( sys.dqdx( x ) ); ...
                      (-K + zgpK) ]; % c'
@@ -268,106 +267,49 @@ function [f,g] = limpco2(z,y,w,sys,opt)
         H = [  PP.'*W*PP + gg , dcdx.'  ; ...
                dcdx         , zeros(nlam)  ];
     end
-    %keyboard
 end
 
 % -----------------------------------------------------------------------------------
 
 function [opt] = check_opt(opt)
-    % check opt input
-    isbad = @(thing) (isempty(thing) & sum(isnan(thing)));
-
-    % opt.printmes
-    if ~isfield(opt,'printmes') || isbad(opt.printmes)
-        opt.printmes = 1; % default on
-    end
-    % opt.K1K2
-    if ~isfield(opt,'K1K2') || isbad(opt.K1K2)
+    % check opt
+    if opt.K1K2 > 18 || opt.K1K2 < 1 
         if opt.printmes ~= 0
-            fprintf('No K1K2 formulation chosen. Assuming opt.K1K2 = 4\n');
-        end
-        opt.K1K2 = 4; % default K1K2 setting
-    elseif opt.K1K2 > 18 || opt.K1K2 < 1 || ...
-                opt.K1K2 == 6 || opt.K1K2 == 7 || opt.K1K2 == 8
-        if opt.printmes ~= 0
-            fprintf(['Invalid K1K2 formulation chosen. ' ...
-                'Assuming opt.K1K2 = 4\n']);
+            fprintf('No K1K2 formulation chosen. Assuming opt.K1K2 = 4');
         end
         opt.K1K2 = 4; % default K1K2 setting
     end
-    % opt.KSO4
-    if ~isfield(opt,'KSO4') || isbad(opt.KSO4)
+    if opt.KSO4 > 3 || opt.KSO4 < 1
         if opt.printmes ~= 0
-            fprintf('No KSO4 formulation chosen. Assuming opt.KSO4 = 1\n');
-        end
-        opt.KSO4 = 1; % default opt.KSO4 setting
-    elseif opt.KSO4 > 3 || opt.KSO4 < 1
-        if opt.printmes ~= 0
-            fprintf(['Invalid KSO4 formulation chosen. ' ...
-                'Assuming opt.KSO4 = 1\n']);
+            fprintf('No KSO4 formulation chosen. Assuming opt.KSO4 = 1');
         end
         opt.KSO4 = 1; % default opt.KSO4 setting
     end
-    % opt.KF
-    if ~isfield(opt,'KF') || isbad(opt.KF)
+    if opt.KF > 2 || opt.KF < 1 
         if opt.printmes ~= 0
-            fprintf('No KF formulation chosen. Assuming opt.KF = 2 \n');
-        end
-        opt.KF = 2; % default KF
-    elseif opt.KF > 2 || opt.KF < 1 
-        if opt.printmes ~= 0
-            fprintf(['Invalid KF formulation chosen. ' ...
-                'Assuming opt.KF = 2 \n']);
+            fprintf('No KF formulation chosen. Assuming opt.KF = 2');
         end
         opt.KF = 2;
     end
-    % opt.TB
-    if ~isfield(opt,'TB') || isbad(opt.TB)
+    if opt.TB > 2 || opt.TB < 1
         if opt.printmes ~= 0
-            fprintf('No TB formulation chosen. Assuming opt.TB = 2\n');
-        end
-        opt.TB = 2;
-    elseif opt.TB > 2 || opt.TB < 1
-        if opt.printmes ~= 0
-            fprintf(['Invalid TB formulation chosen. ' ...
-                'Assuming opt.TB = 2\n']);
+            fprintf('No TB formulation chosen. Assuming opt.TB = 2');
         end
         opt.TB = 2;
     end
-    % opt.phscale
-    if ~isfield(opt,'phscale') || isbad(opt.phscale)
-            error(['No opt.phscale chosen, must choose 1 = tot, ' ...
-                '2 = sws, 3 = free, 4 = NBS \n'])
-    elseif opt.phscale > 4 || opt.phscale < 1
-            eror(['Invalid opt.phscale chosen, must choose 1 = tot, ' ...
-                '2 = sws, 3 = free, 4 = NBS \n'])
-    end
-    % opt.printcsv and opt.fid
-    if ~isfield(opt,'printcsv') || isbad(opt.printcsv)
-        opt.printcsv = 0; % default off
-    elseif opt.printcsv > 1 || opt.printcsv < 0
+    if ~isempty(opt.co2press)  % isfield('co2press',opt)
         if opt.printmes ~= 0
-            fprintf('Invalid CSV opt chosen. Assuming opt.csv = 1\n');
+            if opt.co2press > 1 || opt.co2press < 0
+                fprintf('Invalid opt.co2press input, reset to default')
+                opt.co2press = 0; % default co2press
+            end
         end
     else
-        if ~isfield(opt,'fid') || isbad(opt.fid)
-            opt.fid = 'QUODcarb_output.csv';
-        end
-    end
-    % opt.co2press
-    if (~isfield(opt,'co2press')) || isbad(opt.co2press)
-        opt.co2press = 0; % default co2press
-    elseif opt.co2press > 1 || opt.co2press < 0
-        if opt.printmes ~= 0
-            fprintf('Invalid opt.co2press input, reset to default.\n')
-        end
         opt.co2press = 0; % default co2press
     end
-    % opt.abr (Acid/Base Reactions or systems to include)
-    if (~isfield(opt,'abr')) || (strcmp(opt.abr,""))
+    if (strcmp(opt.abr,""))
         if opt.printmes ~= 0
-            fprintf(['No acid base system chosen. ' ...
-                'Assuming opt.abr = {''all''}\n'])
+            fprintf('No acid base system chosen. Assuming opt.abr = {''all''}')
         end
         opt.abr = {'all'}; % default acid/base system = 'all'
     end
@@ -759,7 +701,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             else
                 if ((obs(i).TSi) == 0) % zero silicate very unlikely and breaks code
                     obs(i).TSi = 1e-3; % umol/kg, reset minimum to 1 nanomolar
-                end
+                end %%%%%%%%% ^^^^^^^ NEW
                 yobs(i,sys.iTSi) = p(obs(i).TSi*1e-6);
             end
             if (~isfield(obs(i), 'eTSi'))  || (~isgood(obs(i).eTSi))
@@ -800,7 +742,10 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).TNH3 = 1e-3; % µmol/kg
                 yobs(i,sys.iTNH3) = p(obs(i).TNH3*1e-6); % convt µmol/kg to mol/kg
             else
-                yobs(i,sys.iTNH3) = p(obs(i).TNH3*1e-6);
+                if ((obs(i).TNH3) == 0) % zero nh3 is very unlikely and breaks the code
+                    obs(i).TNH3  = 1e-3; % umol/kg-SW, reset minimum to 1 nanomolar
+                end
+                yobs(i,sys.iTNH3) = p(obs(i).TNH3*1e-6); % convt µmol/kg to mol/kg
             end
             if (~isfield(obs(i), 'eTNH3'))  || (~isgood(obs(i).eTNH3))
                 obs(i).eTNH3 = 1e-3; % µmol/kg
@@ -2048,7 +1993,6 @@ function [zpK, zgpK, f2t] = parse_zpK(x,sys,opt)
             zpK(sys.m(i).kKs)          = pK(6); 
             zgpK(sys.m(i).kKs, iTSP )  = gpK(6,:); % ∂T, ∂S, ∂P  
             f2t = [f2t;sys.m(i).f2t(x)];
-            % keyboard
         end
         
         if (ismember('fluoride',opt.abr))

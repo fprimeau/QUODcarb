@@ -1,3 +1,4 @@
+
 % take Hoppe data and put it into new QUODcarb
 
 LOG10 = log(10);
