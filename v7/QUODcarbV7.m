@@ -197,10 +197,10 @@ function [f,g] = limpco2(z,y,w,sys,opt)
     nrk = size(K,1);
     nTP = length(sys.m); 
     nv = size(M,2);
-    nlam = size(M,1)+size(K,1);
+    nlam = size(M,1)+size(K,1)+(nTP*3);
        % nlam = nlam+nTP; % one extra lagrange multiplier for each 
        % (T,P)-dependent free to total ph conversions
-       % don't need it anymore because got rid of f2t
+       % got rid of f2t and replaced it with ph_sws, _free, _nbs (3 things)
     x   =  z(1:nv);      % measureable variables
     lam =  z(nv+1:end);  % Lagrange multipliers 
     
@@ -217,25 +217,31 @@ function [f,g] = limpco2(z,y,w,sys,opt)
     e = PP*x - y; % calculated - measured (minus)
     
     % fill zpK and zgpK with associated calculated pK and gpK values
-    [zpK, zgpK, ph_all, gph_all] = parse_zpK(x,sys,opt);
+    [zpK, zgpK, ph_all] = parse_zpK(x,sys,opt);
     
     % constraint equations
     c = [  M * q( x ); ...
         (-K * x) + zpK;...
         ph_all] ;
-    keyboard
+    
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers    
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
-    %keyboard
+
     if ( nargout > 1 ) % compute the gradient
-        gf2t = zeros(nTP,nv);
+        gph_sws = zeros(nTP,nv);
+        gph_free = zeros(nTP,nv);
+        gph_nbs = zeros(nTP,nv);
         for i = 1:nTP
-            gf2t(i,[ sys.m(i).iph, sys.m(i).iKs, sys.iTS, sys.m(i).iph_free ] ) = sys.m(i).gf2t(x);
-            % gf2t(i,[ sys.m(i).iKs, sys.iTS ] ) = sys.m(i).gf2t(x);
+            gph_sws(i,[ sys.iTS, sys.m(i).iKs, sys.iTF, sys.m(i).iKf, ...
+                sys.m(i).iph, sys.m(i).ipfH]) = sys.m(i).gph_sws(x);
+            gph_free(i,[ sys.iTS, sys.m(i).iKs, sys.iTF, sys.m(i).iKf, ...
+                sys.m(i).iph, sys.m(i).ipfH]) = sys.m(i).gph_free(x);
+            gph_nbs(i,[ sys.iTS, sys.m(i).iKs, sys.iTF, sys.m(i).iKf, ...
+                sys.m(i).iph, sys.m(i).ipfH]) = sys.m(i).gph_nbs(x);
         end
         dcdx = [ M * diag( sys.dqdx( x ) ); ...
             (-K + zgpK) ;... % constraint eqns wrt -log10(concentrations)
-            gph_all];
+            gph_sws; gph_free; gph_nbs];
         g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
     end
     %     
@@ -2048,7 +2054,7 @@ end
 
 % -------------------------------------------------------------------------
 
-function [zpK, zgpK, ph_all, gph_all] = parse_zpK(x,sys,opt) % was f2t instead of ph_all
+function [zpK, zgpK, ph_all] = parse_zpK(x,sys,opt) % was f2t instead of ph_all
 % assigning proper calculated values to zpK and zgpK
 
 % zpK  := equilibrium constants, aka pK's
@@ -2062,7 +2068,6 @@ function [zpK, zgpK, ph_all, gph_all] = parse_zpK(x,sys,opt) % was f2t instead o
     zpK = zeros(nrk,1);
     zgpK = zeros(nrk,nv);
     ph_all = [];
-    gph_all = [];
 %     f2t = [];
 
     for i = 1:nTP
@@ -2092,8 +2097,6 @@ function [zpK, zgpK, ph_all, gph_all] = parse_zpK(x,sys,opt) % was f2t instead o
         % f2t = [f2t;sys.m(i).f2t(x)];
         ph_all = [ph_all; sys.m(i).ph_nbs(x); sys.m(i).ph_sws(x); ...
             sys.m(i).ph_free(x)] ;
-        gph_all = [gph_all; sys.m(i).gph_nbs(x); sys.m(i).gph_sws(x); ...
-            sys.m(i).gph_free(x)] ;
 
         zpK(sys.m(i).kKf)          = pK(7);
         zgpK(sys.m(i).kKf, iTSP )  = gpK(7,:); % ∂T, ∂S, ∂P
@@ -2319,7 +2322,7 @@ function z0 = init(yobs,sys,opt);
     % nlam = size(sys.M,1) + size(sys.K,1) + nTP; % (old)
     % ^ + nTP was for each f2t (x3), now we also have ph_nbs, ph_free,
     % and ph_sws with f2t, so nTP * 4 things
-    nlam = size(sys.M,1) + size(sys.K,1) + (nTP*4);
+    nlam = size(sys.M,1) + size(sys.K,1) + (nTP*3);
     lam = zeros(nlam,1);
     z0 = [y0(:);lam(:)];
     

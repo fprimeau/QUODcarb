@@ -434,8 +434,7 @@ function sys = mksysV7(obs,abr)
         ph_nbs_phtot = 1;
         ph_nbs_pfH = 1;
         m(j).gph_nbs = @(z) [ ph_nbs_pTS(z), ph_nbs_pKs(z), ...
-            ph_nbs_pTF(z), ph_nbs_pKf(z), ph_nbs_phtot, ...
-            ph_nbs_pfH ];
+            ph_nbs_pTF(z), ph_nbs_pKf(z), ph_nbs_phtot, ph_nbs_pfH ];
         % let's do ggph_nbs with complex step
 
         % ph_sws = ph_tot + p(SWS2tot)
@@ -451,8 +450,7 @@ function sys = mksysV7(obs,abr)
         ph_sws_phtot = 1;
         ph_sws_pfH = 0;
         m(j).gph_sws = @(z) [ ph_sws_pTS(z), ph_sws_pKs(z), ...
-            ph_sws_pTF(z), ph_sws_pKf(z), ph_sws_phtot, ...
-            ph_sws_pfH ];
+            ph_sws_pTF(z), ph_sws_pKf(z), ph_sws_phtot, ph_sws_pfH ];
         % let's do ggph_sws with complex step
 
         % ph_free = ph_tot + p(FREE2tot)
