@@ -99,7 +99,7 @@ function sys = mksysV7(obs,abr)
         m(j).iph      = i;  i = i + 1; % ph_tot
         m(j).iph_sws  = i;  i = i + 1;
         m(j).iph_free = i;  i = i + 1;
-        m(i).iph_nbs  = i;  i = i + 1;
+        m(j).iph_nbs  = i;  i = i + 1; % TYPO HAD m(i) -MF 08/30 4pm
         m(j).ip2f     = i;  i = i + 1;
         m(j).ipco2    = i;  i = i + 1;
         m(j).ipfH     = i; % fH activity coefficient
@@ -118,7 +118,6 @@ function sys = mksysV7(obs,abr)
         % Ks  = [hf][so4]/[hso4]
         nrk = nrk + 1;      i = i + 1;
         m(j).iKs     = i;   i = i + 1;
-%         m(j).iphf = i;      i = i + 1; % REMOVE when ready
         m(j).iphfree = i;   i = i + 1; % Hfree (free Hydrogen ion)
         m(j).iso4    = i;   i = i + 1;
         m(j).ihso4   = i;
@@ -175,7 +174,6 @@ function sys = mksysV7(obs,abr)
             m(j).iOmegaCa = i;
         end
     end
-keyboard
     %
     nv = i;
     K = sparse(nTP*2*nrk,nv);
@@ -355,7 +353,7 @@ keyboard
         m(j).jTS = row;
 
 %         % free2tot = f2t = (1 + TS/Ks) ;
-        m(j).f2t = @(z) z(m(j).iphf)  + p( q( z(m(j).iKs) ) +...
+        m(j).f2t = @(z) z(m(j).iphfree)  + p( q( z(m(j).iKs) ) +...
             q( z(iTS) ) ) - z(m(j).iKs) - z(m(j).iph);
 %         f2t_phf = @(z)  1;
 %         f2t_ph  = @(z) -1;
@@ -471,6 +469,5 @@ keyboard
     sys.M = M;
     sys.K = K;
     sys.m = m;   
-    keyboard
 end
 

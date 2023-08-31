@@ -115,7 +115,7 @@ function [est,obs,iflag] = QUODcarbV7(obs,opt)
     [obs,yobs,wobs] = parse_input(obs,sys,opt,nD);
 
     z0 = init(yobs,sys,opt);
-  
+  keyboard
     for i = 1:nD
 
         gun = @(z) grad_limpco2(z,yobs(i,:),wobs(i,:),sys,opt);
@@ -2130,6 +2130,11 @@ function z0 = init(yobs,sys,opt);
     nD = length(yobs);
     y0  = yobs;
 
+    nTP = length(sys.m);
+    nz0 = length(yobs) + size(sys.M,1) + size(sys.K,1) + (nTP*4);
+
+    z0 = zeros(nTP,nz0); %initialize it
+
     for i = 1:nD
    
         dic = q(yobs(i,sys.iTC));
@@ -2143,7 +2148,6 @@ function z0 = init(yobs,sys,opt);
             y0(sys.iTA) = p(alk);
         end
 
-        nTP = length(sys.m);
         for ii = 1:nTP
             % solve for the [H+] ion concentration using only the carbonate alkalinity
             gam = dic/alk;
@@ -2256,12 +2260,16 @@ function z0 = init(yobs,sys,opt);
             end
         end
         % add the Lagrange multipliers
-        nlam = size(sys.M,1)+size(sys.K,1)+nTP;
+        % nlam = size(sys.M,1) + size(sys.K,1) + nTP; % (old)
+        % ^ + nTP was for each f2t (x3), now we also have ph_nbs, ph_free,
+        % and ph_sws with f2t, so nTP * 4 things
+        nlam = size(sys.M,1) + size(sys.K,1) + (nTP*4);
         lam = zeros(nlam,1);
-        z0(i) = [y0(i,:);lam(:)];
-
+        % y0i = y0(i,:);
+        z0(i,:) = [y0(i,:)';lam(:)];
+        % z0(i) = [y0i(:);lam(:)];
+        keyboard
     end
-
 
 %     y0  = yobs;
 %     dic = q(yobs(sys.iTC));
