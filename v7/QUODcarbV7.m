@@ -195,10 +195,12 @@ function [f,g] = limpco2(z,y,w,sys,opt)
     M = sys.M;
     K = sys.K;
     nrk = size(K,1);
-    nv = size(M,2);
     nTP = length(sys.m); 
-    nlam = size(M,1)+size(K,1)+ nTP;
-       % nlam = nlam+nTP; % one extra lagrange multiplier for each (T,P)-dependent free to total ph conversions
+    nv = size(M,2);
+    nlam = size(M,1)+size(K,1);
+       % nlam = nlam+nTP; % one extra lagrange multiplier for each 
+       % (T,P)-dependent free to total ph conversions
+       % don't need it anymore because got rid of f2t
     x   =  z(1:nv);      % measureable variables
     lam =  z(nv+1:end);  % Lagrange multipliers 
     
@@ -215,12 +217,12 @@ function [f,g] = limpco2(z,y,w,sys,opt)
     e = PP*x - y; % calculated - measured (minus)
     
     % fill zpK and zgpK with associated calculated pK and gpK values
-    [zpK, zgpK, f2t] = parse_zpK(x,sys,opt);
+    [zpK, zgpK, ph_all, gph_all] = parse_zpK(x,sys,opt);
     
     % constraint equations
     c = [  M * q( x ); ...
         (-K * x) + zpK;...
-        f2t ] ;
+        ph_all] ;
     keyboard
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers    
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
@@ -228,12 +230,12 @@ function [f,g] = limpco2(z,y,w,sys,opt)
     if ( nargout > 1 ) % compute the gradient
         gf2t = zeros(nTP,nv);
         for i = 1:nTP
-            gf2t(i,[ sys.m(i).iph, sys.m(i).iKs, sys.iTS, sys.m(i).iphfree ] ) = sys.m(i).gf2t(x);
+            gf2t(i,[ sys.m(i).iph, sys.m(i).iKs, sys.iTS, sys.m(i).iph_free ] ) = sys.m(i).gf2t(x);
             % gf2t(i,[ sys.m(i).iKs, sys.iTS ] ) = sys.m(i).gf2t(x);
         end
         dcdx = [ M * diag( sys.dqdx( x ) ); ...
             (-K + zgpK) ;... % constraint eqns wrt -log10(concentrations)
-            gf2t ];
+            gph_all];
         g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
     end
     %     
@@ -618,14 +620,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         else
             wobs(i,sys.iTS) = w(obs(i).TS,obs(i).eTS);
         end
-        if (~isfield(obs(i).m(1), 'phfree')) || ...
-                (~isgood(obs(i).m(1).phfree))
-            obs(i).m(1).phfree = [];
-        end
-        if (~isfield(obs(i).m(1), 'ephfree')) || ...
-                (~isgood(obs(i).m(1).ephfree))
-            obs(i).m(1).ephfree = [];
-        end
+        % if (~isfield(obs(i).m(1), 'phfree')) || ... % same as ph_free
+        %         (~isgood(obs(i).m(1).phfree))
+        %     obs(i).m(1).phfree = [];
+        % end
+        % if (~isfield(obs(i).m(1), 'ephfree')) || ...
+        %         (~isgood(obs(i).m(1).ephfree))
+        %     obs(i).m(1).ephfree = [];
+        % end
         if (~isfield(obs(i).m(1), 'so4')) || ...
                 (~isgood(obs(i).m(1).so4))
             obs(i).m(1).so4 = [];
@@ -1102,7 +1104,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 yobs(i,sys.m(ii).iph_sws) = nan;
                 obs(i).m(ii).ph_sws = nan;
             end
-            if (isgood(obs(i).m(ii).ph_free)) % ph_free
+            if (isgood(obs(i).m(ii).ph_free)) % ph_free (ph on free scale)
                 yobs(i,sys.m(ii).iph_free) = obs(i).m(ii).ph_free ;
             else
                 yobs(i,sys.m(ii).iph_free) = nan;
@@ -1228,18 +1230,18 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.m(ii).iso4) = nan;
                 obs(i).m(ii).eso4 = nan;
             end
-            if (isgood(obs(i).m(ii).phfree))
-                yobs(i,sys.m(ii).iphfree) = obs(i).m(ii).phfree; % hydrogen free
-            else
-                yobs(i,sys.m(ii).iphfree) = nan; % from CO2SYS
-                obs(i).m(ii).phfree = nan;
-            end
-            if (isgood(obs(i).m(ii).ephfree))
-                wobs(i,sys.m(ii).iphfree) = (obs(i).m(ii).ephfree)^(-2);
-            else
-                wobs(i,sys.m(ii).iphfree) = nan;
-                obs(i).m(ii).ephfree = nan;
-            end
+            % if (isgood(obs(i).m(ii).phfree)) % same as ph_free
+            %     yobs(i,sys.m(ii).iphfree) = obs(i).m(ii).phfree; % hydrogen free
+            % else
+            %     yobs(i,sys.m(ii).iphfree) = nan; % from CO2SYS
+            %     obs(i).m(ii).phfree = nan;
+            % end
+            % if (isgood(obs(i).m(ii).ephfree))
+            %     wobs(i,sys.m(ii).iphfree) = (obs(i).m(ii).ephfree)^(-2);
+            % else
+            %     wobs(i,sys.m(ii).iphfree) = nan;
+            %     obs(i).m(ii).ephfree = nan;
+            % end
 
             % fluoride system
             if (isgood(obs(i).m(ii).epKf))
@@ -1803,12 +1805,18 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).eKb_u = ebar_u(sys.m(i).iKb);
 
         % H(free)
-        est.m(i).hfree    = q(z(sys.m(i).iphfree))*1e6;
-        est.m(i).ehfree   = ebar(sys.m(i).iphfree)*1e6;
-        est.m(i).ehfree_l = ebar_l(sys.m(i).iphfree)*1e6;
-        est.m(i).ehfree_u = ebar_u(sys.m(i).iphfree)*1e6;
-        est.m(i).phfree   = z(sys.m(i).iphfree);
-        est.m(i).ephfree  = sigy(sys.m(i).iphfree);
+        % est.m(i).hfree    = q(z(sys.m(i).iphfree))*1e6;
+        % est.m(i).ehfree   = ebar(sys.m(i).iphfree)*1e6;
+        % est.m(i).ehfree_l = ebar_l(sys.m(i).iphfree)*1e6;
+        % est.m(i).ehfree_u = ebar_u(sys.m(i).iphfree)*1e6;
+        % est.m(i).phfree   = z(sys.m(i).iphfree);
+        % est.m(i).ephfree  = sigy(sys.m(i).iphfree);
+        est.m(i).h_free    = q(z(sys.m(i).iph_free))*1e6;
+        est.m(i).eh_free   = ebar(sys.m(i).iph_free)*1e6;
+        est.m(i).eh_free_l = ebar_l(sys.m(i).iph_free)*1e6;
+        est.m(i).eh_free_u = ebar_u(sys.m(i).iph_free)*1e6;
+        % est.m(i).ph_free   = z(sys.m(i).iph_free);
+        % est.m(i).eph_free  = sigy(sys.m(i).iph_free);
 
         % SO4 sulfide
         est.m(i).so4    = q(z(sys.m(i).iso4))*1e6; % convt
@@ -2040,7 +2048,7 @@ end
 
 % -------------------------------------------------------------------------
 
-function [zpK, zgpK, f2t] = parse_zpK(x,sys,opt) % was f2t instead of ph_all
+function [zpK, zgpK, ph_all, gph_all] = parse_zpK(x,sys,opt) % was f2t instead of ph_all
 % assigning proper calculated values to zpK and zgpK
 
 % zpK  := equilibrium constants, aka pK's
@@ -2053,8 +2061,9 @@ function [zpK, zgpK, f2t] = parse_zpK(x,sys,opt) % was f2t instead of ph_all
     nrk = size(K,1);
     zpK = zeros(nrk,1);
     zgpK = zeros(nrk,nv);
-    f2t = [];
-%     ph_all = [];
+    ph_all = [];
+    gph_all = [];
+%     f2t = [];
 
     for i = 1:nTP
         [pK, gpK] = calc_pK(opt, x(sys.m(i).iT), x(sys.isal), x(sys.m(i).iP) );
@@ -2080,9 +2089,11 @@ function [zpK, zgpK, f2t] = parse_zpK(x,sys,opt) % was f2t instead of ph_all
 
         zpK(sys.m(i).kKs)          = pK(6);
         zgpK(sys.m(i).kKs, iTSP )  = gpK(6,:); % ∂T, ∂S, ∂P
-        f2t = [f2t;sys.m(i).f2t(x)];
-%         ph_all = [ph_all; sys.m(i).ph_nbs(x), sys.m(i).ph_sws(x), ...
-%             sys.m(i).ph_free(x)] ;
+        % f2t = [f2t;sys.m(i).f2t(x)];
+        ph_all = [ph_all; sys.m(i).ph_nbs(x); sys.m(i).ph_sws(x); ...
+            sys.m(i).ph_free(x)] ;
+        gph_all = [gph_all; sys.m(i).gph_nbs(x); sys.m(i).gph_sws(x); ...
+            sys.m(i).gph_free(x)] ;
 
         zpK(sys.m(i).kKf)          = pK(7);
         zgpK(sys.m(i).kKf, iTSP )  = gpK(7,:); % ∂T, ∂S, ∂P
@@ -2123,14 +2134,14 @@ function [zpK, zgpK, f2t] = parse_zpK(x,sys,opt) % was f2t instead of ph_all
 end
 % ---------------------------------------------------------------------------------
 
-function ph_all = phscales(phin,scalein,TS,Ks,TF,Kf,phfree)
+function ph_all = phscales(phin,scalein,TS,Ks,TF,Kf,pfH)
     % convert input pH to all scales
     q = @(x) 10.^(-x);
     % input TS, Ks, TF, Kf
     free2tot = (1 + TS./Ks);
     sws2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
     % down IS WRONG %%%% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    Hf = q(phfree);
+    fH = q(pHf);
     % THIS ^^ IS WRONG WRONG WRONG CHANGE IT CHANGE IT !!! %%%% !!!!! %%%%
     % 1 = total scale, 2 = sea water scale, 3 = free scale, 4 = NBS
     if scalein == 1
@@ -2144,12 +2155,12 @@ function ph_all = phscales(phin,scalein,TS,Ks,TF,Kf,phfree)
         factor = -log(free2tot)./log(0.1);
     elseif scalein == 4
         % NBS
-        factor = -log(sws2tot)./log(0.1) + log(Hf)./log(0.1);
+        factor = -log(sws2tot)./log(0.1) + log(fH)./log(0.1);
     elseif scalein < 1 || scalein > 4
         fprintf('Warning: Incorrect pH scale factor used.\n');
     end
     ph_tot  = phin - factor;
-    ph_nbs  = ph_tot - log(sws2tot)./log(0.1) + log(Hf)/log(0.1);
+    ph_nbs  = ph_tot - log(sws2tot)./log(0.1) + log(fH)/log(0.1);
     ph_free = ph_tot - log(free2tot)./log(0.1);
     ph_sws  = ph_tot - log(sws2tot)./log(0.1);
 
@@ -2222,7 +2233,7 @@ function z0 = init(yobs,sys,opt);
         hso4 = TS / ( 1 + Ks / hfree);
         so4  = Ks * hso4 / hfree;
         y0(sys.iTS)   = p(TS);
-        y0(sys.m(ii).iphfree)   = p(hfree);
+        % y0(sys.m(ii).iphfree)   = p(hfree);
         y0(sys.m(ii).ihso4) = p(hso4);
         y0(sys.m(ii).iso4)  = p(so4);
 
