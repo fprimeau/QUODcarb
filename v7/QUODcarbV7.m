@@ -113,16 +113,14 @@ function [est,obs,iflag] = QUODcarbV7(obs,opt)
 
     % populate obs, yobs, wobs at each datapoint
     [obs,yobs,wobs] = parse_input(obs,sys,opt,nD);
-
-    z0 = init(yobs,sys,opt);
-  keyboard
+  
     for i = 1:nD
 
         gun = @(z) grad_limpco2(z,yobs(i,:),wobs(i,:),sys,opt);
-        
+        z0 = init(yobs(i,:),sys,opt);
         tol = 1e-7;
 
-        [z,J,iflag(i)] = newtn(z0(i),gun,tol);
+        [z,J,iflag(i)] = newtn(z0,gun,tol);
         if (iflag(i) ~=0) && (opt.printmes ~= 0)
             fprintf('Newton''s method iflag = %i\n',iflag(i));
         end
@@ -500,6 +498,9 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         end
         if (~isfield(obs(i).m(1),'ph_nbs')) || (~isgood(obs(i).m(1).ph_nbs))
             obs(i).m(1).ph_nbs = [];
+        end
+        if (~isfield(obs(i).m(1),'epfH')) || (~isgood(obs(i).m(1).epfH))
+            obs(i).m(1).epfH = [];
         end
         if (~isfield(obs(i).m(1),'pfH')) || (~isgood(obs(i).m(1).pfH))
             obs(i).m(1).pfH = [];
@@ -955,11 +956,13 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             pKw   = pK(5);  pKs  = pK(6);  pKf  = pK(7);  pK1p  = pK(8);
             pK2p  = pK(9);  pK3p = pK(10); pKsi = pK(11); pKnh4 = pK(12);
             pKh2s = pK(13); pp2f = pK(14); pKar = pK(15); pKca  = pK(16);
+            pfH   = pK(17);
 
             epK0   = epK(1);  epK1  = epK(2);  epK2  = epK(3);  epKb   = epK(4);
             epKw   = epK(5);  epKs  = epK(6);  epKf  = epK(7);  epK1p  = epK(8);
             epK2p  = epK(9);  epK3p = epK(10); epKsi = epK(11); epKnh4 = epK(12);
             epKh2s = epK(13); epp2f = epK(14); epKar = epK(15); epKca  = epK(16);
+            epfH = epK(17);
             %
             % add "observations" for the equilibrium constants
             % and transfer from obs struct to yobs and wobs vectors (or
@@ -1081,18 +1084,49 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.m(ii).ifco2) = nan;
                 obs(i).m(ii).efco2 = nan;
             end
-            if (isgood(obs(i).m(ii).ph))
+            if (isgood(obs(i).m(ii).ph)) % ph_tot
                 yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph ;
             else
                 yobs(i,sys.m(ii).iph) = nan;
                 obs(i).m(ii).ph = nan;
             end
-            if (isgood(obs(i).m(ii).eph))
+            if (isgood(obs(i).m(ii).eph)) % eph same for all ph scales
                 wobs(i,sys.m(ii).iph) = (obs(i).m(ii).eph).^(-2);
             else
                 wobs(i,sys.m(ii).iph) = nan;
                 obs(i).m(ii).eph = nan;
             end
+            if (isgood(obs(i).m(ii).ph_sws)) % ph_sws
+                yobs(i,sys.m(ii).iph_sws) = obs(i).m(ii).ph_sws ;
+            else
+                yobs(i,sys.m(ii).iph_sws) = nan;
+                obs(i).m(ii).ph_sws = nan;
+            end
+            if (isgood(obs(i).m(ii).ph_free)) % ph_free
+                yobs(i,sys.m(ii).iph_free) = obs(i).m(ii).ph_free ;
+            else
+                yobs(i,sys.m(ii).iph_free) = nan;
+                obs(i).m(ii).ph_free = nan;
+            end
+            if (isgood(obs(i).m(ii).ph_nbs)) % ph_nbs
+                yobs(i,sys.m(ii).iph_nbs) = obs(i).m(ii).ph_nbs ;
+            else
+                yobs(i,sys.m(ii).iph_nbs) = nan;
+                obs(i).m(ii).ph_nbs = nan;
+            end
+            if (isgood(obs(i).m(ii).pfH)) % pfH activity coefficient
+                yobs(i,sys.m(ii).ipfH) = obs(i).m(ii).pfH ;
+            else
+                yobs(i,sys.m(ii).ipfH) = pfH;
+                obs(i).m(ii).pfH = pfH;
+            end
+            if (isgood(obs(i).m(ii).epfH)) % pfH activity coefficient
+                wobs(i,sys.m(ii).ipfH) = (obs(i).m(ii).epfH).^(-2) ;
+            else
+                wobs(i,sys.m(ii).ipfH) = (epfH).^(-2);
+                obs(i).m(ii).pfH = epfH;
+            end
+
 
             if (isgood(obs(i).m(ii).epKw))
                 wobs(i,sys.m(ii).iKw) = (obs(i).m(ii).epKw).^(-2);
@@ -1647,14 +1681,14 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).ph    = z(sys.m(i).iph);
         est.m(i).eph   = sigy(sys.m(i).iph);
         % output pH on all scales
-        pHall = phscales(est.m(i).ph, opt.phscale, ... % pH_in, pHscale_in
+        ph_all = phscales(est.m(i).ph, opt.phscale, ... % pH_in, pHscale_in
             est.TS, q(z(sys.m(i).iKs)), est.TF, ... % TS, Ks, TF
-            q(z(sys.m(i).iKf)), z(sys.m(i).iphfree) ); % Kf, pH(free)
+            q(z(sys.m(i).iKf)), z(sys.m(i).ipfH) ); % Kf, pfH
 
-        est.m(i).ph_tot  = pHall(1);
-        est.m(i).ph_sws  = pHall(2);
-        est.m(i).ph_free = pHall(3);
-        est.m(i).ph_nbs  = pHall(4);
+        est.m(i).ph_tot  = ph_all(1);
+        est.m(i).ph_sws  = ph_all(2);
+        est.m(i).ph_free = ph_all(3);
+        est.m(i).ph_nbs  = ph_all(4);
         
         % fCO2
         est.m(i).fco2    = q(z(sys.m(i).ifco2))*1e6; % convt atm to µatm
@@ -2089,13 +2123,15 @@ function [zpK, zgpK, f2t] = parse_zpK(x,sys,opt) % was f2t instead of ph_all
 end
 % ---------------------------------------------------------------------------------
 
-function pHall = phscales(phin,scalein,TS,Ks,TF,Kf,phfree)
+function ph_all = phscales(phin,scalein,TS,Ks,TF,Kf,phfree)
     % convert input pH to all scales
     q = @(x) 10.^(-x);
     % input TS, Ks, TF, Kf
     free2tot = (1 + TS./Ks);
     sws2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
+    % down IS WRONG %%%% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     Hf = q(phfree);
+    % THIS ^^ IS WRONG WRONG WRONG CHANGE IT CHANGE IT !!! %%%% !!!!! %%%%
     % 1 = total scale, 2 = sea water scale, 3 = free scale, 4 = NBS
     if scalein == 1
         % total scale
@@ -2112,12 +2148,12 @@ function pHall = phscales(phin,scalein,TS,Ks,TF,Kf,phfree)
     elseif scalein < 1 || scalein > 4
         fprintf('Warning: Incorrect pH scale factor used.\n');
     end
-    pH_tot  = phin - factor;
-    pH_nbs  = pH_tot - log(sws2tot)./log(0.1) + log(Hf)/log(0.1);
-    pH_free = pH_tot - log(free2tot)./log(0.1);
-    pH_sws  = pH_tot - log(sws2tot)./log(0.1);
+    ph_tot  = phin - factor;
+    ph_nbs  = ph_tot - log(sws2tot)./log(0.1) + log(Hf)/log(0.1);
+    ph_free = ph_tot - log(free2tot)./log(0.1);
+    ph_sws  = ph_tot - log(sws2tot)./log(0.1);
 
-    pHall = [pH_tot, pH_sws, pH_free, pH_nbs];
+    ph_all = [ph_tot, ph_sws, ph_free, ph_nbs];
 
 end
 
@@ -2127,277 +2163,318 @@ function z0 = init(yobs,sys,opt);
     q = sys.q;
     p = sys.p;
     
-    nD = length(yobs);
     y0  = yobs;
 
     nTP = length(sys.m);
-    nz0 = length(yobs) + size(sys.M,1) + size(sys.K,1) + (nTP*4);
+    % nz0 = length(yobs) + size(sys.M,1) + size(sys.K,1) + (nTP*4);
 
-    z0 = zeros(nTP,nz0); %initialize it
-
-    for i = 1:nD
+    % z0 = zeros(nTP,nz0); %initialize it
    
-        dic = q(yobs(i,sys.iTC));
-        alk = q(yobs(i,sys.iTA));
-        if (isnan(dic))
-            dic = 2200e-6;
-            y0(sys.iTC) = p(dic);
-        end
-        if (isnan(alk))
-            alk = 2200e-6;
-            y0(sys.iTA) = p(alk);
-        end
-
-        for ii = 1:nTP
-            % solve for the [H+] ion concentration using only the carbonate alkalinity
-            gam = dic/alk;
-            K0 = q(y0(i,sys.m(ii).iK0));
-            K1 = q(y0(i,sys.m(ii).iK1));
-            K2 = q(y0(i,sys.m(ii).iK2));
-            p2f = q(y0(i,sys.m(ii).ip2f));
-            h = 0.5*( ( gam - 1 ) * K1 + ( ( 1 - gam )^2 * K1^2 - 4 * K1 * K2 * ( 1 - 2 * gam ) ).^0.5 ) ;
-            hco3 =  h * alk / (h + 2 * K2 );
-            co2st = h * hco3 / K1 ;
-            %co3 = 0.5 * ( alk - hco3 ) ;
-            co3 = dic*K1*K2/(K1*h + h*h + K1*K2) ;
-            fco2 = co2st/K0;
-            pco2 = fco2/p2f;
-
-            y0(i,sys.m(ii).iph)    = p(h);
-            y0(i,sys.m(ii).ihco3)  = p(hco3);
-            y0(i,sys.m(ii).ico2st) = p(co2st);
-            y0(i,sys.m(ii).ico3)   = p(co3);
-            y0(i,sys.m(ii).ifco2)  = p(fco2);
-            y0(i,sys.m(ii).ipco2)  = p(pco2);
-
-            Kw = q(y0(i,sys.m(ii).iKw));
-            oh = Kw / h;
-            y0(i,sys.m(ii).ioh) = p(oh);
-
-            Kb = q(y0(i,sys.m(ii).iKb));
-            TB = q(yobs(i,sys.iTB));
-            %boh4 = TB / ( 1 + h / Kb );
-            boh4 = TB * Kb / (Kb + h) ;
-            boh3 = TB - boh4;
-            y0(i,sys.iTB)   = p(TB);
-            y0(i,sys.m(ii).iboh3) = p(boh3);
-            y0(i,sys.m(ii).iboh4) = p(boh4);
-
-            Ks = q(y0(i,sys.m(ii).iKs));
-            TS = q(yobs(i,sys.iTS));
-            hfree = h / ( 1 + TS / Ks );
-            hso4 = TS / ( 1 + Ks / hfree);
-            so4  = Ks * hso4 / hfree;
-            y0(i,sys.iTS)   = p(TS);
-            y0(i,sys.m(ii).iphfree)   = p(hfree);
-            y0(i,sys.m(ii).ihso4) = p(hso4);
-            y0(i,sys.m(ii).iso4)  = p(so4);
-
-            Kf = q(y0(i,sys.m(ii).iKf));
-            TF = q(yobs(i,sys.iTF));
-            HF = TF / ( 1 + Kf / h );
-            F  = Kf * HF / h;
-            y0(i,sys.iTF) = p(TF);
-            y0(i,sys.m(ii).iF)  = p(F);
-            y0(i,sys.m(ii).iHF) = p(HF);
-
-            if (ismember('phosphate',opt.abr));
-                K1p = q(y0(i,sys.m(ii).iK1p));
-                K2p = q(y0(i,sys.m(ii).iK2p));
-                K3p = q(y0(i,sys.m(ii).iK3p));
-                TP = q(yobs(i,sys.iTP));
-                d = ( h^3 + K1p * h^2 + K1p * K2p * h + K1p * K2p * K3p);
-                h3po4 = TP * h^3 / d;
-                h2po4 = TP * K1p * h^2 / d;
-                hpo4  = TP * K1p * K2p * h / d;
-                po4   = TP * K1p * K2p * K3p / d;
-                y0(i,sys.iTP)    = p(TP);
-                y0(i,sys.m(ii).ih3po4) = p(h3po4);
-                y0(i,sys.m(ii).ih2po4) = p(h2po4);
-                y0(i,sys.m(ii).ihpo4)  = p(hpo4);
-                y0(i,sys.m(ii).ipo4)   = p(po4);
-            end
-
-            if (ismember('silicate',opt.abr));
-                Ksi = q(y0(i,sys.m(ii).iKsi));
-                TSi = q(yobs(i,sys.iTSi));
-                siooh3 = TSi / ( 1 + h / Ksi );
-                sioh4  = TSi - siooh3;
-                y0(i,sys.iTSi)    = p(TSi);
-                y0(i,sys.m(ii).isiooh3) = p(siooh3);
-                y0(i,sys.m(ii).isioh4)  = p(sioh4);
-            end
-            if (ismember('ammonia',opt.abr));
-                %error('Need to implement initialization for ammonia');
-                Knh4 = q(y0(i,sys.m(ii).iKnh4));
-                TNH3 = q(yobs(i,sys.iTNH3));
-                nh3 = TNH3 / ( 1 + h / Knh4 );
-                nh4 = TNH3 - nh3 ;
-                y0(i,sys.iTNH3)      = p(TNH3);
-                y0(i,sys.m(ii).inh3)  = p(nh3);
-                y0(i,sys.m(ii).inh4)  = p(nh4);
-            end
-            if (ismember('sulfide',opt.abr))
-                %error('Need to implement initialization for sulfide');
-                Kh2s = q(y0(i,sys.m(ii).iKh2s));
-                TH2S = q(yobs(i,sys.iTH2S));
-                hs = TH2S / ( 1 + h / Kh2s );
-                h2s = TH2S - hs ;
-                y0(i,sys.iTH2S)     = p(TH2S);
-                y0(i,sys.m(ii).ihs)  = p(hs);
-                y0(i,sys.m(ii).ih2s) = p(h2s);
-            end
-            if (ismember('solubility',opt.abr))
-                Kar = q(y0(i,sys.m(ii).iKar));
-                TCal = q(yobs(i,sys.iTCal));
-                OmegaAr = co3 * TCal / Kar;
-                Kca = q(y0(i,sys.m(ii).iKca));
-                OmegaCa = co3 * TCal / Kca ;
-                y0(i,sys.iTCal)         = p(TCal);
-                y0(i,sys.m(ii).ica)      = p(TCal);
-                y0(i,sys.m(ii).iOmegaAr) = p(OmegaAr);
-                y0(i,sys.m(ii).iOmegaCa) = p(OmegaCa);
-            end
-        end
-        % add the Lagrange multipliers
-        % nlam = size(sys.M,1) + size(sys.K,1) + nTP; % (old)
-        % ^ + nTP was for each f2t (x3), now we also have ph_nbs, ph_free,
-        % and ph_sws with f2t, so nTP * 4 things
-        nlam = size(sys.M,1) + size(sys.K,1) + (nTP*4);
-        lam = zeros(nlam,1);
-        % y0i = y0(i,:);
-        z0(i,:) = [y0(i,:)';lam(:)];
-        % z0(i) = [y0i(:);lam(:)];
-        keyboard
+    dic = q(yobs(sys.iTC));
+    alk = q(yobs(sys.iTA));
+    if (isnan(dic))
+        dic = 2200e-6;
+        y0(sys.iTC) = p(dic);
+    end
+    if (isnan(alk))
+        alk = 2200e-6;
+        y0(sys.iTA) = p(alk);
     end
 
-%     y0  = yobs;
-%     dic = q(yobs(sys.iTC));
-%     alk = q(yobs(sys.iTA));
-%     if (isnan(dic))
-%         dic = 2200e-6;
-%         y0(sys.iTC) = p(dic);
-%     end
-%     if (isnan(alk))
-%         alk = 2200e-6;
-%         y0(sys.iTA) = p(alk);
-%     end
-% 
-%     nTP = length(sys.m);
-%     for i = 1:nTP
-%         % solve for the [H+] ion concentration using only the carbonate alkalinity
-%         gam = dic/alk;
-%         K0 = q(y0(sys.m(i).iK0));
-%         K1 = q(y0(sys.m(i).iK1));
-%         K2 = q(y0(sys.m(i).iK2));
-%         p2f = q(y0(sys.m(i).ip2f));
-%         h = 0.5*( ( gam - 1 ) * K1 + ( ( 1 - gam )^2 * K1^2 - 4 * K1 * K2 * ( 1 - 2 * gam ) ).^0.5 ) ;    
-%         hco3 =  h * alk / (h + 2 * K2 );
-%         co2st = h * hco3 / K1 ;
-%         %co3 = 0.5 * ( alk - hco3 ) ;
-%         co3 = dic*K1*K2/(K1*h + h*h + K1*K2) ;
-%         fco2 = co2st/K0;
-%         pco2 = fco2/p2f;
-%     
-%         y0(sys.m(i).iph)    = p(h);
-%         y0(sys.m(i).ihco3)  = p(hco3);
-%         y0(sys.m(i).ico2st) = p(co2st);
-%         y0(sys.m(i).ico3)   = p(co3);
-%         y0(sys.m(i).ifco2)  = p(fco2);
-%         y0(sys.m(i).ipco2)  = p(pco2);
-% 
-%         Kw = q(y0(sys.m(i).iKw));
-%         oh = Kw / h;
-%         y0(sys.m(i).ioh) = p(oh);
-%         
-%         Kb = q(y0(sys.m(i).iKb));
-%         TB = q(yobs(sys.iTB));
-%         %boh4 = TB / ( 1 + h / Kb );
-%         boh4 = TB * Kb / (Kb + h) ;
-%         boh3 = TB - boh4;
-%         y0(sys.iTB)   = p(TB);
-%         y0(sys.m(i).iboh3) = p(boh3);
-%         y0(sys.m(i).iboh4) = p(boh4);
-% 
-%         Ks = q(y0(sys.m(i).iKs));
-%         TS = q(yobs(sys.iTS));
-%         hfree = h / ( 1 + TS / Ks );
-%         hso4 = TS / ( 1 + Ks / hfree);
-%         so4  = Ks * hso4 / hfree;
-%         y0(sys.iTS)   = p(TS);
-%         y0(sys.m(i).iphfree)   = p(hfree);
-%         y0(sys.m(i).ihso4) = p(hso4);
-%         y0(sys.m(i).iso4)  = p(so4);
-% 
-%         Kf = q(y0(sys.m(i).iKf));
-%         TF = q(yobs(sys.iTF));
-%         HF = TF / ( 1 + Kf / h );
-%         F  = Kf * HF / h;
-%         y0(sys.iTF) = p(TF);
-%         y0(sys.m(i).iF)  = p(F);
-%         y0(sys.m(i).iHF) = p(HF);
-%     
-%         if (ismember('phosphate',opt.abr));
-%             K1p = q(y0(sys.m(i).iK1p));
-%             K2p = q(y0(sys.m(i).iK2p));
-%             K3p = q(y0(sys.m(i).iK3p));
-%             TP = q(yobs(sys.iTP));
-%             d = ( h^3 + K1p * h^2 + K1p * K2p * h + K1p * K2p * K3p);
-%             h3po4 = TP * h^3 / d;
-%             h2po4 = TP * K1p * h^2 / d;
-%             hpo4  = TP * K1p * K2p * h / d;
-%             po4   = TP * K1p * K2p * K3p / d;
-%             y0(sys.iTP)    = p(TP);
-%             y0(sys.m(i).ih3po4) = p(h3po4);
-%             y0(sys.m(i).ih2po4) = p(h2po4);
-%             y0(sys.m(i).ihpo4)  = p(hpo4);
-%             y0(sys.m(i).ipo4)   = p(po4);
-%         end
-%     
-%         if (ismember('silicate',opt.abr));
-%             Ksi = q(y0(sys.m(i).iKsi));
-%             TSi = q(yobs(sys.iTSi));
-%             siooh3 = TSi / ( 1 + h / Ksi );
-%             sioh4  = TSi - siooh3;
-%             y0(sys.iTSi)    = p(TSi);
-%             y0(sys.m(i).isiooh3) = p(siooh3);
-%             y0(sys.m(i).isioh4)  = p(sioh4);
-%         end
-%         if (ismember('ammonia',opt.abr));
-%             %error('Need to implement initialization for ammonia');
-%             Knh4 = q(y0(sys.m(i).iKnh4));
-%             TNH3 = q(yobs(sys.iTNH3));
-%             nh3 = TNH3 / ( 1 + h / Knh4 );
-%             nh4 = TNH3 - nh3 ;
-%             y0(sys.iTNH3)      = p(TNH3);
-%             y0(sys.m(i).inh3)  = p(nh3);
-%             y0(sys.m(i).inh4)  = p(nh4);
-%         end
-%         if (ismember('sulfide',opt.abr))
-%             %error('Need to implement initialization for sulfide');
-%             Kh2s = q(y0(sys.m(i).iKh2s));
-%             TH2S = q(yobs(sys.iTH2S));
-%             hs = TH2S / ( 1 + h / Kh2s );
-%             h2s = TH2S - hs ;
-%             y0(sys.iTH2S)     = p(TH2S);
-%             y0(sys.m(i).ihs)  = p(hs);
-%             y0(sys.m(i).ih2s) = p(h2s);
-%         end
-%         if (ismember('solubility',opt.abr))
-%             Kar = q(y0(sys.m(i).iKar));
-%             TCal = q(yobs(sys.iTCal));
-%             OmegaAr = co3 * TCal / Kar;
-%             Kca = q(y0(sys.m(i).iKca));
-%             OmegaCa = co3 * TCal / Kca ;
-%             y0(sys.iTCal)         = p(TCal);
-%             y0(sys.m(i).ica)      = p(TCal);
-%             y0(sys.m(i).iOmegaAr) = p(OmegaAr);
-%             y0(sys.m(i).iOmegaCa) = p(OmegaCa);
-%         end
-%     end
-%     % add the Lagrange multipliers
-%     nlam = size(sys.M,1)+size(sys.K,1)+nTP;
-%     lam = zeros(nlam,1);
-%     z0 = [y0(:);lam(:)];
+    for ii = 1:nTP
+        % solve for the [H+] ion concentration using only the carbonate alkalinity
+        gam = dic/alk;
+        K0 = q(y0(sys.m(ii).iK0));
+        K1 = q(y0(sys.m(ii).iK1));
+        K2 = q(y0(sys.m(ii).iK2));
+        p2f = q(y0(sys.m(ii).ip2f));
+        h = 0.5*( ( gam - 1 ) * K1 + ( ( 1 - gam )^2 * K1^2 - 4 * K1 * K2 * ( 1 - 2 * gam ) ).^0.5 ) ;
+        hco3 =  h * alk / (h + 2 * K2 );
+        co2st = h * hco3 / K1 ;
+        %co3 = 0.5 * ( alk - hco3 ) ;
+        co3 = dic*K1*K2/(K1*h + h*h + K1*K2) ;
+        fco2 = co2st/K0;
+        pco2 = fco2/p2f;
+
+        y0(sys.m(ii).iph)    = p(h);
+        y0(sys.m(ii).ihco3)  = p(hco3);
+        y0(sys.m(ii).ico2st) = p(co2st);
+        y0(sys.m(ii).ico3)   = p(co3);
+        y0(sys.m(ii).ifco2)  = p(fco2);
+        y0(sys.m(ii).ipco2)  = p(pco2);
+
+        Kw = q(y0(sys.m(ii).iKw));
+        oh = Kw / h;
+        y0(sys.m(ii).ioh) = p(oh);
+
+        Kb = q(y0(sys.m(ii).iKb));
+        TB = q(yobs(sys.iTB));
+        %boh4 = TB / ( 1 + h / Kb );
+        boh4 = TB * Kb / (Kb + h) ;
+        boh3 = TB - boh4;
+        y0(sys.iTB)   = p(TB);
+        y0(sys.m(ii).iboh3) = p(boh3);
+        y0(sys.m(ii).iboh4) = p(boh4);
+
+        Ks = q(y0(sys.m(ii).iKs));
+        TS = q(yobs(sys.iTS));
+        hfree = h / ( 1 + TS / Ks );
+        hso4 = TS / ( 1 + Ks / hfree);
+        so4  = Ks * hso4 / hfree;
+        y0(sys.iTS)   = p(TS);
+        y0(sys.m(ii).iphfree)   = p(hfree);
+        y0(sys.m(ii).ihso4) = p(hso4);
+        y0(sys.m(ii).iso4)  = p(so4);
+
+        Kf = q(y0(sys.m(ii).iKf));
+        TF = q(yobs(sys.iTF));
+        HF = TF / ( 1 + Kf / h );
+        F  = Kf * HF / h;
+        y0(sys.iTF) = p(TF);
+        y0(sys.m(ii).iF)  = p(F);
+        y0(sys.m(ii).iHF) = p(HF);
+
+        free2tot = (1 + TS./Ks);
+        sws2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
+        fH = q(y0(sys.m(ii).ipfH));
+
+        ph_tot = p(h);
+        ph_nbs  = ph_tot - log(sws2tot)./log(0.1) + log(fH)/log(0.1);
+        ph_free = ph_tot - log(free2tot)./log(0.1);
+        ph_sws  = ph_tot - log(sws2tot)./log(0.1);
+        y0(sys.m(ii).iph_sws) = ph_sws;
+        y0(sys.m(ii).iph_free) = ph_free;
+        y0(sys.m(ii).iph_nbs) = ph_nbs;
+
+        if (ismember('phosphate',opt.abr))
+            K1p = q(y0(sys.m(ii).iK1p));
+            K2p = q(y0(sys.m(ii).iK2p));
+            K3p = q(y0(sys.m(ii).iK3p));
+            TP = q(yobs(sys.iTP));
+            d = ( h^3 + K1p * h^2 + K1p * K2p * h + K1p * K2p * K3p);
+            h3po4 = TP * h^3 / d;
+            h2po4 = TP * K1p * h^2 / d;
+            hpo4  = TP * K1p * K2p * h / d;
+            po4   = TP * K1p * K2p * K3p / d;
+            y0(sys.iTP)    = p(TP);
+            y0(sys.m(ii).ih3po4) = p(h3po4);
+            y0(sys.m(ii).ih2po4) = p(h2po4);
+            y0(sys.m(ii).ihpo4)  = p(hpo4);
+            y0(sys.m(ii).ipo4)   = p(po4);
+        end
+
+        if (ismember('silicate',opt.abr))
+            Ksi = q(y0(sys.m(ii).iKsi));
+            TSi = q(yobs(sys.iTSi));
+            siooh3 = TSi / ( 1 + h / Ksi );
+            sioh4  = TSi - siooh3;
+            y0(sys.iTSi)    = p(TSi);
+            y0(sys.m(ii).isiooh3) = p(siooh3);
+            y0(sys.m(ii).isioh4)  = p(sioh4);
+        end
+        if (ismember('ammonia',opt.abr))
+            %error('Need to implement initialization for ammonia');
+            Knh4 = q(y0(sys.m(ii).iKnh4));
+            TNH3 = q(yobs(sys.iTNH3));
+            nh3 = TNH3 / ( 1 + h / Knh4 );
+            nh4 = TNH3 - nh3 ;
+            y0(sys.iTNH3)      = p(TNH3);
+            y0(sys.m(ii).inh3)  = p(nh3);
+            y0(sys.m(ii).inh4)  = p(nh4);
+        end
+        if (ismember('sulfide',opt.abr))
+            %error('Need to implement initialization for sulfide');
+            Kh2s = q(y0(sys.m(ii).iKh2s));
+            TH2S = q(yobs(sys.iTH2S));
+            hs = TH2S / ( 1 + h / Kh2s );
+            h2s = TH2S - hs ;
+            y0(sys.iTH2S)     = p(TH2S);
+            y0(sys.m(ii).ihs)  = p(hs);
+            y0(sys.m(ii).ih2s) = p(h2s);
+        end
+        if (ismember('solubility',opt.abr))
+            Kar = q(y0(sys.m(ii).iKar));
+            TCal = q(yobs(sys.iTCal));
+            OmegaAr = co3 * TCal / Kar;
+            Kca = q(y0(sys.m(ii).iKca));
+            OmegaCa = co3 * TCal / Kca ;
+            y0(sys.iTCal)         = p(TCal);
+            y0(sys.m(ii).ica)      = p(TCal);
+            y0(sys.m(ii).iOmegaAr) = p(OmegaAr);
+            y0(sys.m(ii).iOmegaCa) = p(OmegaCa);
+        end
+    end
+    % add the Lagrange multipliers
+    % nlam = size(sys.M,1) + size(sys.K,1) + nTP; % (old)
+    % ^ + nTP was for each f2t (x3), now we also have ph_nbs, ph_free,
+    % and ph_sws with f2t, so nTP * 4 things
+    nlam = size(sys.M,1) + size(sys.K,1) + (nTP*4);
+    lam = zeros(nlam,1);
+    z0 = [y0(:);lam(:)];
+    
+
+
+
+
+    % q = sys.q;
+    % p = sys.p;
+    % 
+    % nD = size(yobs,1);
+    % y0  = yobs;
+    % 
+    % nTP = length(sys.m);
+    % nz0 = length(yobs) + size(sys.M,1) + size(sys.K,1) + (nTP*4);
+    % 
+    % z0 = zeros(nTP,nz0); %initialize it
+    % 
+    % for i = 1:nD
+    % 
+    %     dic = q(yobs(i,sys.iTC));
+    %     alk = q(yobs(i,sys.iTA));
+    %     if (isnan(dic))
+    %         dic = 2200e-6;
+    %         y0(sys.iTC) = p(dic);
+    %     end
+    %     if (isnan(alk))
+    %         alk = 2200e-6;
+    %         y0(sys.iTA) = p(alk);
+    %     end
+    % 
+    %     for ii = 1:nTP
+    %         % solve for the [H+] ion concentration using only the carbonate alkalinity
+    %         gam = dic/alk;
+    %         K0 = q(y0(i,sys.m(ii).iK0));
+    %         K1 = q(y0(i,sys.m(ii).iK1));
+    %         K2 = q(y0(i,sys.m(ii).iK2));
+    %         p2f = q(y0(i,sys.m(ii).ip2f));
+    %         h = 0.5*( ( gam - 1 ) * K1 + ( ( 1 - gam )^2 * K1^2 - 4 * K1 * K2 * ( 1 - 2 * gam ) ).^0.5 ) ;
+    %         hco3 =  h * alk / (h + 2 * K2 );
+    %         co2st = h * hco3 / K1 ;
+    %         %co3 = 0.5 * ( alk - hco3 ) ;
+    %         co3 = dic*K1*K2/(K1*h + h*h + K1*K2) ;
+    %         fco2 = co2st/K0;
+    %         pco2 = fco2/p2f;
+    % 
+    %         y0(i,sys.m(ii).iph)    = p(h);
+    %         y0(i,sys.m(ii).ihco3)  = p(hco3);
+    %         y0(i,sys.m(ii).ico2st) = p(co2st);
+    %         y0(i,sys.m(ii).ico3)   = p(co3);
+    %         y0(i,sys.m(ii).ifco2)  = p(fco2);
+    %         y0(i,sys.m(ii).ipco2)  = p(pco2);
+    % 
+    %         Kw = q(y0(i,sys.m(ii).iKw));
+    %         oh = Kw / h;
+    %         y0(i,sys.m(ii).ioh) = p(oh);
+    % 
+    %         Kb = q(y0(i,sys.m(ii).iKb));
+    %         TB = q(yobs(i,sys.iTB));
+    %         %boh4 = TB / ( 1 + h / Kb );
+    %         boh4 = TB * Kb / (Kb + h) ;
+    %         boh3 = TB - boh4;
+    %         y0(i,sys.iTB)   = p(TB);
+    %         y0(i,sys.m(ii).iboh3) = p(boh3);
+    %         y0(i,sys.m(ii).iboh4) = p(boh4);
+    % 
+    %         Ks = q(y0(i,sys.m(ii).iKs));
+    %         TS = q(yobs(i,sys.iTS));
+    %         hfree = h / ( 1 + TS / Ks );
+    %         hso4 = TS / ( 1 + Ks / hfree);
+    %         so4  = Ks * hso4 / hfree;
+    %         y0(i,sys.iTS)   = p(TS);
+    %         y0(i,sys.m(ii).iphfree)   = p(hfree);
+    %         y0(i,sys.m(ii).ihso4) = p(hso4);
+    %         y0(i,sys.m(ii).iso4)  = p(so4);
+    % 
+    %         Kf = q(y0(i,sys.m(ii).iKf));
+    %         TF = q(yobs(i,sys.iTF));
+    %         HF = TF / ( 1 + Kf / h );
+    %         F  = Kf * HF / h;
+    %         y0(i,sys.iTF) = p(TF);
+    %         y0(i,sys.m(ii).iF)  = p(F);
+    %         y0(i,sys.m(ii).iHF) = p(HF);
+    % 
+    %         free2tot = (1 + TS./Ks);
+    %         sws2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
+    %         fH = q(y0(i,sys.m(ii).ipfH));
+    % 
+    %         ph_tot = p(h);
+    %         ph_nbs  = ph_tot - log(sws2tot)./log(0.1) + log(fH)/log(0.1);
+    %         ph_free = ph_tot - log(free2tot)./log(0.1);
+    %         ph_sws  = ph_tot - log(sws2tot)./log(0.1);
+    %         y0(i,sys.m(ii).iph_sws) = ph_sws;
+    %         y0(i,sys.m(ii).iph_free) = ph_free;
+    %         y0(i,sys.m(ii).iph_nbs) = ph_nbs;
+    % 
+    %         if (ismember('phosphate',opt.abr))
+    %             K1p = q(y0(i,sys.m(ii).iK1p));
+    %             K2p = q(y0(i,sys.m(ii).iK2p));
+    %             K3p = q(y0(i,sys.m(ii).iK3p));
+    %             TP = q(yobs(i,sys.iTP));
+    %             d = ( h^3 + K1p * h^2 + K1p * K2p * h + K1p * K2p * K3p);
+    %             h3po4 = TP * h^3 / d;
+    %             h2po4 = TP * K1p * h^2 / d;
+    %             hpo4  = TP * K1p * K2p * h / d;
+    %             po4   = TP * K1p * K2p * K3p / d;
+    %             y0(i,sys.iTP)    = p(TP);
+    %             y0(i,sys.m(ii).ih3po4) = p(h3po4);
+    %             y0(i,sys.m(ii).ih2po4) = p(h2po4);
+    %             y0(i,sys.m(ii).ihpo4)  = p(hpo4);
+    %             y0(i,sys.m(ii).ipo4)   = p(po4);
+    %         end
+    % 
+    %         if (ismember('silicate',opt.abr))
+    %             Ksi = q(y0(i,sys.m(ii).iKsi));
+    %             TSi = q(yobs(i,sys.iTSi));
+    %             siooh3 = TSi / ( 1 + h / Ksi );
+    %             sioh4  = TSi - siooh3;
+    %             y0(i,sys.iTSi)    = p(TSi);
+    %             y0(i,sys.m(ii).isiooh3) = p(siooh3);
+    %             y0(i,sys.m(ii).isioh4)  = p(sioh4);
+    %         end
+    %         if (ismember('ammonia',opt.abr))
+    %             %error('Need to implement initialization for ammonia');
+    %             Knh4 = q(y0(i,sys.m(ii).iKnh4));
+    %             TNH3 = q(yobs(i,sys.iTNH3));
+    %             nh3 = TNH3 / ( 1 + h / Knh4 );
+    %             nh4 = TNH3 - nh3 ;
+    %             y0(i,sys.iTNH3)      = p(TNH3);
+    %             y0(i,sys.m(ii).inh3)  = p(nh3);
+    %             y0(i,sys.m(ii).inh4)  = p(nh4);
+    %         end
+    %         if (ismember('sulfide',opt.abr))
+    %             %error('Need to implement initialization for sulfide');
+    %             Kh2s = q(y0(i,sys.m(ii).iKh2s));
+    %             TH2S = q(yobs(i,sys.iTH2S));
+    %             hs = TH2S / ( 1 + h / Kh2s );
+    %             h2s = TH2S - hs ;
+    %             y0(i,sys.iTH2S)     = p(TH2S);
+    %             y0(i,sys.m(ii).ihs)  = p(hs);
+    %             y0(i,sys.m(ii).ih2s) = p(h2s);
+    %         end
+    %         if (ismember('solubility',opt.abr))
+    %             Kar = q(y0(i,sys.m(ii).iKar));
+    %             TCal = q(yobs(i,sys.iTCal));
+    %             OmegaAr = co3 * TCal / Kar;
+    %             Kca = q(y0(i,sys.m(ii).iKca));
+    %             OmegaCa = co3 * TCal / Kca ;
+    %             y0(i,sys.iTCal)         = p(TCal);
+    %             y0(i,sys.m(ii).ica)      = p(TCal);
+    %             y0(i,sys.m(ii).iOmegaAr) = p(OmegaAr);
+    %             y0(i,sys.m(ii).iOmegaCa) = p(OmegaCa);
+    %         end
+    %     end
+    %     % add the Lagrange multipliers
+    %     % nlam = size(sys.M,1) + size(sys.K,1) + nTP; % (old)
+    %     % ^ + nTP was for each f2t (x3), now we also have ph_nbs, ph_free,
+    %     % and ph_sws with f2t, so nTP * 4 things
+    %     nlam = size(sys.M,1) + size(sys.K,1) + (nTP*4);
+    %     lam = zeros(nlam,1);
+    %     z0(i,:) = [y0(i,:)';lam(:)];
+    % end
 end
+
+
+
+
+
 
