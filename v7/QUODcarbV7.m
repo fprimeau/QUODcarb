@@ -134,6 +134,7 @@ function [est,obs,iflag] = QUODcarbV7(obs,opt)
 
         if (sum(isnan(sigy)) > 0) && (opt.printmes ~= 0)
             fprintf('NaN found in output means faulty run. i = %i\n',i)
+            % keyboard
         end
         % populate est
         [est(i)] = parse_output(z,sigy,opt,sys);
@@ -166,7 +167,7 @@ function [g,H] = grad_limpco2(z,y,w,sys,opt)
     end
     g = real( g(:) );
     % [ g, test_g ]
-    %keyboard
+    keyboard
 end
 
 % ---------------------------------------------------------------------------------
@@ -262,7 +263,7 @@ function [f,g] = limpco2(z,y,w,sys,opt)
         H = [  PP.'*W*PP + gg , dcdx.'  ; ...
                dcdx         , zeros(nlam)  ];
     end
-    %keyboard
+    % keyboard
 end
 
 % -----------------------------------------------------------------------------------
@@ -2143,9 +2144,7 @@ function ph_all = phscales(phin,scalein,TS,Ks,TF,Kf,pfH)
     % input TS, Ks, TF, Kf
     free2tot = (1 + TS./Ks);
     sws2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
-    % down IS WRONG %%%% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    fH = q(pHf);
-    % THIS ^^ IS WRONG WRONG WRONG CHANGE IT CHANGE IT !!! %%%% !!!!! %%%%
+    fH = q(pfH);
     % 1 = total scale, 2 = sea water scale, 3 = free scale, 4 = NBS
     if scalein == 1
         % total scale

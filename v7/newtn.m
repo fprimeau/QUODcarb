@@ -21,7 +21,7 @@ function [x,J,iflag] = newtn(x0, F, tol)
     if (nargin==4)
         [F0,iJ] = F(x);
     else
-        [F0, J] = F(x);
+        [F0, J] = F(x); 
     end
     iflag = 0; itno = 0;
     while (((norm(F0) > tol) && (itno<MAXIT)) )

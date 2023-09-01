@@ -446,11 +446,11 @@ function out = PrintCSVv7(varargin)
             fprintf(fid,'%f, ', est.m(j).pKb);
             fprintf(fid,'%f, ', est.m(j).epKb);
 
-            % hf (Hfree)
-            fprintf(fid,'%f, ', obs.m(j).phf);
-            fprintf(fid,'%f, ', obs.m(j).ephf);
-            fprintf(fid,'%f, ', est.m(j).phf);
-            fprintf(fid,'%f, ', est.m(j).ephf);
+            % hf (Hfree) ???? COME back to this MARINA !!!! %%%%%
+            % fprintf(fid,'%f, ', obs.m(j).phf);
+            % fprintf(fid,'%f, ', obs.m(j).ephf);
+            % fprintf(fid,'%f, ', est.m(j).phf);
+            % fprintf(fid,'%f, ', est.m(j).ephf);
             % so4
             fprintf(fid,'%f, ', obs.m(j).so4);
             fprintf(fid,'%f, ', obs.m(j).eso4);
