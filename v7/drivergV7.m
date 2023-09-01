@@ -1,5 +1,5 @@
 
-% drivergV6 to go with QUODcarbV6
+% drivergV7 to go with QUODcarbV7
 
 % updated opt (options) structure
 
@@ -9,7 +9,7 @@ format long
 
 load datag.mat;
 [in] = datag;
-nD = 1186; % until UW start, or before: %length(in);
+nD = 5; %1186; % until UW start, or before: %length(in);
 
 % choose options for opt structure
 opt.K1K2 = 10; % option for K1K2 formulation
@@ -17,8 +17,8 @@ opt.KSO4 = 1; % option for KSO4 formulation
 opt.KF   = 2; % option for KF formulation
 opt.TB   = 2; % option for TB formulation
 opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
-opt.printcsv = 0; % print est to CSV? 1 = on , 0 = off
-%opt.fid      = 'CT_AT_K10.csv'; % don't need it if printcsv is off
+opt.printcsv = 1; % print est to CSV? 1 = on , 0 = off
+opt.fid      = 'CT_AT.csv'; % don't need it if printcsv is off
 opt.printmes = 1; % print screen messages? 1 = on, 0 = off
 opt.abr = 'all'; % option for which acid/base reactions to include
     % opt.abr = {'all'}; % same as below
@@ -75,46 +75,33 @@ for i = 1:nD
     obs(i).m(3).epco2 = in(i+ad,12)*0.0021; % 0.21% relative std error (avg)
 
 end
-% fid2 = 'compare_CT_AT_.csv';
+fid2 = 'compare_CT_AT.csv';
 % [A] = compare2(obs,est,opt,2,1,fid2);
 obs_backup = obs;
 
-% organic alk correction for fid04
-for i = 1:nD
-    y04 = (0.0027 * obs(i).m(1).P) - 2.9869;
 
-    obs(i).TA = obs(i).TA - y04;
+% TA TC (Q2) (fid2)
+for i = 1:nD
+    obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
+    obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
+    obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 end
+[est,obs,iflag] = QUODcarbV7(obs,opt);
+est02   = est;
+[A] = compare2(obs,est,opt,2,1,fid2);
+
 % CT AT pH pCO2 CO3 (Q5) (fid5)
 obs = obs_backup;
-[est,obs,iflag] = QUODcarbV6(obs,opt);
-est_04corr = est;
-save org_alk/est_04corr.mat est_04corr;
+[est,obs,iflag] = QUODcarbV7(obs,opt);
+est05 = est;
 
-obs = obs_backup;
 
-% organic alk correction for fid33
-for i = 1:nD
-    y33 = (0.0057 * obs(i).m(1).P) + 1.1263;
-
-    obs(i).TA = obs(i).TA - y33;
-end
 % CT AT pH pCO2 CO3 (Q5) (fid5)
 obs = obs_backup;
-[est,obs,iflag] = QUODcarbV6(obs,opt);
-est_33corr = est;
-save org_alk/est_33corr.mat est_33corr;
+[est,obs,iflag] = QUODcarbV7(obs,opt);
+est33 = est;
 
 
-% 
-% % TA TC (Q2) (fid2)
-% for i = 1:nD
-%     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
-%     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
-%     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
-% end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
-% est02   = est;
 % 
 % 
 % % TA ph (Q2) (fid3)
@@ -124,7 +111,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 %     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est03   = est;
 % 
 % 
@@ -135,7 +122,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 %     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est04   = est;
 % 
 % 
@@ -146,7 +133,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TA = nan;        obs(i).eTA = nan;
 %     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est10   = est;
 % 
 % 
@@ -157,7 +144,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TA = nan;        obs(i).eTA = nan;
 %     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est11   = est;
 % 
 % 
@@ -168,7 +155,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 %     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est12   = est;
 % 
 % 
@@ -179,7 +166,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 %     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est13   = est;
 % 
 % % TA pCO2 (Q2)(fid14)
@@ -189,7 +176,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 %     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est14   = est;
 % 
 % 
@@ -200,7 +187,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 %     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est15   = est;
 % 
 % 
@@ -211,7 +198,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TA = nan; obs(i).eTA = nan;
 %     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est16   = est;
 % 
 % 
@@ -221,7 +208,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 %     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est20   = est;
 % 
 % 
@@ -231,7 +218,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 %     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est21   = est;
 % 
 % 
@@ -241,7 +228,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).m(3).pco2 = nan; obs(i).m(2).epco2 = nan;
 %     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est22   = est;
 % 
 % 
@@ -251,7 +238,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TA = nan;        obs(i).eTA = nan;
 %     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est23   = est;
 % 
 % 
@@ -261,7 +248,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TA = nan;        obs(i).eTA = nan;
 %     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est24   = est;
 % 
 % 
@@ -271,7 +258,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TA = nan;        obs(i).eTA = nan;
 %     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est25   = est;
 % 
 % 
@@ -281,7 +268,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TC = nan;        obs(i).eTC = nan;
 %     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est26   = est;
 % 
 % 
@@ -291,7 +278,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TC = nan;        obs(i).eTC = nan;
 %     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est27   = est;
 % 
 % 
@@ -301,7 +288,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TC = nan;        obs(i).eTC = nan;
 %     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est28   = est;
 % 
 % 
@@ -311,7 +298,7 @@ save org_alk/est_33corr.mat est_33corr;
 %     obs(i).TA = nan;    obs(i).eTA = nan;
 %     obs(i).TC = nan;    obs(i).eTC = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est29   = est;
 % 
 % 
@@ -320,7 +307,7 @@ save org_alk/est_33corr.mat est_33corr;
 % for i = 1:nD
 %     obs(i).m(2).co3 = nan; obs(i).m(2).eco3 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est30   = est;
 % 
 % 
@@ -329,7 +316,7 @@ save org_alk/est_33corr.mat est_33corr;
 % for i = 1:nD
 %     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est31   = est;
 % 
 % 
@@ -338,7 +325,7 @@ save org_alk/est_33corr.mat est_33corr;
 % for i = 1:nD
 %     obs(i).m(2).ph = nan; obs(i).m(2).eph = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est32   = est;
 % 
 % 
@@ -347,7 +334,7 @@ save org_alk/est_33corr.mat est_33corr;
 % for i = 1:nD
 %     obs(i).TA = nan; obs(i).eTA = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est33   = est;
 % 
 % 
@@ -356,39 +343,39 @@ save org_alk/est_33corr.mat est_33corr;
 % for i = 1:nD
 %     obs(i).TC = nan; obs(i).eTC = nan;
 % end
-% [est,obs,iflag] = QUODcarbV6(obs,opt);
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est34  = est;
 
 
 
-%save calc_f_files/est05v6K11.mat est05;
+%save calc_f_files/est05V7K11.mat est05;
 % 
-% save estV6/est02.mat est02;
-% save estV6/est03.mat est03;
-% save estV6/est04.mat est04;
-% save estV6/est05.mat est05;
-% save estV6/est10.mat est10;
-% save estV6/est11.mat est11;
-% save estV6/est12.mat est12;
-% save estV6/est13.mat est13;
-% save estV6/est14.mat est14;
-% save estV6/est15.mat est15;
-% save estV6/est16.mat est16;
-% save estV6/est20.mat est20;
-% save estV6/est21.mat est21;
-% save estV6/est22.mat est22;
-% save estV6/est23.mat est23;
-% save estV6/est24.mat est24;
-% save estV6/est25.mat est25;
-% save estV6/est26.mat est26;
-% save estV6/est27.mat est27;
-% save estV6/est28.mat est28;
-% save estV6/est29.mat est29;
-% save estV6v2/est30.mat est30;
-% save estV6v2/est31.mat est31;
-% save estV6v2/est32.mat est32;
-% save estV6v2/est33.mat est33;
-% save estV6v2/est34.mat est34;
+% save estV7/est02.mat est02;
+% save estV7/est03.mat est03;
+% save estV7/est04.mat est04;
+% save estV7/est05.mat est05;
+% save estV7/est10.mat est10;
+% save estV7/est11.mat est11;
+% save estV7/est12.mat est12;
+% save estV7/est13.mat est13;
+% save estV7/est14.mat est14;
+% save estV7/est15.mat est15;
+% save estV7/est16.mat est16;
+% save estV7/est20.mat est20;
+% save estV7/est21.mat est21;
+% save estV7/est22.mat est22;
+% save estV7/est23.mat est23;
+% save estV7/est24.mat est24;
+% save estV7/est25.mat est25;
+% save estV7/est26.mat est26;
+% save estV7/est27.mat est27;
+% save estV7/est28.mat est28;
+% save estV7/est29.mat est29;
+% save estV7v2/est30.mat est30;
+% save estV7v2/est31.mat est31;
+% save estV7v2/est32.mat est32;
+% save estV7v2/est33.mat est33;
+% save estV7v2/est34.mat est34;
 
 
 
