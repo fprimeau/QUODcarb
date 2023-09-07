@@ -76,7 +76,6 @@ function sys = mksysV7(obs,abr)
     end
 
     nTP = length(obs.m); % number of different (T,P) measurements
-%     m = struct;
 
     for j = 1:nTP
         if (isgood(obs.m(j).T) && isgood(obs.m(j).P))
@@ -97,9 +96,9 @@ function sys = mksysV7(obs,abr)
         m(j).ihco3    = i;  i = i + 1;
         m(j).ico3     = i;  i = i + 1;
         m(j).iph      = i;  i = i + 1; % ph_tot
-        m(j).iph_sws  = i;  i = i + 1;
+        % m(j).iph_sws  = i;  i = i + 1;
         m(j).iph_free = i;  i = i + 1;
-        m(j).iph_nbs  = i;  i = i + 1; % TYPO HAD m(i) -MF 08/30 4pm
+        % m(j).iph_nbs  = i;  i = i + 1; % TYPO HAD m(i) -MF 08/30 4pm
         m(j).ip2f     = i;  i = i + 1;
         m(j).ipco2    = i;  i = i + 1;
         m(j).ipfH     = i; % fH activity coefficient
@@ -118,6 +117,7 @@ function sys = mksysV7(obs,abr)
         % Ks  = [hf][so4]/[hso4]
         nrk = nrk + 1;      i = i + 1;
         m(j).iKs     = i;   i = i + 1;
+        % m(j).iphf = i;      i = i + 1; % COMMENT OUT for v7
         m(j).iso4    = i;   i = i + 1;
         m(j).ihso4   = i;
 
@@ -201,7 +201,7 @@ function sys = mksysV7(obs,abr)
         m(j).kK2 = row;
         K(row, m(j).iK2) = 1; 
         
-        %fco2 = pco2*p2f;
+        % fco2 = pco2 * p2f;
         row = row + 1;
         K(row,[ m(j).ifco2, m(j).ipco2, m(j).ip2f ]) = [-1 1 1];
         row = row + 1;
@@ -227,6 +227,8 @@ function sys = mksysV7(obs,abr)
         row = row+1;
         K(row,[ m(j).iKs, m(j).iph_free, m(j).iso4, m(j).ihso4 ]) = ...
             [-1, 1, 1, -1];
+        % K(row,[ m(j).iKs, m(j).ipfH, m(j).iso4, m(j).ihso4 ]) = ...
+        %     [-1, 1, 1, -1];
         row = row+1;
         m(j).kKs = row;
         K(row, m(j).iKs) = 1; % Ks
@@ -246,6 +248,7 @@ function sys = mksysV7(obs,abr)
             row = row + 1;
             m(j).kK1p = row;
             K(row, m(j).iK1p) = 1; % K1p
+
             % K2p = [H][HPO4]/[H2PO4]
             row = row + 1;
             K(row,[ m(j).iK2p, m(j).iph, m(j).ihpo4, m(j).ih2po4 ]) = ...
@@ -253,6 +256,7 @@ function sys = mksysV7(obs,abr)
             row = row + 1;
             m(j).kK2p = row;
             K(row, m(j).iK2p) = 1; % K2p
+
             % K3p = [H][PO4]/[HPO4]        
             row = row + 1;
             K(row,[ m(j).iK3p, m(j).iph, m(j).ipo4, m(j).ihpo4 ]) = ...
@@ -296,6 +300,7 @@ function sys = mksysV7(obs,abr)
             row = row + 1;
             m(j).kKar = row;
             K(row, m(j).iKar) = 1; 
+
             % Kca = [co3][ca]/OmegaCa ==> -pKca + pco3 + pca - pOmegaCa = 0
             row = row + 1;
             K(row, [ m(j).iKca, m(j).ico3, m(j).ica, m(j).iOmegaCa]) = ...
@@ -349,24 +354,26 @@ function sys = mksysV7(obs,abr)
         row = row + 1;
         M(row, [ iTS, m(j).ihso4, m(j).iso4 ])   =  [1, -1, -1];
         M(row_alk,[ m(j).iph_free, m(j).ihso4 ])  =  [1, 1];
+        % M(row_alk,[ m(j).ipfH, m(j).ihso4 ])   =  [1, 1]; 
         m(j).jTS = row;
 
-%         % free2tot = f2t = (1 + TS/Ks) ;
-        % m(j).f2t = @(z) z(m(j).iph_free)  + p( q( z(m(j).iKs) ) +...
+%         % free2tot = f2t = (1 + TS/Ks) ; % ph_free or phf
+        % m(j).f2t = @(z) z(m(j).ipfH)  + p( q( z(m(j).iKs) ) + ...
         %     q( z(iTS) ) ) - z(m(j).iKs) - z(m(j).iph);
-%         f2t_phf = @(z)  1;
-%         f2t_ph  = @(z) -1;
-%         f2t_pTS = @(z) dpdx( q( z(m(j).iKs) ) + q( z(iTS) ) ) * dqdx( z(iTS) );
-%         f2t_pKs = @(z) dpdx( q( z(m(j).iKs) ) + q( z(iTS) ) ) * dqdx( z(m(j).iKs) ) - 1;
-%         f2t_2pKs = @(z) dpdx( q( z(m(j).iKs) ) + ...
-%             q( z(iTS) ) ) * d2qdx2( z(m(j).iKs) ) + ...
-%             d2pdx2( q( z(m(j).iKs) ) + q( z(iTS) ) ) * dqdx( z(m(j).iKs) ).^2;
-%         f2t_2pTS = @(z) dpdx( q( z(m(j).iKs) ) + q( z(iTS) ) ) * d2qdx2( z(iTS) ) + ...
-%             d2pdx2( q( m(j).z(iKs) ) + q( m(j).z(iTS) ) ) * dqdx( z(iTS) ).^2;
-%         f2t_pTS_pKs = @(z) d2pdx2( q( z(m(j).iKs) ) + q( z(iTS) ) ) * dqdx( z(iTS) ) * dqdx( z(m(j).iKs) );
-%         m(j).gf2t = @(z) [ f2t_ph(z), f2t_pKs(z), f2t_pTS(z), f2t_phf(z) ];
-%         m(j).ggf2t = @(z) [ [f2t_2pKs(z), f2t_pTS_pKs(z)]; ...
-%             [f2t_pTS_pKs(z), f2t_2pTS(z)]  ];
+        % f2t_phf = @(z)  1;
+        % f2t_ph  = @(z) -1;
+        % f2t_pTS = @(z) dpdx( q( z(m(j).iKs) ) + q( z(iTS) ) ) * dqdx( z(iTS) );
+        % f2t_pKs = @(z) dpdx( q( z(m(j).iKs) ) + q( z(iTS) ) ) * dqdx( z(m(j).iKs) ) - 1;
+        % f2t_2pKs = @(z) dpdx( q( z(m(j).iKs) ) + ...
+        %     q( z(iTS) ) ) * d2qdx2( z(m(j).iKs) ) + ...
+        %     d2pdx2( q( z(m(j).iKs) ) + q( z(iTS) ) ) * dqdx( z(m(j).iKs) ).^2;
+        % f2t_2pTS = @(z) dpdx( q( z(m(j).iKs) ) + q( z(iTS) ) ) * d2qdx2( z(iTS) ) + ...
+        %     d2pdx2( q( m(j).z(iKs) ) + q( m(j).z(iTS) ) ) * dqdx( z(iTS) ).^2;
+        % f2t_pTS_pKs = @(z) d2pdx2( q( z(m(j).iKs) ) + q( z(iTS) ) ) * dqdx( z(iTS) ) ...
+        %     * dqdx( z(m(j).iKs) );
+        % m(j).gf2t = @(z) [ f2t_ph(z), f2t_pKs(z), f2t_pTS(z), f2t_phf(z) ];
+        % m(j).ggf2t = @(z) [ [f2t_2pKs(z), f2t_pTS_pKs(z)]; ...
+        %     [f2t_pTS_pKs(z), f2t_2pTS(z)]  ];
         
         % Total fluoride
         row = row + 1;
@@ -376,8 +383,10 @@ function sys = mksysV7(obs,abr)
         
         if (ismember('phosphate',abr))
             row = row + 1;
-            M(row, [ iTP,m(j).ih3po4, m(j).ih2po4, m(j).ihpo4, m(j).ipo4 ])    =  [1, -1, -1, -1, -1];
-            M(row_alk, [ m(j).ihpo4, m(j).ipo4, m(j).ih3po4 ])  = [-1, -2, 1]; 
+            M(row, [ iTP,m(j).ih3po4, m(j).ih2po4, m(j).ihpo4, m(j).ipo4 ]) ...
+                = [1, -1, -1, -1, -1];
+            M(row_alk, [ m(j).ihpo4, m(j).ipo4, m(j).ih3po4 ]) ...
+                = [-1, -2, 1]; 
             m(j).jTP = row;
         end
         if (ismember('silicate',abr))
@@ -404,54 +413,54 @@ function sys = mksysV7(obs,abr)
             m(j).jTCal = row;
         end
 
-        % pH scale conversion factors as functions to solve in QUODcarb.m
-
-        % ph_nbs = ph_tot + p(SWS2tot) - p(fH) 
-        %   where SWS2tot = (1 + TS/Ks)/(1 + TS/Ks + TF/Kf) and ph_tot = ph
-        m(j).ph_nbs = @(z) z(m(j).iph) ...                              % (_)
-            + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...   % (_)
-            - p( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                   % (_
-            + q(z(iTF) ) / q( z(m(j).iKf)) ) ...                        %   _)
-            - z(m(j).ipfH) ;                                            % (_)
-        ph_nbs_pTS = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...    % (_)
-            dqdx( z(iTS) ) ...                                          % (_)
-            - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
-            + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
-            (dqdx( z(iTS)) / z(m(j).iKs) );                             % (_)
-        ph_nbs_pKs = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...    % (_)
-            dqdx( z(m(j).iKs) ) - 1 ...                                 % (_) (_)
-            - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
-            + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
-            (dqdx ( q( z(m(j).iKs))^(-1) ) ) * q( z(iTS)) * ...         % (_) (_)
-            (-1 * ( q( z(m(j).iKs))^(-2) ) );                           % (_)
-        ph_nbs_pTF = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...   % (_
-            + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
-            (dqdx( z(iTF)) / q( z(m(j).iKf)) );                         % (_)
-        ph_nbs_pKf = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...   % (_
-            + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
-            (dqdx ( q( z(m(j).iKf))^(-1) ) ) * q( z(iTF)) * ...         % (_) (_)
-            (-1 * ( q( z(m(j).iKf))^(-2) ) );                           % (_)  
-        ph_nbs_phtot = 1;
-        ph_nbs_pfH = 1;
-        m(j).gph_nbs = @(z) [ ph_nbs_pTS(z), ph_nbs_pKs(z), ...
-            ph_nbs_pTF(z), ph_nbs_pKf(z), ph_nbs_phtot, ph_nbs_pfH ];
-        % let's do ggph_nbs with complex step
-
-        % ph_sws = ph_tot + p(SWS2tot)
-        %   where SWS2tot = (1 + TS/Ks)/(1 + TS/Ks + TF/Kf) and ph_tot = ph
-        m(j).ph_sws = @(z) z(m(j).iph) ...                              % (_)
-            + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...   % (_)
-            - p( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                   % (_
-            + q(z(iTF) ) / q( z(m(j).iKf)) ) ;                          %   _)
-        ph_sws_pTS = @(z) ph_nbs_pTS(z);
-        ph_sws_pKs = @(z) ph_nbs_pKs(z);
-        ph_sws_pTF = @(z) ph_nbs_pTF(z);
-        ph_sws_pKf = @(z) ph_nbs_pKf(z);
-        ph_sws_phtot = 1;
-        ph_sws_pfH = 0;
-        m(j).gph_sws = @(z) [ ph_sws_pTS(z), ph_sws_pKs(z), ...
-            ph_sws_pTF(z), ph_sws_pKf(z), ph_sws_phtot, ph_sws_pfH ];
-        % let's do ggph_sws with complex step
+        % % pH scale conversion factors as functions to solve in QUODcarb.m
+        % 
+        % % ph_nbs = ph_tot + p(SWS2tot) - p(fH) 
+        % %   where SWS2tot = (1 + TS/Ks)/(1 + TS/Ks + TF/Kf) and ph_tot = ph
+        % m(j).ph_nbs = @(z) z(m(j).iph) ...                              % (_)
+        %     + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...   % (_)
+        %     - p( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                   % (_
+        %     + q(z(iTF) ) / q( z(m(j).iKf)) ) ...                        %   _)
+        %     - z(m(j).ipfH) ;                                            % (_)
+        % ph_nbs_pTS = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...    % (_)
+        %     dqdx( z(iTS) ) ...                                          % (_)
+        %     - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
+        %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
+        %     (dqdx( z(iTS)) / z(m(j).iKs) );                             % (_)
+        % ph_nbs_pKs = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...    % (_)
+        %     dqdx( z(m(j).iKs) ) - 1 ...                                 % (_) (_)
+        %     - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
+        %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
+        %     (dqdx ( q( z(m(j).iKs))^(-1) ) ) * q( z(iTS)) * ...         % (_) (_)
+        %     (-1 * ( q( z(m(j).iKs))^(-2) ) );                           % (_)
+        % ph_nbs_pTF = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...   % (_
+        %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
+        %     (dqdx( z(iTF)) / q( z(m(j).iKf)) );                         % (_)
+        % ph_nbs_pKf = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...   % (_
+        %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
+        %     (dqdx ( q( z(m(j).iKf))^(-1) ) ) * q( z(iTF)) * ...         % (_) (_)
+        %     (-1 * ( q( z(m(j).iKf))^(-2) ) );                           % (_)  
+        % ph_nbs_phtot = 1;
+        % ph_nbs_pfH = 1;
+        % m(j).gph_nbs = @(z) [ ph_nbs_pTS(z), ph_nbs_pKs(z), ...
+        %     ph_nbs_pTF(z), ph_nbs_pKf(z), ph_nbs_phtot, ph_nbs_pfH ];
+        % % let's do ggph_nbs with complex step
+        % 
+        % % ph_sws = ph_tot + p(SWS2tot)
+        % %   where SWS2tot = (1 + TS/Ks)/(1 + TS/Ks + TF/Kf) and ph_tot = ph
+        % m(j).ph_sws = @(z) z(m(j).iph) ...                              % (_)
+        %     + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...   % (_)
+        %     - p( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                   % (_
+        %     + q(z(iTF) ) / q( z(m(j).iKf)) ) ;                          %   _)
+        % ph_sws_pTS = @(z) ph_nbs_pTS(z);
+        % ph_sws_pKs = @(z) ph_nbs_pKs(z);
+        % ph_sws_pTF = @(z) ph_nbs_pTF(z);
+        % ph_sws_pKf = @(z) ph_nbs_pKf(z);
+        % ph_sws_phtot = 1;
+        % ph_sws_pfH = 0;
+        % m(j).gph_sws = @(z) [ ph_sws_pTS(z), ph_sws_pKs(z), ...
+        %     ph_sws_pTF(z), ph_sws_pKf(z), ph_sws_phtot, ph_sws_pfH ];
+        % % let's do ggph_sws with complex step
 
         % ph_free = ph_tot + p(FREE2tot)
         %   where FREE2tot = (1 + TS/Ks) and ph_tot = ph
@@ -463,7 +472,7 @@ function sys = mksysV7(obs,abr)
             dqdx( z(m(j).iKs) ) - 1;
         m(j).gph_free = @(z) [ ph_free_pTS(z), ph_free_pKs(z), ...
             0, 0, 0, 0];
-        % could do gg pretty easily
+        % % gg
 
     end
     sys.M = M;

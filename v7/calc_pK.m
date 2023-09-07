@@ -1,4 +1,4 @@
-
+% saved in FP_QUODcarb/v7
 
 function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 % base equations COPIED FROM co2sys.m Orr et al. (2018)  Github
@@ -225,7 +225,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     pKsi  = pKsi  + phfac;  gpKsi  = gpKsi  + gphfac;
     pKnh4 = pKnh4 + phfac;  gpKnh4 = gpKnh4 + gphfac;
     pKh2s = pKh2s + phfac;  gpKh2s = gpKh2s + gphfac;
-    % pKar, pKca, pKs, and pKf are not converted in CO2SYS
+    % pKar, pKca, pKs, and pKf do not need the conversion
 
     % default uncertainty, if does not change with options
     epp2f = 0.001;
@@ -1551,6 +1551,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     end
 
     function [pfH,gpfH,epfH] = calc_pfH(opt,T,S)
+        % fH = [H]/(1 + TS/Ks)
         TK = T + 273.15; % convert to Kelvin
         if opt.K1K2 == 8
             %fH = 1; % shouldn't occur

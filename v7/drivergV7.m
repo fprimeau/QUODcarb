@@ -75,25 +75,20 @@ for i = 1:nD
     obs(i).m(3).epco2 = in(i+ad,12)*0.0021; % 0.21% relative std error (avg)
 
 end
-fid2 = 'compare_CT_AT.csv';
+% fid2 = 'compare_CT_AT.csv';
 % [A] = compare2(obs,est,opt,2,1,fid2);
 obs_backup = obs;
 
 
-% TA TC (Q2) (fid2)
-for i = 1:nD
-    obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
-    obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
-    obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
-end
-[est,obs,iflag] = QUODcarbV7(obs,opt);
-est02   = est;
-[A] = compare2(obs,est,opt,2,1,fid2);
-
-% CT AT pH pCO2 CO3 (Q5) (fid5)
-obs = obs_backup;
-[est,obs,iflag] = QUODcarbV7(obs,opt);
-est05 = est;
+% % TA TC (Q2) (fid2)
+% for i = 1:nD
+%     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
+%     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
+%     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
+% end
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
+% est02   = est;
+% [A] = compare2(obs,est,opt,2,1,fid2);
 
 
 % CT AT pH pCO2 CO3 (Q5) (fid5)
