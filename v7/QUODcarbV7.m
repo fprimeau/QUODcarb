@@ -1709,18 +1709,20 @@ function [est] = parse_output(z,sigy,opt,sys)
             q(z(sys.m(i).iKf)), z(sys.m(i).ipfH) ); % Kf, pfH
             % q(z(sys.m(i).iKf)), z(sys.m(i).iphf) ); % Kf, phf
 
-        est.m(i).ph_tot  = ph_all(1);
+        est.m(i).ph      = ph_all(1); % ph_tot is default
         est.m(i).ph_sws  = ph_all(2);
         est.m(i).ph_free = ph_all(3);
         est.m(i).ph_nbs  = ph_all(4);
 
+    % ebar = @(j) (0.5 * ( q( z(j) - sigy(j) ) - q( z(j) + sigy(j) ) ) );
+
         % H (free) = q(ph_free)
         est.m(i).h_free    = q(z(sys.m(i).iph_free))*1e6;
-        est.m(i).eh_free = (0.5 * ( q( z(sys.m(i).ph_free) - ...
-            sigy(sys.m(i).ph) ) - q(z(sys.m(i).ph_free) + ...
-            sigy(sys.m(i).ph) ) ) ) * 1e6; % eph_free = eph
-        est.m(i).eh_free_l = (q( -sigy(sys.m(i).ph) ) ) * 1e6;
-        est.m(i).eh_free_u = (q( sigy(sys.m(i).ph) ) ) * 1e6;
+        est.m(i).eh_free = (0.5 * (q (z(sys.m(i).iph_free) - ...
+            sigy(sys.m(i).iph) ) - ( q( z(sys.m(i).iph_free) + ...
+            sigy(sys.m(i).iph) ) ) ) )  * 1e6; % eph_free = eph
+        est.m(i).eh_free_l = (q( -sigy(sys.m(i).iph) ) ) * 1e6;
+        est.m(i).eh_free_u = (q( sigy(sys.m(i).iph) ) ) * 1e6;
         est.m(i).ph_free   = z(sys.m(i).iph_free);
         est.m(i).eph_free  = sigy(sys.m(i).iph);
 
