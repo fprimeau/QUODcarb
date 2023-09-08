@@ -230,7 +230,7 @@ function [f,g] = limpco2(z,y,w,sys,opt)
     
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers    
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
-    % keyboard
+    
     if ( nargout > 1 ) % compute the gradient
         % gph_sws = zeros(nTP,nv);
         gph_free = zeros(nTP,nv);
@@ -2199,12 +2199,7 @@ function z0 = init(yobs,sys,opt)
     q = sys.q;
     p = sys.p;
     
-    y0  = yobs;
-
-    nTP = length(sys.m);
-    % nz0 = length(yobs) + size(sys.M,1) + size(sys.K,1) + (nTP*4);
-    % z0 = zeros(nTP,nz0); %initialize it
-   
+    y0  = yobs;   
     dic = q(yobs(sys.iTC));
     alk = q(yobs(sys.iTA));
     if (isnan(dic))
@@ -2216,6 +2211,7 @@ function z0 = init(yobs,sys,opt)
         y0(sys.iTA) = p(alk);
     end
 
+    nTP = length(sys.m);
     for i = 1:nTP
         % solve for the [H+] ion concentration using only the carbonate alkalinity
         gam = dic/alk;
@@ -2280,7 +2276,7 @@ function z0 = init(yobs,sys,opt)
         ph_free = ph_tot - log(free2tot)./log(0.1);
         % ph_sws  = ph_tot - log(sws2tot)./log(0.1);
         % y0(sys.m(i).iph_sws) = ph_sws;
-        y0(sys.m(i).iph_free) = ph_free;
+        % y0(sys.m(i).iph_free) = ph_free;
         % y0(sys.m(i).iph_nbs) = ph_nbs;
 
         if (ismember('phosphate',opt.abr))
@@ -2347,8 +2343,7 @@ function z0 = init(yobs,sys,opt)
     lam = zeros(nlam,1);
     z0 = [y0(:);lam(:)];
   
-
-
+keyboard
     % q = sys.q;
     % p = sys.p;
     % 
