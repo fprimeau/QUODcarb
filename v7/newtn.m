@@ -23,7 +23,6 @@ function [x,J,iflag] = newtn(x0, F, tol)
     else
         [F0, J] = F(x); 
     end
-    %keyboard
     iflag = 0; itno = 0;
     while (((norm(F0) > tol) && (itno<MAXIT)) )
         if (nargin==4)            
@@ -36,7 +35,6 @@ function [x,J,iflag] = newtn(x0, F, tol)
             x = x + dx;
             [F0, J] = F(x);
             warning('on');
-            % keyboard
         end
         itno = itno+1;
         if (iprint)
