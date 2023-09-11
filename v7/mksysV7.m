@@ -96,9 +96,9 @@ function sys = mksysV7(obs,abr)
         m(j).ihco3    = i;  i = i + 1;
         m(j).ico3     = i;  i = i + 1;
         m(j).iph      = i;  i = i + 1; % ph_tot
-        % m(j).iph_sws  = i;  i = i + 1;
         m(j).iph_free = i;  i = i + 1;
-        % m(j).iph_nbs  = i;  i = i + 1;
+        % m(j).iph_sws  = i;  i = i + 1;        
+        m(j).iph_nbs  = i;  i = i + 1;
         m(j).ip2f     = i;  i = i + 1;
         m(j).ipco2    = i;  i = i + 1; 
         m(j).ipfH     = i; % fH activity coefficient
@@ -420,38 +420,38 @@ function sys = mksysV7(obs,abr)
         % % ph_nbs = ph_tot + p(SWS2tot) - p(fH)
         % %     where SWS2tot = (1 + TS/Ks)/(1 + TS/Ks + TF/Kf) & ph_tot = ph
         % % rph_nbs = ( ph_tot + p(SWS2tot) - p(fH) ) - ph_nbs
-        % m(j).rph_nbs = @(z) z(m(j).iph) ...                             % (_)
-        %     + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...   % (_)
-        %     - p( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                   % (_
-        %     + q(z(iTF) ) / q( z(m(j).iKf)) ) ...                        %   _)
-        %     - z(m(j).ipfH) - z(m(j).iph_nbs);                           % (_) (_)
-        % rph_nbs_pTS = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...   % (_)
-        %     dqdx( z(iTS) ) ...                                          % (_)
-        %     - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
-        %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
-        %     (dqdx( z(iTS)) / z(m(j).iKs) );                             % (_)
-        % rph_nbs_pKs = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...   % (_)
-        %     dqdx( z(m(j).iKs) ) - 1 ...                                 % (_) (_)
-        %     - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
-        %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
-        %     (dqdx ( q( z(m(j).iKs))^(-1) ) ) * q( z(iTS)) * ...         % (_) (_)
-        %     (-1 * ( q( z(m(j).iKs))^(-2) ) );                           % (_)
-        % rph_nbs_pTF = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...  % (_
-        %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
-        %     (dqdx( z(iTF)) / q( z(m(j).iKf)) );                         % (_)
-        % rph_nbs_pKf = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...  % (_
-        %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
-        %     (dqdx ( q( z(m(j).iKf))^(-1) ) ) * q( z(iTF)) * ...         % (_) (_)
-        %     (-1 * ( q( z(m(j).iKf))^(-2) ) );                           % (_)  
+        m(j).rph_nbs = @(z) z(m(j).iph) ...                             % (_)
+            + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...   % (_)
+            - p( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                   % (_
+            + q(z(iTF) ) / q( z(m(j).iKf)) ) ...                        %   _)
+            - z(m(j).ipfH) - z(m(j).iph_nbs);                           % (_) (_)
+        rph_nbs_pTS = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...   % (_)
+            dqdx( z(iTS) ) ...                                          % (_)
+            - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
+            + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
+            (dqdx( z(iTS)) / z(m(j).iKs) );                             % (_)
+        rph_nbs_pKs = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...   % (_)
+            dqdx( z(m(j).iKs) ) - 1 ...                                 % (_) (_)
+            - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
+            + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
+            (dqdx ( q( z(m(j).iKs))^(-1) ) ) * q( z(iTS)) * ...         % (_) (_)
+            (-1 * ( q( z(m(j).iKs))^(-2) ) );                           % (_)
+        rph_nbs_pTF = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...  % (_
+            + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
+            (dqdx( z(iTF)) / q( z(m(j).iKf)) );                         % (_)
+        rph_nbs_pKf = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...  % (_
+            + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
+            (dqdx ( q( z(m(j).iKf))^(-1) ) ) * q( z(iTF)) * ...         % (_) (_)
+            (-1 * ( q( z(m(j).iKf))^(-2) ) );                           % (_)  
         % % rph_nbs_phtot = 1;
         % % rph_nbs_pfH = 1;
         % % rph_nbs_phnbs = -1;
 
-        % (d/dx)_pTS,_pKS,_pTF,_pKf,_pfH,_ph(tot),_phnbs
-        % m(j).grph_nbs = @(z) [ rph_nbs_pTS(z), rph_nbs_pKs(z), ...
-        %     rph_nbs_pTF(z), rph_nbs_pKf(z), 1, 1, -1 ];
+        % % (d/dx)_pTS,_pKS,_pTF,_pKf,_pfH,_ph(tot),_phnbs
+        m(j).grph_nbs = @(z) [ rph_nbs_pTS(z), rph_nbs_pKs(z), ...
+            rph_nbs_pTF(z), rph_nbs_pKf(z),    1,        1,    -1 ];
+        % %           _pTF,           _pKf, _pfH, _ph(tot), _phnbs
 
-        % 
         % % rph_sws = residual ph_sws = ph_tot + p(SWS2tot) - ph_sws
         % %   where SWS2tot = (1 + TS/Ks)/(1 + TS/Ks + TF/Kf) and ph_tot = ph
         % m(j).rph_sws = @(z) z(m(j).iph) ...                             % (_)
@@ -467,13 +467,13 @@ function sys = mksysV7(obs,abr)
         % % rph_sws_phtot = 1;  
         % % rph_sws_phsws = -1;
 
-        % (d/dx)_pTS,_pKS,_pTF,_pKf,_pfH,_ph(tot),_phsws
+        % % (d/dx)_pTS,_pKS,_pTF,_pKf,_pfH,_ph(tot),_phsws
         % m(j).grph_sws = @(z) [ rph_sws_pTS(z), rph_sws_pKs(z), ...
         %     rph_sws_pTF(z), rph_sws_pKf(z),    0,        1,    -1 ];
-        %               _pTF,           _pKf, _pfH, _ph(tot), _phsws
+        % %             _pTF,           _pKf, _pfH, _ph(tot), _phsws
 
-        % rph_free = residual ph_free = ph_tot + p(FREE2tot) - ph_free;
-        %   where FREE2tot = (1 + TS/Ks) and ph_tot = ph
+        % % rph_free = residual ph_free = ph_tot + p(FREE2tot) - ph_free;
+        % %   where FREE2tot = (1 + TS/Ks) and ph_tot = ph
         m(j).rph_free = @(z) z(m(j).iph) ...                              
             + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...
             - z(m(j).iph_free); 
@@ -481,12 +481,12 @@ function sys = mksysV7(obs,abr)
             dqdx( z(iTS) );                                         
         rph_free_pKs = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...
             dqdx( z(m(j).iKs) ) - 1;
-        % rph_free_phfree = @(z) -1;
+        % % rph_free_phfree = @(z) -1;
 
-        % (d/dx)_pTS,_pKS,_pTF,_pKf,_pfH,_ph(tot),_phfree
+        % % (d/dx)_pTS,_pKS,_pTF,_pKf,_pfH,_ph(tot),_phfree
         m(j).grph_free = @(z) [ rph_free_pTS(z), rph_free_pKs(z), ...
                        0,    0,    0,        0,     -1];
-        % (d/dx)    _pTF, _pKf, _pfH, _ph(tot), _phfree
+        % % (d/dx)  _pTF, _pKf, _pfH, _ph(tot), _phfree
         
 
     end
