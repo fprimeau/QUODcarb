@@ -75,7 +75,7 @@ function sys = mksysV7(obs,abr)
         i = i + 1;  iTCal = i; sys.iTCal = iTCal ;
     end
 
-    nTP = length(obs.m); % number of different (T,P) measurements
+    nTP = length(obs.m); % number of different (T,P) systems
 
     for j = 1:nTP
         if (isgood(obs.m(j).T) && isgood(obs.m(j).P))
@@ -98,11 +98,11 @@ function sys = mksysV7(obs,abr)
         m(j).iph      = i;  i = i + 1; % ph_tot
         % m(j).iph_sws  = i;  i = i + 1;
         m(j).iph_free = i;  i = i + 1;
-        % m(j).iph_nbs  = i;  i = i + 1; % TYPO HAD m(i) -MF 08/30 4pm
+        % m(j).iph_nbs  = i;  i = i + 1;
         m(j).ip2f     = i;  i = i + 1;
-        m(j).ipco2    = i;  i = i + 1;
+        m(j).ipco2    = i;  i = i + 1; 
         m(j).ipfH     = i; % fH activity coefficient
-
+        
         % Kw = [h][oh] water = {'Kw','oh' };
         nrk = nrk + 1;      i = i + 1;
         m(j).iKw = i;       i = i + 1;
@@ -233,9 +233,10 @@ function sys = mksysV7(obs,abr)
         m(j).kKs = row;
         K(row, m(j).iKs) = 1; % Ks
 
-        % Kf = [H][F]/[HF]
+        % Kf = [H][F]/[HF]     [H] like in DOE or [H]F like in CO2SYS?
         row = row+1;
-        K(row,[ m(j).iKf, m(j).iph, m(j).iF, m(j).iHF ]) = [-1, 1, 1, -1];
+        K(row,[ m(j).iKf, m(j).iph_free, m(j).iF, m(j).iHF ]) = ...
+            [-1, 1, 1, -1];
         row = row+1;
         m(j).kKf = row;
         K(row, m(j).iKf) = 1; % Kf
@@ -413,66 +414,80 @@ function sys = mksysV7(obs,abr)
             m(j).jTCal = row;
         end
 
-        % % pH scale conversion factors as functions to solve in QUODcarb.m
-        % 
-        % % ph_nbs = ph_tot + p(SWS2tot) - p(fH) 
-        % %   where SWS2tot = (1 + TS/Ks)/(1 + TS/Ks + TF/Kf) and ph_tot = ph
-        % m(j).ph_nbs = @(z) z(m(j).iph) ...                              % (_)
+        % % RESIDUALS of pH scale conversion factors 
+        % %     (as functions solved in parse_zpK subfunction)
+        
+        % % ph_nbs = ph_tot + p(SWS2tot) - p(fH)
+        % %     where SWS2tot = (1 + TS/Ks)/(1 + TS/Ks + TF/Kf) & ph_tot = ph
+        % % rph_nbs = ( ph_tot + p(SWS2tot) - p(fH) ) - ph_nbs
+        % m(j).rph_nbs = @(z) z(m(j).iph) ...                             % (_)
         %     + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...   % (_)
         %     - p( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                   % (_
         %     + q(z(iTF) ) / q( z(m(j).iKf)) ) ...                        %   _)
-        %     - z(m(j).ipfH) ;                                            % (_)
-        % ph_nbs_pTS = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...    % (_)
+        %     - z(m(j).ipfH) - z(m(j).iph_nbs);                           % (_) (_)
+        % rph_nbs_pTS = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...   % (_)
         %     dqdx( z(iTS) ) ...                                          % (_)
         %     - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
         %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
         %     (dqdx( z(iTS)) / z(m(j).iKs) );                             % (_)
-        % ph_nbs_pKs = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...    % (_)
+        % rph_nbs_pKs = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...   % (_)
         %     dqdx( z(m(j).iKs) ) - 1 ...                                 % (_) (_)
         %     - dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                % (_
         %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %   _)
         %     (dqdx ( q( z(m(j).iKs))^(-1) ) ) * q( z(iTS)) * ...         % (_) (_)
         %     (-1 * ( q( z(m(j).iKs))^(-2) ) );                           % (_)
-        % ph_nbs_pTF = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...   % (_
+        % rph_nbs_pTF = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...  % (_
         %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
         %     (dqdx( z(iTF)) / q( z(m(j).iKf)) );                         % (_)
-        % ph_nbs_pKf = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...   % (_
+        % rph_nbs_pKf = @(z) -dpdx( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...  % (_
         %     + q( z(iTF)) / q( z(m(j).iKf)) ) * ...                      %     _)
         %     (dqdx ( q( z(m(j).iKf))^(-1) ) ) * q( z(iTF)) * ...         % (_) (_)
         %     (-1 * ( q( z(m(j).iKf))^(-2) ) );                           % (_)  
-        % ph_nbs_phtot = 1;
-        % ph_nbs_pfH = 1;
-        % m(j).gph_nbs = @(z) [ ph_nbs_pTS(z), ph_nbs_pKs(z), ...
-        %     ph_nbs_pTF(z), ph_nbs_pKf(z), ph_nbs_phtot, ph_nbs_pfH ];
-        % % let's do ggph_nbs with complex step
+        % % rph_nbs_phtot = 1;
+        % % rph_nbs_pfH = 1;
+        % % rph_nbs_phnbs = -1;
+
+        % (d/dx)_pTS,_pKS,_pTF,_pKf,_pfH,_ph(tot),_phnbs
+        % m(j).grph_nbs = @(z) [ rph_nbs_pTS(z), rph_nbs_pKs(z), ...
+        %     rph_nbs_pTF(z), rph_nbs_pKf(z), 1, 1, -1 ];
+
         % 
-        % % ph_sws = ph_tot + p(SWS2tot)
+        % % rph_sws = residual ph_sws = ph_tot + p(SWS2tot) - ph_sws
         % %   where SWS2tot = (1 + TS/Ks)/(1 + TS/Ks + TF/Kf) and ph_tot = ph
-        % m(j).ph_sws = @(z) z(m(j).iph) ...                              % (_)
+        % m(j).rph_sws = @(z) z(m(j).iph) ...                             % (_)
         %     + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...   % (_)
         %     - p( 1 + q( z(iTS)) / q( z(m(j).iKs)) ...                   % (_
-        %     + q(z(iTF) ) / q( z(m(j).iKf)) ) ;                          %   _)
-        % ph_sws_pTS = @(z) ph_nbs_pTS(z);
-        % ph_sws_pKs = @(z) ph_nbs_pKs(z);
-        % ph_sws_pTF = @(z) ph_nbs_pTF(z);
-        % ph_sws_pKf = @(z) ph_nbs_pKf(z);
-        % ph_sws_phtot = 1;
-        % ph_sws_pfH = 0;
-        % m(j).gph_sws = @(z) [ ph_sws_pTS(z), ph_sws_pKs(z), ...
-        %     ph_sws_pTF(z), ph_sws_pKf(z), ph_sws_phtot, ph_sws_pfH ];
-        % % let's do ggph_sws with complex step
+        %     + q(z(iTF) ) / q( z(m(j).iKf)) ) ...                        %   _)
+        %     - z(m(j).iph_sws);
+        % rph_sws_pTS = @(z) rph_nbs_pTS(z);
+        % rph_sws_pKs = @(z) rph_nbs_pKs(z);
+        % rph_sws_pTF = @(z) rph_nbs_pTF(z);
+        % rph_sws_pKf = @(z) rph_nbs_pKf(z);
+        % % rph_sws_pfH = 0;
+        % % rph_sws_phtot = 1;  
+        % % rph_sws_phsws = -1;
 
-        % ph_free = ph_tot + p(FREE2tot)
+        % (d/dx)_pTS,_pKS,_pTF,_pKf,_pfH,_ph(tot),_phsws
+        % m(j).grph_sws = @(z) [ rph_sws_pTS(z), rph_sws_pKs(z), ...
+        %     rph_sws_pTF(z), rph_sws_pKf(z),    0,        1,    -1 ];
+        %               _pTF,           _pKf, _pfH, _ph(tot), _phsws
+
+        % rph_free = residual ph_free = ph_tot + p(FREE2tot) - ph_free;
         %   where FREE2tot = (1 + TS/Ks) and ph_tot = ph
-        m(j).ph_free = @(z) z(m(j).iph) ...                              
-            + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ; 
-        ph_free_pTS = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...
+        m(j).rph_free = @(z) z(m(j).iph) ...                              
+            + ( p( q( z(iTS)) + q( z(m(j).iKs)) ) - z(m(j).iKs) ) ...
+            - z(m(j).iph_free); 
+        rph_free_pTS = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...
             dqdx( z(iTS) );                                         
-        ph_free_pKs = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...
+        rph_free_pKs = @(z) dpdx( q( z(iTS)) + q( z(m(j).iKs)) ) * ...
             dqdx( z(m(j).iKs) ) - 1;
-        m(j).gph_free = @(z) [ ph_free_pTS(z), ph_free_pKs(z), ...
-            0, 0, 0, 0];
-        % % gg
+        % rph_free_phfree = @(z) -1;
+
+        % (d/dx)_pTS,_pKS,_pTF,_pKf,_pfH,_ph(tot),_phfree
+        m(j).grph_free = @(z) [ rph_free_pTS(z), rph_free_pKs(z), ...
+                       0,    0,    0,        0,     -1];
+        % (d/dx)    _pTF, _pKf, _pfH, _ph(tot), _phfree
+        
 
     end
     sys.M = M;
