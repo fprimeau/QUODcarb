@@ -17,7 +17,7 @@ opt.KSO4 = 1; % option for KSO4 formulation
 opt.KF   = 2; % option for KF formulation
 opt.TB   = 2; % option for TB formulation
 opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
-opt.printcsv = 1; % print est to CSV? 1 = on , 0 = off
+opt.printcsv = 0; % print est to CSV? 1 = on , 0 = off
 opt.fid      = 'CT_AT.csv'; % don't need it if printcsv is off
 opt.printmes = 1; % print screen messages? 1 = on, 0 = off
 opt.abr = 'all'; % option for which acid/base reactions to include
@@ -80,7 +80,7 @@ fid2 = 'compare_CT_AT.csv';
 obs_backup = obs;
 
 
-% TA TC (Q2) (fid2)
+% % TA TC (Q2) (fid2)
 for i = 1:nD
     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
@@ -90,16 +90,11 @@ end
 est02   = est;
 [A] = compare2(obs,est,opt,2,1,fid2);
 
-% CT AT pH pCO2 CO3 (Q5) (fid5)
-obs = obs_backup;
-[est,obs,iflag] = QUODcarbV7(obs,opt);
-est05 = est;
-
 
 % CT AT pH pCO2 CO3 (Q5) (fid5)
-obs = obs_backup;
-[est,obs,iflag] = QUODcarbV7(obs,opt);
-est33 = est;
+% obs = obs_backup;
+% [est,obs,iflag] = QUODcarbV7(obs,opt);
+% est33 = est;
 
 
 % 

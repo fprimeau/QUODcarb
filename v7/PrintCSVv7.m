@@ -370,7 +370,7 @@ function out = PrintCSVv7(varargin)
             fprintf(fid,'%f, ', est.m(j).ph); 
             fprintf(fid,'%f, ', est.m(j).eph);
             % all pH scales
-            fprintf(fid,'%f, ', est.m(j).ph_tot);
+            fprintf(fid,'%f, ', est.m(j).ph);
             fprintf(fid,'%f, ', est.m(j).ph_sws);
             fprintf(fid,'%f, ', est.m(j).ph_free);
             fprintf(fid,'%f, ', est.m(j).ph_nbs);
