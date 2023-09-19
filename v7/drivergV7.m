@@ -48,47 +48,47 @@ for i = 1:nD
     obs(i).eTSi  = in(i+ad,18)*0.001; % 0.01% meas uncertainty
 
     % first (T,P)-dependent measurement
-    obs(i).m(1).T = in(i+ad,2); % deg C, CTD temp
-    obs(i).m(1).eT = 0.02; % ±0.02 degC
-    obs(i).m(1).P = in(i+ad,1); % dbar
-    obs(i).m(1).eP = 0.63; % (max) ± 0.63 dbar
+    % obs(i).m(1).T = in(i+ad,2); % deg C, CTD temp
+    % obs(i).m(1).eT = 0.02; % ±0.02 degC
+    % obs(i).m(1).P = in(i+ad,1); % dbar
+    % obs(i).m(1).eP = 0.63; % (max) ± 0.63 dbar
 
     % second(T,P)-dependent measurement
-    obs(i).m(2).T    = 25 ; % degC
-    obs(i).m(2).eT   = 0.05 ; % from cruise report
-    obs(i).m(2).P    = 0.0 ; %in(i+ad,1); % NOT in situ
-    obs(i).m(2).eP   = 0.63 ;
-    obs(i).m(2).ph   = in(i+ad,9); % total scale
-    obs(i).m(2).eph  = 0.0004 ;
+    obs(i).m(1).T    = 25 ; % degC
+    obs(i).m(1).eT   = 0.05 ; % from cruise report
+    obs(i).m(1).P    = 0.0 ; %in(i+ad,1); % NOT in situ
+    obs(i).m(1).eP   = 0.63 ;
+    obs(i).m(1).ph   = in(i+ad,9); % total scale
+    obs(i).m(1).eph  = 0.0004 ;
     if i >= 1187 % DON"T WANT THIS ANYMORE
-        obs(i).m(2).eph = 0.05; % for UW measurements
+        obs(i).m(1).eph = 0.05; % for UW measurements
     end
-    obs(i).m(2).co3  = in(i+ad,15); % (µmol/kg)
-    obs(i).m(2).eco3 = 2.0 ;  % std ±2µmol/kg
+    obs(i).m(1).co3  = in(i+ad,15); % (µmol/kg)
+    obs(i).m(1).eco3 = 2.0 ;  % std ±2µmol/kg
 
     % third (T,P)-dependent measurement
-    obs(i).m(3).T   = 20 ; %degC
-    obs(i).m(3).eT  = 0.03 ; % from cruise report
-    obs(i).m(3).P   = 0.0 ; % dbar (surface pressure for pco2)
-    obs(i).m(3).eP  = 0.63 ;
-    obs(i).m(3).pco2  = in(i+ad,12); % (µatm)
-    obs(i).m(3).epco2 = in(i+ad,12)*0.0021; % 0.21% relative std error (avg)
+    % obs(i).m(3).T   = 20 ; %degC
+    % obs(i).m(3).eT  = 0.03 ; % from cruise report
+    % obs(i).m(3).P   = 0.0 ; % dbar (surface pressure for pco2)
+    % obs(i).m(3).eP  = 0.63 ;
+    % obs(i).m(3).pco2  = in(i+ad,12); % (µatm)
+    % obs(i).m(3).epco2 = in(i+ad,12)*0.0021; % 0.21% relative std error (avg)
 
 end
 fid2 = 'compare_CT_AT.csv';
 % [A] = compare2(obs,est,opt,2,1,fid2);
 obs_backup = obs;
 
-
+tp = 1;
 % % TA TC (Q2) (fid2)
 for i = 1:nD
-    obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
-    obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
-    obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
+    obs(i).m(1).ph = nan;   obs(i).m(1).eph = nan;
+    % obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
+    obs(i).m(1).co3 = nan;  obs(i).m(1).eco3 = nan;
 end
 [est,obs,iflag] = QUODcarbV7(obs,opt);
 est02   = est;
-[A] = compare2(obs,est,opt,2,1,fid2);
+[A] = compare2(obs,est,opt,tp,1,fid2);
 
 
 % CT AT pH pCO2 CO3 (Q5) (fid5)

@@ -1431,11 +1431,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             log10Kar = f(TK,a1) + f(TK,a2) .* sqrt(S) + ...
                         b .* S + c .* S ^(3/2) ;
             pKar = -log10Kar ; % pK = -log10(K);
-            %pKar = pKar - pfH ; % convert from NBS to SWS pH scale
 
-            pKar_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) ) ;%- gpfH(1);
+            pKar_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) ) ;
             pKar_S = - ( 0.5 .* f(TK,a2) ./ sqrt(S) + ...
-                        b + (3/2) .* c .* sqrt(S) ) ;%- gpfH(2);
+                        b + (3/2) .* c .* sqrt(S) ) ;
 
             % pressure correction
             d1 = [(-48.76 + 2.8); 0.5304; 0.0 ] ;
@@ -1470,9 +1469,9 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             Kca_S = a .* ( (1/3) .* c .* S ^ (-2/3) + ...
                     d ./ (S .* LOG10) ) ;
 
-            pKca = p(Kca) ;%- pfH ; % 'p' it and convert to SWS pH scale            
-            pKca_T = dpdx(Kca) .* Kca_T ;% - gpfH(1) ; 
-            pKca_S = dpdx(Kca) .* Kca_S ; %- gpfH(2) ;
+            pKca = p(Kca) ;            
+            pKca_T = dpdx(Kca) .* Kca_T ; 
+            pKca_S = dpdx(Kca) .* Kca_S ; 
 
             % pressure correction
             pKca = pKca - ((36 - 0.2 .* T) .* Pbar ./ RT ) ./ LOG10 ; % T = tempC
@@ -1492,11 +1491,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             log10Kca = f(TK,a1) + f(TK,a2) .* sqrt(S) + ...
                         b .* S + c .* S ^(3/2) ;
             pKca = -log10Kca ; % pK = -log10(K);
-            %pKca = pKca - pfH ; % convert from NBS to SWS pH scale
 
-            pKca_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) );% - gpfH(1);
+            pKca_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) );
             pKca_S = - ( 0.5 .* f(TK,a2) ./ sqrt(S) + ...
-                        b + (3/2) .* c .* sqrt(S) ) ;%- gpfH(2);
+                        b + (3/2) .* c .* sqrt(S) ) ;
 
             % pressure correction
             d1 = [-48.76; 0.5304; 0.0 ] ;
@@ -1575,8 +1573,9 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         end
         gpfH = [gpfH_T, gpfH_S, 0];
         % assumed independent of pressure
-
-        epfH = p(0.005); % ± 0.005 on fH from Culberson, Pytkowicz, ...
+        
+        epfH = 0.005;
+        % epfH = p(0.005); % ± 0.005 on fH from Culberson, Pytkowicz, ...
                          %  and Hawley 1970 Journal of Marine Research
     end 
     
