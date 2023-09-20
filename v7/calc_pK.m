@@ -310,7 +310,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK0 = pK0 + ppfacK0 ;
             pK0_P = pK0_P + ppfacK0_P ;
         end
-        epK0 = p( 0.003 * q(pK0) ); % Weiss (1974) reports 0.2 - 0.3% uncertainty 
+        epK0 = 0.003 * q(pK0);  % Weiss (1974) reports 0.2 - 0.3% uncertainty 
         gpK0 = [pK0_T, pK0_S, pK0_P];
     end
     
