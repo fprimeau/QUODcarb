@@ -95,7 +95,7 @@ function sys = mksysV7(obs,abr,phscale)
         m(j).ico2st   = i;  i = i + 1;
         m(j).ihco3    = i;  i = i + 1;
         m(j).ico3     = i;  i = i + 1;
-        m(j).iph      = i;  i = i + 1; 
+        % m(j).iph      = i;  i = i + 1;
         m(j).iph_tot  = i;  i = i + 1;
         m(j).iph_free = i;  i = i + 1;
         m(j).iph_sws  = i;  i = i + 1;        
@@ -104,6 +104,16 @@ function sys = mksysV7(obs,abr,phscale)
         m(j).ipco2    = i;  i = i + 1; 
         m(j).ipfH     = i; % fH activity coefficient
         
+        if phscale == 1 % tot
+            m(j).iph = m(j).iph_tot;
+        elseif phscale == 2 % sws
+            m(j).iph = m(j).iph_sws;
+        elseif phscale == 3 % free
+            m(j).iph = m(j).iph_free;
+        elseif phscale == 4 % nbs
+            m(j).iph = m(j).iph_nbs;
+        end
+
         % Kw = [h][oh] water = {'Kw','oh' };
         nrk = nrk + 1;      i = i + 1;
         m(j).iKw = i;       i = i + 1;

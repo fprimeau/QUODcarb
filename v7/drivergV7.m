@@ -16,8 +16,8 @@ opt.K1K2 = 10; % option for K1K2 formulation
 opt.KSO4 = 1; % option for KSO4 formulation
 opt.KF   = 2; % option for KF formulation
 opt.TB   = 2; % option for TB formulation
-opt.phscale  = 2;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
-opt.printcsv = 1; % print est to CSV? 1 = on , 0 = off
+opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
+opt.printcsv = 0; % print est to CSV? 1 = on , 0 = off
 opt.fid      = 'CT_ph.csv'; % don't need it if printcsv is off
 opt.printmes = 1; % print screen messages? 1 = on, 0 = off
 opt.abr = 'all'; % option for which acid/base reactions to include
@@ -58,8 +58,8 @@ for i = 1:nD
     obs(i).m(1).eT   = 0.05 ; % from cruise report
     obs(i).m(1).P    = 0.0 ; %in(i+ad,1); % NOT in situ
     obs(i).m(1).eP   = 0.63 ;
-    obs(i).m(1).ph   = in(i+ad,9); % total scale
-    obs(i).m(1).eph  = 0.0004 ;
+    obs(i).m(1).ph_tot   = in(i+ad,9); % total scale
+    obs(i).m(1).eph_tot  = 0.0004 ;
     if i >= 1187 % DON"T WANT THIS ANYMORE
         obs(i).m(1).eph = 0.05; % for UW measurements
     end

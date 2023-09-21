@@ -30,7 +30,7 @@ function [est,obs,iflag] = QUODcarbV7(obs,opt)
 %   obs.m(1).eT     = temp_error;   (±sigma)        
 %   obs.m(1).P      = pressure;     (dbar)          
 %   obs.m(1).eP     = pres_error;   (±sigma)     
-%   obs.m(1).ph     = pH_meas;      
+%   obs.m(1).ph     = ph_meas;      
 %   obs.m(1).eph    = ph_error;     (±sigma)
 %
 %   opt.K1K2        = 10;           (Lueker et al 2000)
@@ -197,13 +197,13 @@ function [f,g] = limpco2(z,y,w,sys,opt)
     % nlam = size(M,1) + size(K,1) + (nTP); 
         % one extra lagrange multiplier for each 
         % (T,P)-dependent free to total ph conversions
-    nlam = size(M,1)+size(K,1)+(nTP*4);
-        % got rid of f2t and replaced it with ph_free, _sws, _nbs (3 things)
+    nlam = size(M,1)+size(K,1)+(nTP*3);
+        % got rid of f2t and replaced it with ph_tot, _free, _sws, _nbs (4 things)
     x   =  z(1:nv);      % measureable variables
     lam =  z(nv+1:end);  % Lagrange multipliers 
     
     % Make a vector of measured quantities    
-    i = find(~isnan(y)); % was 'y', changed to w because MF put some defintions into obs w/o precisions
+    i = find(~isnan(y));
     y = y(i)';
     
     % Make a precision matrix
@@ -216,26 +216,46 @@ function [f,g] = limpco2(z,y,w,sys,opt)
     
     % fill zpK and zgpK with associated calculated pK and gpK values
     [zpK, zgpK, rph_tot, rph_sws, rph_free, rph_nbs] = parse_zpK(x,sys,opt);
+
+    % want to zero out the residual for chosen scale
+    % then, zero out grph too
+    if opt.phscale == 1
+        c = [  M * q( x ); ...
+        (-K * x) + zpK;...
+        rph_sws; rph_free; rph_nbs] ;
+    elseif opt.phscale == 2
+        c = [  M * q( x ); ...
+        (-K * x) + zpK;...
+        rph_tot; rph_free; rph_nbs] ;
+    elseif opt.phscale == 3
+        c = [  M * q( x ); ...
+        (-K * x) + zpK;...
+        rph_tot; rph_sws; rph_nbs] ;
+    elseif opt.phscale == 4
+        c = [  M * q( x ); ...
+        (-K * x) + zpK;...
+        rph_tot; rph_sws; rph_free] ;
+    end
     
     % constraint equations
-    c = [  M * q( x ); ...
-        (-K * x) + zpK;...
-        rph_tot; rph_sws; rph_free; rph_nbs] ;
+    % c = [  M * q( x ); ...
+    %     (-K * x) + zpK;...
+    %     rph_tot; rph_sws; rph_free; rph_nbs] ;
 
     % keyboard
     f = 0.5 *  e.' * W * e  + lam.' * c ;  % limp, method of lagrange multipliers    
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
     
     if ( nargout > 1 ) % compute the gradient
-        grph_tot = zeros(nTP,nv);
-        grph_sws = zeros(nTP,nv);
+        grph_tot  = zeros(nTP,nv);
+        grph_sws  = zeros(nTP,nv);
         grph_free = zeros(nTP,nv);
-        grph_nbs = zeros(nTP,nv);        
+        grph_nbs  = zeros(nTP,nv);        
         for i = 1:nTP
-            grph_tot(i,[  sys.iTS           , sys.m(i).iKs  , ... % (d/dx) _pTS,_pKs
-                          sys.iTF           , sys.m(i).iKf  , ... % (d/dx) _pTF,_pKf
-                          sys.m(i).ipfH     , sys.m(i).iph  , ... % (d/dx) _pfH,_ph
-                          sys.m(i).iph_tot  ])                 ...  % (d/dx) _ph_tot
+            grph_tot(i,[  sys.iTS           , sys.m(i).iKs  ,   ... % (d/dx) _pTS,_pKs
+                          sys.iTF           , sys.m(i).iKf  ,   ... % (d/dx) _pTF,_pKf
+                          sys.m(i).ipfH     , sys.m(i).iph  ,   ... % (d/dx) _pfH,_ph
+                          sys.m(i).iph_tot  ])                  ... % (d/dx) _ph_tot
                                             = sys.m(i).grph_tot(x); 
             grph_sws(i,[  sys.iTS           , sys.m(i).iKs    , ... % (d/dx) _pTS,_pKs
                           sys.iTF           , sys.m(i).iKf    , ... % (d/dx) _pTF,_pKf
@@ -253,23 +273,34 @@ function [f,g] = limpco2(z,y,w,sys,opt)
                           sys.m(i).iph_nbs   ])                 ... % (d/dx) _ph_nbs
                                             = sys.m(i).grph_nbs(x); 
         end
-        dcdx = [ M * diag( sys.dqdx( x ) ); ...
-              (-K + zgpK) ;... % constraint eqns wrt -log10(concentrations)
-              grph_tot; grph_sws; grph_free; grph_nbs] ;
+        if opt.phscale == 1
+            dcdx = [ M * diag( sys.dqdx( x ) ); ...
+              (-K + zgpK) ;... 
+              grph_sws; grph_free; grph_nbs] ;
+        elseif opt.phscale == 2
+            dcdx = [ M * diag( sys.dqdx( x ) ); ...
+              (-K + zgpK) ;... 
+              grph_tot; grph_free; grph_nbs] ;
+        elseif opt.phscale == 3
+            dcdx = [ M * diag( sys.dqdx( x ) ); ...
+              (-K + zgpK) ;... 
+              grph_tot; grph_sws; grph_nbs] ;
+        elseif opt.phscale == 4
+            dcdx = [ M * diag( sys.dqdx( x ) ); ...
+              (-K + zgpK) ;... 
+              grph_tot; grph_sws; grph_free] ;
+        end
 
-        % gf2t = zeros(nTP,nv);
-        % for i = 1:nTP
-        %     gf2t(i, [ sys.m(i).iph, sys.m(i).iKs, sys.iTS, ...
-        %         sys.m(i).iph_free ] ) = sys.m(i).gf2t(x);
-        % end
+        % constraint eqns wrt -log10(concentrations)
         % dcdx = [ M * diag( sys.dqdx( x ) ); ...
-        %         (-K + zgpK) ;...
-        %         gf2t ]; % constraint eqns wrt -log10(concentrations)
+        %       (-K + zgpK) ;... 
+        %       grph_tot; grph_sws; grph_free; grph_nbs] ;
+
         g = [ e.' * W * PP +  lam.' * dcdx ,  c.' ];
         % keyboard
     end
 
-    if ( nargout > 2 ) % compute the Hessian
+    if ( nargout > 2 ) % compute the Hessian, not used as of v7
         ddq =  diag( sys.d2qdx2( x ) ); % q"
         [nr,nc] = size(M);
         gg = zeros(nc,1);
@@ -291,9 +322,10 @@ end
 
 % -----------------------------------------------------------------------------------
 
-function [opt] = check_opt(opt)
+function [opt] = check_opt(opt,obs)
     % check opt input
     isbad = @(thing) (isempty(thing) & sum(isnan(thing)));
+    isgood = @(thing) (~isempty(thing) & ~sum(isnan(thing)));
 
     % opt.printmes
     if ~isfield(opt,'printmes') || isbad(opt.printmes)
@@ -354,8 +386,23 @@ function [opt] = check_opt(opt)
     end
     % opt.phscale
     if ~isfield(opt,'phscale') || isbad(opt.phscale)
+        if ~isfield(obs,'ph_tot') || isbad(obs,'ph_tot') || ...
+            ~isfield(obs,'ph_sws') || isbad(obs,'ph_sws') || ...
+            ~isfield(obs,'ph_free') || isbad(obs,'ph_free') || ...
+            ~isfield(obs,'ph_nbs') || isbad(obs,'ph_nbs')               
             error(['No opt.phscale chosen, must choose 1 = tot, ' ...
                 '2 = sws, 3 = free, 4 = NBS \n'])
+        else 
+            if isgood(obs,'ph_tot')
+                opt.phscale = 1;
+            elseif isgood(obs,'ph_sws')
+                opt.phscale = 2;
+            elseif isgood(obs,'ph_free') 
+                opt.phscale = 3;
+            elseif isgood(obs,'ph_nbs')
+                opt.phscale = 4;
+            end
+        end
     elseif opt.phscale > 4 || opt.phscale < 1
             eror(['Invalid opt.phscale chosen, must choose 1 = tot, ' ...
                 '2 = sws, 3 = free, 4 = NBS \n'])
@@ -515,12 +562,12 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         if (~isfield(obs(i).m(1),'co3')) || (~isgood(obs(i).m(1).co3))
             obs(i).m(1).co3 = [];
         end
-        if (~isfield(obs(i).m(1),'eph')) || (~isgood(obs(i).m(1).eph))
-            obs(i).m(1).eph = [];
-        end
-        if (~isfield(obs(i).m(1),'ph')) || (~isgood(obs(i).m(1).ph))
-            obs(i).m(1).ph = [];
-        end
+        % if (~isfield(obs(i).m(1),'eph')) || (~isgood(obs(i).m(1).eph))
+        %     obs(i).m(1).eph = [];
+        % end
+        % if (~isfield(obs(i).m(1),'ph')) || (~isgood(obs(i).m(1).ph))
+        %     obs(i).m(1).ph = [];
+        % end
         if (~isfield(obs(i).m(1),'eph_tot')) || (~isgood(obs(i).m(1).eph_tot))
             obs(i).m(1).eph_tot = [];
         end
@@ -1001,11 +1048,11 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             epK2p  = epK(9);  epK3p = epK(10); epKsi = epK(11); epKnh4 = epK(12);
             epKh2s = epK(13); epp2f = epK(14); epKar = epK(15); epKca  = epK(16);
             epfH   = epK(17);
-            %
+            
             % add "observations" for the equilibrium constants
             % and transfer from obs struct to yobs and wobs vectors (or
-            % matrixes if nD >1)
-            %
+            % matrixes if nD > 1)
+            
             if (isgood(obs(i).m(ii).epK0))
                 wobs(i,sys.m(ii).iK0) = (obs(i).m(ii).epK0)^(-2);
             else
@@ -1125,59 +1172,59 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
 
             % -------------------------------------------------------------
             % begin parse_ph
-            if (isgood(obs(i).m(ii).ph)) % ph on chosen scale
-                yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph ;
-                if opt.phscale == 1 % tot
-                    yobs(i,sys.m(ii).iph_tot) = obs(i).m(ii).ph;
-                    obs(i).m(ii).ph_tot = obs(i).m(ii).ph;
-                elseif opt.phscale == 2 % sws
-                    yobs(i,sys.m(ii).iph_sws) = obs(i).m(ii).ph;
-                    obs(i).m(ii).ph_sws = obs(i).m(ii).ph;
-                elseif opt.phscale == 3 % free
-                    yobs(i,sys.m(ii).iph_free) = obs(i).m(ii).ph;
-                    obs(i).m(ii).ph_free = obs(i).m(ii).ph;
-                elseif opt.phscale == 4 % nbs
-                    yobs(i,sys.m(ii).iph_nbs) = obs(i).m(ii).ph;
-                    obs(i).m(ii).ph_nbs = obs(i).m(ii).ph;
-                end
-            else
-                yobs(i,sys.m(ii).iph) = nan;
-                obs(i).m(ii).ph = nan;
-            end
-            if (isgood(obs(i).m(ii).eph))
-                wobs(i,sys.m(ii).iph) = (obs(i).m(ii).eph).^(-2);
-                if opt.phscale == 1 % tot
-                    wobs(i,sys.m(ii).iph_tot) = obs(i).m(ii).eph;
-                    obs(i).m(ii).eph_tot = obs(i).m(ii).eph;
-                elseif opt.phscale == 2 % sws
-                    wobs(i,sys.m(ii).iph_sws) = obs(i).m(ii).eph;
-                    obs(i).m(ii).eph_sws = obs(i).m(ii).eph;
-                elseif opt.phscale == 3 % free
-                    wobs(i,sys.m(ii).iph_free) = obs(i).m(ii).eph;
-                    obs(i).m(ii).eph_free = obs(i).m(ii).eph;
-                elseif opt.phscale == 4 % nbs
-                    wobs(i,sys.m(ii).iph_nbs) = obs(i).m(ii).eph;
-                    obs(i).m(ii).eph_nbs = obs(i).m(ii).eph;
-                end
-            else
-                wobs(i,sys.m(ii).iph) = nan;
-                obs(i).m(ii).eph = nan;
-            end
+            % if (isgood(obs(i).m(ii).ph)) % ph on chosen scale
+            %     % yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph ;
+            %     if opt.phscale == 1 % tot
+            %         yobs(i,sys.m(ii).iph_tot) = obs(i).m(ii).ph;
+            %         obs(i).m(ii).ph_tot = obs(i).m(ii).ph;
+            %     elseif opt.phscale == 2 % sws
+            %         yobs(i,sys.m(ii).iph_sws) = obs(i).m(ii).ph;
+            %         obs(i).m(ii).ph_sws = obs(i).m(ii).ph;
+            %     elseif opt.phscale == 3 % free
+            %         yobs(i,sys.m(ii).iph_free) = obs(i).m(ii).ph;
+            %         obs(i).m(ii).ph_free = obs(i).m(ii).ph;
+            %     elseif opt.phscale == 4 % nbs
+            %         yobs(i,sys.m(ii).iph_nbs) = obs(i).m(ii).ph;
+            %         obs(i).m(ii).ph_nbs = obs(i).m(ii).ph;
+            %     end
+            % % else
+            % %     yobs(i,sys.m(ii).iph) = nan;
+            % %     obs(i).m(ii).ph = nan;
+            % end
+            % if (isgood(obs(i).m(ii).eph))
+            %     % wobs(i,sys.m(ii).iph) = (obs(i).m(ii).eph).^(-2);
+            %     if opt.phscale == 1 % tot
+            %         wobs(i,sys.m(ii).iph_tot) = obs(i).m(ii).eph;
+            %         obs(i).m(ii).eph_tot = obs(i).m(ii).eph;
+            %     elseif opt.phscale == 2 % sws
+            %         wobs(i,sys.m(ii).iph_sws) = obs(i).m(ii).eph;
+            %         obs(i).m(ii).eph_sws = obs(i).m(ii).eph;
+            %     elseif opt.phscale == 3 % free
+            %         wobs(i,sys.m(ii).iph_free) = obs(i).m(ii).eph;
+            %         obs(i).m(ii).eph_free = obs(i).m(ii).eph;
+            %     elseif opt.phscale == 4 % nbs
+            %         wobs(i,sys.m(ii).iph_nbs) = obs(i).m(ii).eph;
+            %         obs(i).m(ii).eph_nbs = obs(i).m(ii).eph;
+            %     end
+            % % else
+            % %     wobs(i,sys.m(ii).iph) = nan;
+            % %     obs(i).m(ii).eph = nan;
+            % end
 
             if (isgood(obs(i).m(ii).ph_tot)) % ph_tot
                 yobs(i,sys.m(ii).iph_tot) = obs(i).m(ii).ph_tot ;
-                if opt.phscale == 1
-                    yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph_tot;
-                end
+                % if opt.phscale == 1
+                %     yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph_tot;
+                % end
             else
                 yobs(i,sys.m(ii).iph_tot) = nan;
                 obs(i).m(ii).ph_tot = nan;
             end
             if (isgood(obs(i).m(ii).eph_tot))
                 wobs(i,sys.m(ii).iph_tot) = obs(i).m(ii).eph_tot.^(-2);
-                if opt.phscale == 1
-                    wobs(i,sys.m(ii).iph) = obs(i).m(ii).eph_tot.^(-2);
-                end
+                % if opt.phscale == 1
+                %     wobs(i,sys.m(ii).iph) = obs(i).m(ii).eph_tot.^(-2);
+                % end
             else
                 wobs(i,sys.m(ii).iph_tot) = nan;
                 obs(i).m(ii).eph_tot = nan;
@@ -1185,18 +1232,18 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
 
             if (isgood(obs(i).m(ii).ph_sws)) % ph_sws (ph on sws scale)
                 yobs(i,sys.m(ii).iph_sws) = obs(i).m(ii).ph_sws;
-                if opt.phscale == 3
-                    yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph_sws;
-                end
+                % if opt.phscale == 2
+                %     yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph_sws;
+                % end
             else
                 yobs(i,sys.m(ii).iph_sws) = nan;
                 obs(i).m(ii).ph_sws = nan;
             end
             if (isgood(obs(i).m(ii).eph_sws))
                 wobs(i,sys.m(ii).iph_sws) = obs(i).m(ii).eph_sws.^(-2);
-                if opt.phscale == 3
-                    wobs(i,sys.m(ii).iph) = obs(i).m(ii).eph_sws.^(-2);
-                end
+                % if opt.phscale == 2
+                %     wobs(i,sys.m(ii).iph) = obs(i).m(ii).eph_sws.^(-2);
+                % end
             else
                 wobs(i,sys.m(ii).iph_sws) = nan;
                 obs(i).m(ii).eph_sws = nan;
@@ -1204,18 +1251,18 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
 
             if (isgood(obs(i).m(ii).ph_free)) % ph_free (ph on free scale)
                 yobs(i,sys.m(ii).iph_free) = obs(i).m(ii).ph_free ;
-                if opt.phscale == 2
-                    yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph_free;
-                end
+                % if opt.phscale == 3
+                %     yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph_free;
+                % end
             else
                 yobs(i,sys.m(ii).iph_free) = nan;
                 obs(i).m(ii).ph_free = nan;
             end
             if (isgood(obs(i).m(ii).eph_free)) 
                 wobs(i,sys.m(ii).iph_free) = obs(i).m(ii).eph_free.^(-2);
-                if opt.phscale == 2
-                    wobs(i,sys.m(ii).iph) = obs(i).m(ii).eph_free.^(-2);
-                end
+                % if opt.phscale == 3
+                %     wobs(i,sys.m(ii).iph) = obs(i).m(ii).eph_free.^(-2);
+                % end
             else
                 wobs(i,sys.m(ii).iph_free) = nan;
                 obs(i).m(ii).eph_free = nan;
@@ -1223,18 +1270,18 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
 
             if (isgood(obs(i).m(ii).ph_nbs)) % ph_nbs
                 yobs(i,sys.m(ii).iph_nbs) = obs(i).m(ii).ph_nbs;
-                if opt.phscale == 4
-                    yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph_nbs;
-                end
+                % if opt.phscale == 4
+                %     yobs(i,sys.m(ii).iph) = obs(i).m(ii).ph_nbs;
+                % end
             else
                 yobs(i,sys.m(ii).iph_nbs) = nan;
                 obs(i).m(ii).ph_nbs = nan;
             end
             if (isgood(obs(i).m(ii).eph_nbs)) 
                 wobs(i,sys.m(ii).iph_nbs) = obs(i).m(ii).eph_nbs.^(-2);
-                if opt.phscale == 4
-                    wobs(i,sys.m(ii).iph) = obs(i).m(ii).eph_nbs.^(-2);
-                end
+                % if opt.phscale == 4
+                %     wobs(i,sys.m(ii).iph) = obs(i).m(ii).eph_nbs.^(-2);
+                % end
             else
                 wobs(i,sys.m(ii).iph_nbs) = nan;
                 obs(i).m(ii).eph_nbs = nan;
@@ -1817,12 +1864,12 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).eP_u  = z(sys.m(i).iP)+sigy(sys.m(i).iP);
         
         % pH
-        est.m(i).ph    = z(sys.m(i).iph);
-        est.m(i).eph   = sigy(sys.m(i).iph);
-        est.m(i).h_    = q(z(sys.m(i).iph)) * 1e6;
-        est.m(i).eh_   = ebar(sys.m(i).iph) * 1e6;
-        est.m(i).eh_l  = ebar_l(sys.m(i).iph) * 1e6;
-        est.m(i).eh_u  = ebar_u(sys.m(i).iph) * 1e6;
+        % est.m(i).ph    = z(sys.m(i).iph);
+        % est.m(i).eph   = sigy(sys.m(i).iph);
+        % est.m(i).h_    = q(z(sys.m(i).iph)) * 1e6;
+        % est.m(i).eh_   = ebar(sys.m(i).iph) * 1e6;
+        % est.m(i).eh_l  = ebar_l(sys.m(i).iph) * 1e6;
+        % est.m(i).eh_u  = ebar_u(sys.m(i).iph) * 1e6;
 
         % ph_tot
         est.m(i).ph_tot   = z(sys.m(i).iph_tot);
@@ -2296,38 +2343,38 @@ function [zpK, zgpK, rph_tot, rph_sws, rph_free, rph_nbs] = ...
 end
 % ---------------------------------------------------------------------------------
 
-function ph_all = phscales(phin,scalein,TS,Ks,TF,Kf,pfH) % pfH
-    % convert input pH to all scales
-    q = @(x) 10.^(-x);
-    % input TS, Ks, TF, Kf
-    free2tot = (1 + TS./Ks);
-    sws2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
-    fH = q(pfH);
-    % fH = q(phf);
-    % 1 = total scale, 2 = sea water scale, 3 = free scale, 4 = NBS
-    if scalein == 1
-        % total scale
-        factor = 0;
-    elseif scalein == 2
-        % seawater scale
-        factor = -log(sws2tot)./log(0.1);
-    elseif scalein == 3
-        % free scale
-        factor = -log(free2tot)./log(0.1);
-    elseif scalein == 4
-        % NBS
-        factor = -log(sws2tot)./log(0.1) + log(fH)./log(0.1);
-    elseif scalein < 1 || scalein > 4
-        fprintf('Warning: Incorrect pH scale factor used.\n');
-    end
-    ph_tot  = phin - factor;
-    ph_nbs  = ph_tot - log(sws2tot)./log(0.1) + log(fH)/log(0.1);
-    ph_free = ph_tot - log(free2tot)./log(0.1);
-    ph_sws  = ph_tot - log(sws2tot)./log(0.1);
-
-    ph_all = [ph_tot, ph_sws, ph_free, ph_nbs];
-
-end
+% function ph_all = phscales(phin,scalein,TS,Ks,TF,Kf,pfH) % pfH
+%     % convert input pH to all scales
+%     q = @(x) 10.^(-x);
+%     % input TS, Ks, TF, Kf
+%     free2tot = (1 + TS./Ks);
+%     sws2tot  = (1 + TS./Ks)./(1 + TS./Ks + TF./Kf);
+%     fH = q(pfH);
+%     % fH = q(phf);
+%     % 1 = total scale, 2 = sea water scale, 3 = free scale, 4 = NBS
+%     if scalein == 1
+%         % total scale
+%         factor = 0;
+%     elseif scalein == 2
+%         % seawater scale
+%         factor = -log(sws2tot)./log(0.1);
+%     elseif scalein == 3
+%         % free scale
+%         factor = -log(free2tot)./log(0.1);
+%     elseif scalein == 4
+%         % NBS
+%         factor = -log(sws2tot)./log(0.1) + log(fH)./log(0.1);
+%     elseif scalein < 1 || scalein > 4
+%         fprintf('Warning: Incorrect pH scale factor used.\n');
+%     end
+%     ph_tot  = phin - factor;
+%     ph_nbs  = ph_tot - log(sws2tot)./log(0.1) + log(fH)/log(0.1);
+%     ph_free = ph_tot - log(free2tot)./log(0.1);
+%     ph_sws  = ph_tot - log(sws2tot)./log(0.1);
+% 
+%     ph_all = [ph_tot, ph_sws, ph_free, ph_nbs];
+% 
+% end
 
 % ----------------------------------------------------------------------------------
 
@@ -2480,11 +2527,10 @@ function z0 = init(yobs,sys,opt)
     % add the Lagrange multipliers
     % nlam = size(sys.M,1) + size(sys.K,1) + nTP; % (old)
     % ^ + nTP was for each f2t (x3 m's)
-    nlam = size(sys.M,1) + size(sys.K,1) + (nTP*4);
+    nlam = size(sys.M,1) + size(sys.K,1) + (nTP*3);
     % now have ph_free, ph_sws, and ph_nbs (3 things) to add for nlam
     lam = zeros(nlam,1);
     z0 = [y0(:);lam(:)];
-   
 end
 
 
