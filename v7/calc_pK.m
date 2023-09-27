@@ -74,6 +74,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [-4.53; 0.09 ];
         
     pKs = pKs + ppfac(T,Pbar,a,b);
+    % pKs_T = gpKs(1); % isn't this needed?
     pKs_T = pKs_T + ppfac_T(T,Pbar,a,b);
     pKs_P = ppfac_P(T,Pbar,a,b);
     gpKs(1) = pKs_T;
@@ -139,8 +140,8 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     gpK3p(1) = pK3p_T;
     gpK3p(3) = pK3p_P;
 
-    % pressure correction for Ksi (Millero, 1995; used the values from
-    % boric acid)
+    % pressure correction for Ksi 
+    % (Millero, 1995; used the values from boric acid)
     a = [ -29.48; 0.1622; -0.002608 ];
     b =[ -2.84; 0];
         
@@ -236,8 +237,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             gpK2p; gpK3p; gpKsi; gpKnh4; gpKh2s; gpp2f; gpKar; gpKca; gpfH];
     epK = [  epK0;  epK1;  epK2;   epKb;   epKw;  epKs;  epKf; epK1p; ...
             epK2p; epK3p; epKsi; epKnh4; epKh2s; epp2f; epKar; epKca; epfH];
-
     
+    % pK0 = 1, pK1 = 2, pK2 = 3, pKb = 4, pKw = 5, pKs = 6, pKf = 7, 
+    % pK1p = 8, pK2p= 9, pK3p = 10, pKsi = 11, pKnh4 = 12, pKh2s = 13, 
+    % pp2f = 14, pKar = 15, pKca = 16, pfH = 17 
     % ---------------------------------------------------------------------
     % subfunctions
     % ---------------------------------------------------------------------
@@ -433,9 +436,11 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         % calculate Kf (Dickson and Riley 1979)----------------------------   
             a = 1590.2; b = -12.641; c = 1.525;
 
-            pKf = -( a/TK + b + c * sqrt(IonS) ) ./LOG10 + p(1 - 0.001005 * S) ; % free pH scale
+            pKf = -( a/TK + b + c * sqrt(IonS) ) ./LOG10 ...
+                + p(1 - 0.001005 * S) ; % free pH scale
             pKf_T = -(-a/(TK.^2) ) / LOG10; 
-            pKf_S =  -c * sqrtIonS_S / LOG10 + dpdx(1 - 0.001005  *S) * (-0.001005) ;  
+            pKf_S =  -c * sqrtIonS_S / LOG10 + dpdx(1 - 0.001005 * S)...
+                * (-0.001005) ;  
         elseif opt.KF == 2
         % calculate Perez and Fraga (1987)---------------------------------
         % (to be used for S: 10-40, T: 9-33) (from Sharp's code)
@@ -443,7 +448,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pKf = -( a/TK + b + c * sqrt(S) ) ./LOG10 ; % free pH scale
             pKf_T = -(-a/(TK.^2) ) / LOG10; 
-            pKf_S =  -c * (-0.5/sqrt(S)) / LOG10 ;  
+            pKf_S = ( -c * (0.5/sqrt(S)) )/ LOG10 ;  
         end
         pKf_P = 0.0;
         gpKf = [pKf_T, pKf_S, pKf_P];
@@ -478,14 +483,20 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             a3 = [ -24.4344;  -25.085; -0.2474;  0.0 ;    0.0  ];
             a4 = [   0.0   ; 0.053105;   0.0  ;  0.0 ;    0.0  ];
 
-            f  = @(S,a) a(1) + (a(2) .* sqrt(S)) + (a(3) .* S) + (a(4) .* S.^(1.5)) + (a(5) .* (S.^2));
-            df = @(S,a)  0.5 .* a(2) .* S^(-0.5) + a(3) + 1.5 .* a(4) .* sqrt(S) + 2 .* a(5) .* S;
+            f  = @(S,a) a(1) + (a(2) .* sqrt(S)) + (a(3) .* S) + ...
+                (a(4) .* S.^(1.5)) + (a(5) .* (S.^2));
+            df = @(S,a)  0.5 .* a(2) .* S^(-0.5) + a(3) + ...
+                1.5 .* a(4) .* sqrt(S) + 2 .* a(5) .* S;
 
-            pKb   = -(  (f(S,a1) ./ TK) + f(S,a2) + (f(S,a3) .* log(TK)) + (f(S,a4) .* TK) ) ./ LOG10;
+            pKb   = -(  (f(S,a1) ./ TK) + ...
+                f(S,a2) + (f(S,a3) .* log(TK)) + ...
+                (f(S,a4) .* TK) ) ./ LOG10;
             pKb   = pKb - pSWS2tot; % convert from total to SWS pH scale
-            pKb_T = -( (-f(S,a1) ./ (TK.^2) ) + ( f(S,a3) ./ TK ) +  f(S,a4) ) ./ LOG10;
+            pKb_T = -( (-f(S,a1) ./ (TK.^2) ) + ...
+                ( f(S,a3) ./ TK ) +  f(S,a4) ) ./ LOG10;
             pKb_T = pKb_T - gpSWS2tot(1);
-            pKb_S = -( ( df(S,a1) ./ TK ) + df(S,a2) + (df(S,a3) .* log(TK)) + (df(S,a4) .* TK) ) ./ LOG10;
+            pKb_S = -( ( df(S,a1) ./ TK ) + df(S,a2) + ...
+                (df(S,a3) .* log(TK)) + (df(S,a4) .* TK) ) ./ LOG10;
             pKb_S = pKb_S - gpSWS2tot(2);
         end
         gpKb = [pKb_T, pKb_S];
@@ -531,15 +542,22 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         else
         % calculate Kw (Millero, 1995)-------------------------------------
             a1 = [ 148.9802; -13847.26; -23.6521 ];
-            a2 = [  -5.977;     118.67;   1.0495 ];
-            a3 = [  -0.01615;     0.0;    0.0    ];
+            a2 = [   -5.977;    118.67;   1.0495 ];
+            a3 = [ -0.01615;     0.0  ;     0.0  ];
 
             f  = @(T,a)   a(1) + a(2) / T    + a(3) * log(T);
             df = @(T,a)        - a(2) / T^2  + a(3) / T;
 
-            pKw   = -(  f(TK,a1) +  f(TK,a2) * sqrt(S)       +  f(TK,a3) * S ) / LOG10;
-            pKw_T = -( df(TK,a1) + df(TK,a2) * sqrt(S)       + df(TK,a3) * S ) / LOG10;
-            pKw_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
+            pKw   = -( f(TK,a1) + ...
+                       f(TK,a2) * sqrt(S) + ...
+                       f(TK,a3) * S ) / LOG10;
+            % pKw   =  f(TK,a2) * (S)  ;
+            pKw_T = -( df(TK,a1) + ...
+                       df(TK,a2) * sqrt(S) + ...
+                       df(TK,a3) * S ) / LOG10;
+            pKw_S = -( ( f(TK,a2) .* ( 0.5 ./ sqrt(S) ) ) + ...
+                       f(TK,a3) ) ./ LOG10;
+            % pKw_S = (  f(TK,a2)  );
 
             elnKw = 0.01; % pg 670 Millero, 1995
             epKw = abs( -elnKw/LOG10 ) ; % convert to epK with -/LOG10
@@ -1541,13 +1559,13 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
     % calculate TF (Riley 1965)--------------------------------------------
         TF = (0.000067./18.998).*(S./1.80655); % mol/kg-SW
-        TF_S = 1.95217e-6; % derivative wrt S
+        TF_S = (0.000067/18.998)*(1/1.80655); % derivative wrt S
         pTF = p(TF);
         pTF_S = dpdx(TF).*TF_S;
         
     % calculate TS (Morris & Riley 1966)-----------------------------------
         TS = (0.14./96.062).*(S./1.80655); % mol/kg-SW
-        TS_S = 0.000806727; % derivative wrt S
+        TS_S = (0.14/96.062)*(1/1.80655); % derivative wrt S
         pTS = p(TS);
         pTS_S = dpdx(TS).*TS_S;
         
@@ -1590,11 +1608,14 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             gpfH_S = dpdx(pfH) * 2 * (0.00046 - (0.00000148 * (TK))) * S ;
         else
         % fH def'n: Takahashi et al, Ch 3 in GEOSECS v.3, 1982 ------------
-            fH = 1.2948 - 0.002036*(TK) + ...
-                (0.0004607 - (0.000001475 * (TK))) * (S).^2 ;
+            fH = 1.2948 - 0.002036*TK + ...
+                ( 0.0004607 - 0.000001475 * (TK) ) .* (S).^2 ;
+            fH_T = -0.002036 + ( -0.000001475 ) .* (S).^2  ;
+            fH_S = 2 * ( 0.0004607 - ( 0.000001475 .* (TK) ) ) .* (S) ;
             pfH = p(fH);
-            gpfH_T = dpdx(pfH) - 0.002036 - 0.000001475 * (S.^2) ;
-            gpfH_S = dpdx(pfH) * 2 * (0.0004607 - (0.000001475 * (TK))) * S ;
+
+            gpfH_T = dpdx(fH) * fH_T;
+            gpfH_S = dpdx(fH) * fH_S;
         end
         gpfH = [gpfH_T, gpfH_S, 0];
         % assumed independent of pressure

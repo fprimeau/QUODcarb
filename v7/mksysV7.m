@@ -363,7 +363,7 @@ function sys = mksysV7(obs,abr,phscale)
         % Total sulfate
         row = row + 1;
         M(row, [ iTS, m(j).ihso4, m(j).iso4 ])   =  [1, -1, -1];
-        M(row_alk,[ m(j).iph_free, m(j).ihso4 ])  =  [1, 1];
+        M(row_alk,[ m(j).iph_free, m(j).ihso4 ])  =  [1, 1]; 
         m(j).jTS = row;
 
 %         % free2tot = f2t = (1 + TS/Ks) ; % ph_free or phf

@@ -17,7 +17,7 @@ opt.KSO4 = 1; % option for KSO4 formulation
 opt.KF   = 2; % option for KF formulation
 opt.TB   = 2; % option for TB formulation
 opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
-opt.printcsv = 0; % print est to CSV? 1 = on , 0 = off
+opt.printcsv = 1; % print est to CSV? 1 = on , 0 = off
 opt.fid      = 'CT_ph.csv'; % don't need it if printcsv is off
 opt.printmes = 1; % print screen messages? 1 = on, 0 = off
 opt.abr = 'all'; % option for which acid/base reactions to include
@@ -60,9 +60,9 @@ for i = 1:nD
     obs(i).m(1).eP   = 0.63 ;
     obs(i).m(1).ph_tot   = in(i+ad,9); % total scale
     obs(i).m(1).eph_tot  = 0.0004 ;
-    if i >= 1187 % DON"T WANT THIS ANYMORE
-        obs(i).m(1).eph = 0.05; % for UW measurements
-    end
+    % if i >= 1187 % DON"T WANT THIS ANYMORE
+    %     obs(i).m(1).eph = 0.05; % for UW measurements
+    % end
     obs(i).m(1).co3  = in(i+ad,15); % (µmol/kg)
     obs(i).m(1).eco3 = 2.0 ;  % std ±2µmol/kg
 
@@ -73,35 +73,35 @@ for i = 1:nD
     % obs(i).m(3).eP  = 0.63 ;
     % obs(i).m(3).pco2  = in(i+ad,12); % (µatm)
     % obs(i).m(3).epco2 = in(i+ad,12)*0.0021; % 0.21% relative std error (avg)
-
 end
+
 fid2 = 'compare_CT_AT.csv';
 % [A] = compare2(obs,est,opt,2,1,fid2);
 obs_backup = obs;
 
-% tp = 1;
+tp = 1;
 % % TA TC (Q2) (fid2)
-% for i = 1:nD
-%     obs(i).m(1).ph = nan;   obs(i).m(1).eph = nan;
-%     % obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
-%     obs(i).m(1).co3 = nan;  obs(i).m(1).eco3 = nan;
-% end
-% [est,obs,iflag] = QUODcarbV7(obs,opt);
+for i = 1:nD
+    obs(i).m(1).ph = nan;   obs(i).m(1).eph = nan;
+    % obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
+    obs(i).m(1).co3 = nan;  obs(i).m(1).eco3 = nan;
+end
+[est,obs,iflag] = QUODcarbV7(obs,opt);
 % est02   = est;
-% [A] = compare2(obs,est,opt,tp,1,fid2);
+[A] = compare2(obs,est,opt,tp,1,fid2);
 
 % % TC ph (Q2) (fid4)
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;        obs(i).eTA = nan;
-    obs(i).m(1).pco2 = nan; obs(i).m(1).epco2 = nan; % m(3)
+    % obs(i).m(1).pco2 = nan; obs(i).m(1).epco2 = nan; % m(3)
     obs(i).m(1).co3 = nan;  obs(i).m(1).eco3 = nan; % m(2)
 end
 [est,obs,iflag] = QUODcarbV7(obs,opt);
 % est04   = est;
-% tp = 1;
-% fid3 = 'compare_CT_ph.csv';
-% [A] = compare2(obs,est,opt,tp,2,fid3);
+tp = 1;
+fid3 = 'compare_CT_ph.csv';
+[A] = compare2(obs,est,opt,tp,2,fid3);
 
 
 % CT AT pH pCO2 CO3 (Q5) (fid5)

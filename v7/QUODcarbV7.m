@@ -450,7 +450,8 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
     isgood = @(thing) (~isempty(thing) & ~sum(isnan(thing)));
     p = sys.p;
     q = sys.q;
-    w = @(x,e) p(1+e./x).^(-2); % convert x+/-e into precision for p(x)
+    % convert x+/-e into precision for p(x)
+    w = @(x,e) abs( p(1 + e./x) ).^(-2);
 
     nv = size(sys.K,2);
     yobs = nan(nD,nv);
@@ -900,9 +901,10 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 yobs(i,sys.iTNH3) = p(obs(i).TNH3*1e-6);
             end
             if (~isfield(obs(i), 'eTNH3'))  || (~isgood(obs(i).eTNH3))
-                obs(i).eTNH3 = 1e-3; % µmol/kg
+                obs(i).eTNH3 = 5e-4; % µmol/kg
                 wobs(i,sys.iTNH3) = w(obs(i).TNH3,obs(i).eTNH3);
             else
+                % w = @(x,e) p(1+e./x).^(-2); % convert x+/-e into precision for p(x)
                 wobs(i,sys.iTNH3) = w(obs(i).TNH3,obs(i).eTNH3);
             end
             if (~isfield(obs(i).m(1), 'nh3')) || ...
@@ -940,7 +942,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 yobs(i,sys.iTH2S) = p(obs(i).TH2S*1e-6);
             end
             if (~isfield(obs(i), 'eTH2S'))  || (~isgood(obs(i).eTH2S))
-                obs(i).eTH2S = 1e-3; % µmol/kg
+                obs(i).eTH2S = 5e-4; % µmol/kg
                 wobs(i,sys.iTH2S) = w(obs(i).TH2S,obs(i).eTH2S);
             else
                 wobs(i,sys.iTH2S) = w(obs(i).TH2S,obs(i).eTH2S);
@@ -1031,8 +1033,8 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.m(ii).iT) = obs(i).m(ii).T;
             yobs(i,sys.m(ii).iP) = obs(i).m(ii).P;
 
-            wobs(i,sys.m(ii).iT) = obs(i).m(ii).eT;
-            wobs(i,sys.m(ii).iP) = obs(i).m(ii).eP;
+            wobs(i,sys.m(ii).iT) = (obs(i).m(ii).eT)^(-2);
+            wobs(i,sys.m(ii).iP) = (obs(i).m(ii).eP)^(-2);
 
             [pK,gpK,epK] = calc_pK(opt, obs(i).m(ii).T, obs(i).sal, ...
                 obs(i).m(ii).P );
@@ -1083,7 +1085,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.m(ii).iK2) = (obs(i).m(ii).epK2)^(-2);
             else
                 obs(i).m(ii).epK2 = epK2;
-                wobs(i,sys.m(ii).iK2) = (obs(i).m(ii).epK2)^(-2);  % wK2 = 1/(1 + (0.02/pKsys(3)))^2 ;
+                wobs(i,sys.m(ii).iK2) = (obs(i).m(ii).epK2)^(-2);
             end
             if (isgood(obs(i).m(ii).pK2))
                 yobs(i,sys.m(ii).iK2) = obs(i).m(ii).pK2;
@@ -1740,10 +1742,9 @@ end
 % --------------------------------------------------------------------------------
 
 function [est] = parse_output(z,sigy,opt,sys)
-    % populate est
+    % populate est, output structure with best estimates
     %
     % INPUT:
-    %
     %   z  := system state including equilibrium constants and lagrange multipliers
     
     p = sys.p;
@@ -1959,7 +1960,7 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).ep2f_l = ebar_l(sys.m(i).ip2f);
         est.m(i).ep2f_u = ebar_u(sys.m(i).ip2f);
         
-        % pK0 (no 81)
+        % pK0 
         est.m(i).pK0   = z(sys.m(i).iK0);
         est.m(i).epK0  = sigy(sys.m(i).iK0);
         est.m(i).K0    = q(z(sys.m(i).iK0));
@@ -1983,7 +1984,7 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).eK2_l = ebar_l(sys.m(i).iK2);
         est.m(i).eK2_u = ebar_u(sys.m(i).iK2);
 
-        % OH (99)
+        % OH 
         est.m(i).oh    = q(z(sys.m(i).ioh))*1e6; % convt
         est.m(i).eoh   = ebar(sys.m(i).ioh)*1e6;
         est.m(i).eoh_l = ebar_l(sys.m(i).ioh)*1e6;
@@ -1991,7 +1992,7 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).poh   = z(sys.m(i).ioh);
         est.m(i).epoh  = sigy(sys.m(i).ioh);
 
-        % pKw (105)
+        % pKw 
         est.m(i).pKw   = z(sys.m(i).iKw);
         est.m(i).epKw  = sigy(sys.m(i).iKw);
         est.m(i).Kw    = q(z(sys.m(i).iKw));
@@ -2039,7 +2040,7 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).phso4   = z(sys.m(i).ihso4);
         est.m(i).ephso4  = sigy(sys.m(i).ihso4);
 
-        % pKs (141)
+        % pKs
         est.m(i).pKs   = z(sys.m(i).iKs);
         est.m(i).epKs  = sigy(sys.m(i).iKs);
         est.m(i).Ks    = q(z(sys.m(i).iKs));
@@ -2047,7 +2048,7 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).eKs_l = ebar_l(sys.m(i).iKs);
         est.m(i).eKs_u = ebar_u(sys.m(i).iKs);
 
-        % F fluoride (147)
+        % F fluoride 
         est.m(i).F    = q(z(sys.m(i).iF))*1e6; % convt
         est.m(i).eF   = ebar(sys.m(i).iF)*1e6;
         est.m(i).eF_l = ebar_l(sys.m(i).iF)*1e6;
@@ -2055,7 +2056,7 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).pF   = z(sys.m(i).iF);
         est.m(i).epF  = sigy(sys.m(i).iF);
 
-        % HF (153)
+        % HF 
         est.m(i).HF    = q(z(sys.m(i).iHF))*1e6;
         est.m(i).eHF   = ebar(sys.m(i).iHF)*1e6;
         est.m(i).eHF_l = ebar_l(sys.m(i).iHF)*1e6;
@@ -2063,7 +2064,7 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).pHF   = z(sys.m(i).iHF);
         est.m(i).epHF  = sigy(sys.m(i).iHF);
 
-        % pKf (159)
+        % pKf
         est.m(i).pKf   = z(sys.m(i).iKf);
         est.m(i).epKf  = sigy(sys.m(i).iKf);
         est.m(i).Kf    = q(z(sys.m(i).iKf));
@@ -2253,8 +2254,7 @@ end
 
 % -------------------------------------------------------------------------
 
-function [zpK, zgpK, rph_tot, rph_sws, rph_free, rph_nbs] = ...
-    parse_zpK(x,sys,opt)
+function [zpK,zgpK,rph_tot,rph_sws,rph_free,rph_nbs] = parse_zpK(x,sys,opt)
 % assigning proper calculated values to zpK and zgpK
 
 % zpK  := equilibrium constants, aka pK's
@@ -2423,7 +2423,7 @@ function z0 = init(yobs,sys,opt)
         y0(sys.m(i).ioh) = p(oh);
 
         Kb = q(y0(sys.m(i).iKb));
-        TB = q(yobs(sys.iTB));
+        TB = q(yobs(sys.iTB)); 
         %boh4 = TB / ( 1 + h / Kb );
         boh4 = TB * Kb / (Kb + h) ;
         boh3 = TB - boh4;

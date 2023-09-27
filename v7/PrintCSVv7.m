@@ -39,73 +39,71 @@ function out = PrintCSVv7(varargin)
                 fprintf(fid,'est_%s, ', fnj{i});
                 fprintf(fid,'est_e%s, ', fnj{i}); % error
             end
-            for i = 9:6:51 % ph, ph_tot, ph_sws, ph_free, ph_nbs, pfH, fco2, pco2
+            for i = 9:6:45 %9:6:51 % ph, ph_tot, ph_sws, ph_free, ph_nbs, pfH, fco2, pco2
                 fprintf(fid,'obs_%s, ', fnj{i});
                 fprintf(fid,'obs_e%s, ', fnj{i}); % error
                 fprintf(fid,'est_%s, ', fnj{i});
                 fprintf(fid,'est_e%s, ', fnj{i}); % error
             end
-            for i = 57 % hco3 
+            for i = 51 %57 % hco3 
                 fprintf(fid,'est_%s, ', fnj{i});
                 fprintf(fid,'est_e%s, ', fnj{i}); % error
             end
-            for i = 63 % co3
-                fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_e%s, ', fnj{i}); % error
-                fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_e%s, ', fnj{i}); % error
-            end
-            for i = 69:6:75 % pco2st thru p2f
-                fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_e%s, ', fnj{i}); % error
-            end
-            for i = 81:6:93 % pK0, pK1, pK2
+            for i = 57 %63 % co3
                 fprintf(fid,'obs_%s, ', fnj{i});
                 fprintf(fid,'obs_e%s, ', fnj{i}); % error
                 fprintf(fid,'est_%s, ', fnj{i});
                 fprintf(fid,'est_e%s, ', fnj{i}); % error
             end
-            for i = 99:6:length(fnj)
-                if i == 99 || i == 111 || i == 117 ...      % oh, boh4, boh3
-                        || i == 129 || i == 135 ...         % so4, hso4
-                        || i == 147 || i == 153             % F, HF
+            for i = 63:6:69 %69:6:75 % pco2st thru p2f
+                fprintf(fid,'est_%s, ', fnj{i});
+                fprintf(fid,'est_e%s, ', fnj{i}); % error
+            end
+            for i = 75:6:87 %81:6:93 % pK0, pK1, pK2
+                fprintf(fid,'obs_%s, ', fnj{i});
+                fprintf(fid,'obs_e%s, ', fnj{i}); % error
+                fprintf(fid,'est_%s, ', fnj{i});
+                fprintf(fid,'est_e%s, ', fnj{i}); % error
+            end
+            for i = 93:6:length(fnj) %99:6:length(fnj)
+                if (    (strcmp(fnj(i),'oh'))       || ...  % oh
+                        (strcmp(fnj(i),'boh4'))     || ...  % boh4
+                        (strcmp(fnj(i),'boh3'))     || ...  % boh3
+                        (strcmp(fnj(i),'so4'))      || ...  % so4
+                        (strcmp(fnj(i),'hso4'))     || ...  % hso4
+                        (strcmp(fnj(i),'F'))        || ...  % F
+                        (strcmp(fnj(i),'HF'))       || ...  % HF
+                        (strcmp(fnj(i),'po4'))      || ...  % po4
+                        (strcmp(fnm(i),'hpo4'))     || ...  % hpo4
+                        (strcmp(fnm(i),'h2po4'))    || ...  % h2po4
+                        (strcmp(fnm(i),'h3po4'))    || ...  % h3po4
+                        (strcmp(fnm(i),'sioh4'))    || ...  % sioh4
+                        (strcmp(fnm(i),'siooh3'))   || ...  % siooh3
+                        (strcmp(fnm(i),'nh3'))      || ...  % nh3
+                        (strcmp(fnm(i),'nh4'))      || ...  % nh4
+                        (strcmp(fnm(i),'hs'))       || ...  % hs
+                        (strcmp(fnm(i),'h2s'))      || ...  % h2s
+                        (strcmp(fnm(i),'ca'))       || ...  % ca
+                        (strcmp(fnm(i),'OmegaAr'))  || ...  % OmegaAr
+                        (strcmp(fnm(i),'OmegaCa'))      )   % OmegaCa
                     fprintf(fid,'est_%s, ', fnj{i});
-                    fprintf(fid,'est_e%s, ', fnj{i}); % error
-                end
-                if i == 105 || i == 123 || i == 141 ...     % pKw, pKb, pKs
-                        || i == 159                         % pKf
+                    fprintf(fid,'est_e%s, ', fnj{i});       
+                elseif ( (strcmp(fnm(i),'pKw'))     || ...  % pKw
+                        (strcmp(fnm(i),'pKb'))      || ...  % pKb
+                        (strcmp(fnm(i),'pKs'))      || ...  % pKs
+                        (strcmp(fnm(i),'pKf'))      || ...  % pKf
+                        (strcmp(fnm(i),'pK1p'))     || ...  % pK1p
+                        (strcmp(fnm(i),'pK2p'))     || ...  % pK2p
+                        (strcmp(fnm(i),'pK3p'))     || ...  % pK3p
+                        (strcmp(fnm(i),'pKsi'))     || ...  % pKsi
+                        (strcmp(fnm(i),'pKnh4'))    || ...  % pKnh4
+                        (strcmp(fnm(i),'pKh2s'))    || ...  % pKh2s
+                        (strcmp(fnm(i),'pKar'))     || ...  % pKar
+                        (strcmp(fnm(i),'pKca'))         )   % pKca
                     fprintf(fid,'obs_%s, ', fnj{i});
-                    fprintf(fid,'obs_e%s, ', fnj{i}); % error
+                    fprintf(fid,'obs_e%s, ', fnj{i});
                     fprintf(fid,'est_%s, ', fnj{i});
-                    fprintf(fid,'est_e%s, ', fnj{i}); % error
-                end
-                if ( (strcmp(fnj(i),'po4')) ||  ...         % po4
-                        (strcmp(fnm(i),'hpo4')) || ...      % hpo4
-                        (strcmp(fnm(i),'h2po4')) || ...     % h2po4
-                        (strcmp(fnm(i),'h3po4')) || ...     % h3po4
-                        (strcmp(fnm(i),'sioh4')) || ...     % sioh4
-                        (strcmp(fnm(i),'siooh3')) || ...    % siooh3
-                        (strcmp(fnm(i),'nh3')) || ...       % nh3
-                        (strcmp(fnm(i),'nh4')) || ...       % nh4
-                        (strcmp(fnm(i),'hs')) || ...        % hs
-                        (strcmp(fnm(i),'h2s')) || ...       % h2s
-                        (strcmp(fnm(i),'ca')) || ...        % ca
-                        (strcmp(fnm(i),'OmegaAr')) || ...   % OmegaAr
-                        (strcmp(fnm(i),'OmegaCa')) )        % OmegaCa
-                    fprintf(fid,'est_%s, ', fnj{i});
-                    fprintf(fid,'est_e%s, ', fnj{i}); % error
-                elseif ( (strcmp(fnm(i),'pK1p')) || ...     % pK1p
-                        (strcmp(fnm(i),'pK2p')) || ...      % pK2p
-                        (strcmp(fnm(i),'pK3p')) || ...      % pK3p
-                        (strcmp(fnm(i),'pKsi')) || ...      % pKsi
-                        (strcmp(fnm(i),'pKnh4')) || ...     % pKnh4
-                        (strcmp(fnm(i),'pKh2s')) || ...     % pKh2s
-                        (strcmp(fnm(i),'pKar')) || ...      % pKar
-                        (strcmp(fnm(i),'pKca')) )           % pKca
-                    fprintf(fid,'obs_%s, ', fnj{i});
-                    fprintf(fid,'obs_e%s, ', fnj{i}); % error
-                    fprintf(fid,'est_%s, ', fnj{i});
-                    fprintf(fid,'est_e%s, ', fnj{i}); % error
+                    fprintf(fid,'est_e%s, ', fnj{i}); % e = error
                 end
             end
         end
@@ -146,151 +144,128 @@ function out = PrintCSVv7(varargin)
             fprintf(fid, '%s, ', 'dbar');
             fprintf(fid, '%s, ', 'dbar');
             for i = 9:6:length(fnm)
-                if ( (strcmp(fnm(i),'ph')) || ... % ph (chosen scale)
-                        (strcmp(fnm(i),'ph_tot')) || ... % ph_tot
-                        (strcmp(fnm(i),'ph_sws')) || ... % ph_sws
-                        (strcmp(fnm(i),'ph_free')) || ...% ph_free
-                        (strcmp(fnm(i),'ph_nbs')) || ... % ph_nbs
-                        (strcmp(fnm(i),'pfH')) )         % pfH
-                    fprintf(fid, '%s, ', '(p units)'); % ph, log10 unitless
+                if ...% ( (strcmp(fnm(i),'ph')) || ... % ph (chosen scale)
+                        (strcmp(fnm(i),'ph_tot')) || ...    % ph_tot
+                        (strcmp(fnm(i),'ph_sws')) || ...    % ph_sws
+                        (strcmp(fnm(i),'ph_free')) || ...   % ph_free
+                        (strcmp(fnm(i),'ph_nbs')) || ...    % ph_nbs
+                        (strcmp(fnm(i),'pfH'))  % )         % pfH
+                    fprintf(fid, '%s, ', '(p units)');      % log10 unitless
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'fco2')) || ...
-                        (strcmp(fnm(i),'pco2'))  )
-                    %fco2 & efco2 , pco2 & epco2
+                elseif ( (strcmp(fnm(i),'fco2')) || ...     % fco2
+                        (strcmp(fnm(i),'pco2'))  )          % pco2
                     fprintf(fid, '%s, ', '(uatm)');
                     fprintf(fid, '%s, ', '(uatm)');
                     fprintf(fid, '%s, ', '(uatm)');
                     fprintf(fid, '%s, ', '(uatm)');
-                elseif ( strcmp(fnm(i),'hco3'))
-                    % hco3 % ehco3
+                elseif ( strcmp(fnm(i),'hco3'))             % hco3
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif (strcmp(fnm(i),'co3'))
-                    % co3 & eco3
+                elseif (strcmp(fnm(i),'co3'))               % co3
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pco2st')) || ...
-                        (strcmp(fnm(i),'pp2f'))  )
+                elseif ( (strcmp(fnm(i),'pco2st')) || ...   % pco2st
+                        (strcmp(fnm(i),'pp2f'))  )          % pp2f
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'pK0')) || ...
-                        (strcmp(fnm(i),'pK1')) || ...
-                        (strcmp(fnm(i),'pK2')) )
-                    % pH , pco2st , pp2f , pK0 , pK1 , pK2
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'pK0')) || ...      % pK0
+                        (strcmp(fnm(i),'pK1')) || ...       % pK1
+                        (strcmp(fnm(i),'pK2')) )            % pK2
+                    fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'oh')) )
-                    % oh & eoh
+                elseif ( (strcmp(fnm(i),'oh')) )            % oh
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKw')) )
-                    % pKw & epKw
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'pKw')) )           % pKw
+                    fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'boh4')) || ...
-                        (strcmp(fnm(i),'boh3')) )
-                    % boh4 & eboh4 , boh3 & eboh3
+                elseif ( (strcmp(fnm(i),'boh4')) || ...     % boh4
+                        (strcmp(fnm(i),'boh3')) )           % boh3
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKb')) )
-                    % pKb & epKb
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'pKb')) )           % pKb
+                    fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( strcmp(fnm(i),'so4'))
-                    % so4 & eso4
+                elseif ( strcmp(fnm(i),'so4'))              % so4
                     fprintf(fid, '%s, ', '(mol/kg)');
                     fprintf(fid, '%s, ', '(mol/kg)');
-                elseif (strcmp(fnm(i),'hso4'))
-                    % hso4 % ehso4
+                elseif (strcmp(fnm(i),'hso4'))              % hso4
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif (strcmp(fnm(i),'pKs'))
-                    % phf & ephf , pKs & epKs
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif (strcmp(fnm(i),'pKs'))               % pKs
+                    fprintf(fid, '%s, ', '(p units)'); 
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'F')) || ...
-                        (strcmp(fnm(i),'HF'))  )
-                    % F & eF , HF & eHF
+                elseif ( (strcmp(fnm(i),'F')) || ...        % F
+                        (strcmp(fnm(i),'HF'))  )            % HF
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKf')) )
-                    % pKf & epKf
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'pKf')) )           % pKf
+                    fprintf(fid, '%s, ', '(p units)'); 
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'po4')) || ... % 'ifs' start here
-                        (strcmp(fnm(i),'hpo4')) || ...
-                        (strcmp(fnm(i),'h2po4')) || ...
-                        (strcmp(fnm(i),'h3po4')) )
-                    % po4 & epo4 , hpo4 % ehpo4 , h2po4 & eh2po4 , h3po4 & eh3po4
+                elseif ( (strcmp(fnm(i),'po4')) || ...      % po4
+                        (strcmp(fnm(i),'hpo4')) || ...      % hpo4
+                        (strcmp(fnm(i),'h2po4')) || ...     % h2po4
+                        (strcmp(fnm(i),'h3po4')) )          % h3po4
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pK1p')) || ...
-                        (strcmp(fnm(i),'pK2p')) || ...
-                        (strcmp(fnm(i),'pK3p')) )
-                    % pK1p , pK2p , pK3p
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'pK1p')) || ...     % pK1p
+                        (strcmp(fnm(i),'pK2p')) || ...      % pK2p
+                        (strcmp(fnm(i),'pK3p')) )           % pK3p
+                    fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'sioh4')) || ...
-                        (strcmp(fnm(i),'siooh3')) )
-                    % sioh4 & esioh4 , siooh3 & esiooh3
+                elseif ( (strcmp(fnm(i),'sioh4')) || ...    % sioh4
+                        (strcmp(fnm(i),'siooh3')) )         % siooh3
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKsi'))  )
-                    % pKsi & epKsi
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'pKsi'))  )         % pKsi
+                    fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'nh3')) || ...
-                        (strcmp(fnm(i),'nh4')) )
-                    % nh3 & enh3 , nh4 & enh4
+                elseif ( (strcmp(fnm(i),'nh3')) || ...      % nh3
+                        (strcmp(fnm(i),'nh4')) )            % nh4
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKnh4')) )
-                    % pKnh4 & epKnh4
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'pKnh4')) )         % pKnh4
+                    fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'hs')) || ...
-                        (strcmp(fnm(i),'h2s')) )
-                    % hs & ehs , h2s & eh2s
+                elseif ( (strcmp(fnm(i),'hs')) || ...       % hs
+                        (strcmp(fnm(i),'h2s')) )            % h2s
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKh2s')) )
-                    % pKh2s & epKh2s
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'pKh2s')) )         % pKh2s
+                    fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'ca')) )
-                    % ca and eca ( = TCal)
+                elseif ( (strcmp(fnm(i),'ca')) )            % ca ( = TCal)
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'OmegaAr')) || ...
-                        (strcmp(fnm(i),'OmegaCa')) )
-                    % OmegaAr & eOmegaAr, OmegaCa & eOmegaCa
-                    fprintf(fid, '%s, ', '   '); % dimensionless
+                elseif ( (strcmp(fnm(i),'OmegaAr')) || ...  % OmegaAr
+                        (strcmp(fnm(i),'OmegaCa')) )        % OmegaCa
+                    fprintf(fid, '%s, ', '   ');            % dimensionless
                     fprintf(fid, '%s, ', '   ');
-                elseif ( (strcmp(fnm(i),'pKar')) || ...
-                        (strcmp(fnm(i),'pKca')) )
-                    fprintf(fid, '%s, ', '(p units)'); % log10 unitless
+                elseif ( (strcmp(fnm(i),'pKar')) || ...     % pKar
+                        (strcmp(fnm(i),'pKca')) )           % pKca
+                    fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
@@ -398,10 +373,10 @@ function out = PrintCSVv7(varargin)
             fprintf(fid,'%f, ', est.m(j).P); 
             fprintf(fid,'%f, ', est.m(j).eP);
             % ph
-            fprintf(fid,'%f, ', obs.m(j).ph); 
-            fprintf(fid,'%f, ', obs.m(j).eph);
-            fprintf(fid,'%f, ', est.m(j).ph); 
-            fprintf(fid,'%f, ', est.m(j).eph);
+            % fprintf(fid,'%f, ', obs.m(j).ph); 
+            % fprintf(fid,'%f, ', obs.m(j).eph);
+            % fprintf(fid,'%f, ', est.m(j).ph); 
+            % fprintf(fid,'%f, ', est.m(j).eph);
             % ph_tot
             fprintf(fid,'%f, ', obs.m(j).ph_tot); 
             fprintf(fid,'%f, ', obs.m(j).eph_tot);
