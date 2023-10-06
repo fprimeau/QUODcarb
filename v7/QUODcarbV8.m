@@ -1118,12 +1118,12 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
 
             if (isgood(obs(i).m(ii).ph))
                 % calculate ph_tot, ph_sws, & ph_nbs via 'phscales' function
-                ph_all = phscales(obs(i).m(ii).ph, opt.phscale, p(obs(i).TS), ...
+                ph_out = phscales(obs(i).m(ii).ph, opt.phscale, p(obs(i).TS), ...
                     pKs, p(obs(i).TF), pKf, pfH ) ;
                 % ph_all = phscales(phin,scalein,pTS,pKs,pTF,pKf,pfH);                
-                obs(i).m(ii).ph_tot = ph_all(1);
-                obs(i).m(ii).ph_sws = ph_all(2);
-                obs(i).m(ii).ph_nbs = ph_all(4);
+                obs(i).m(ii).ph_tot = ph_out(1);
+                obs(i).m(ii).ph_sws = ph_out(2);
+                obs(i).m(ii).ph_nbs = ph_out(3);
             else 
                 obs(i).m(ii).ph_tot(i) = nan;
                 obs(i).m(ii).ph_sws(i) = nan;
@@ -1737,12 +1737,12 @@ function [est] = parse_output(z,sigy,opt,sys)
         est.m(i).eh_free_u = ebar_u(sys.m(i).iph_free) * 1e6;
 
         % ph_tot, ph_sws, & ph_nbs calculate via 'phscales' function
-        ph_all = phscales(est.m(i).ph, opt.phscale, est.pTS, ...
+        ph_out = phscales(est.m(i).ph, opt.phscale, est.pTS, ...
             z(sys.m(i).iKs), est.pTF, z(sys.m(i).iKf), z(sys.m(i).ipfH) );
             % ph_all = phscales(phin,scalein,pTS,pKs,pTF,pKf,pfH)
-        est.m(i).ph_tot(i) = ph_all(1);
-        est.m(i).ph_sws(i) = ph_all(2);
-        est.m(i).ph_nbs(i) = ph_all(4);
+        est.m(i).ph_tot(i) = ph_out(1);
+        est.m(i).ph_sws(i) = ph_out(2);
+        est.m(i).ph_nbs(i) = ph_out(3);
 
         % fH = activity coefficient
         est.m(i).pfH   = z(sys.m(i).ipfH);
@@ -2176,28 +2176,52 @@ end
 
 % ---------------------------------------------------------------------------------
 
-function ph_all = phscales(phin,scalein,pTS,pKs,pTF,pKf,pfH)
+function ph_out = phscales(phin,scalein,pTS,pKs,pTF,pKf,pfH)
     % convert input ph to all scales
     p = @(x) -log10(x);
     q = @(x) 10.^(-x);
-    pFREE2tot = -p(q(pTS) + q(pKs)) + pKs; % this is -pFREE2tot
-    pSWS2tot = -p(q(pTS) + q(pKs)) + pKs + ... 
-        p( 1 + (q(pTS)./q(pKs)) + (q(pTF)./q(pKf)) ); % this is -pSWS2tot
-    if scalein == 1 % tot
-        factor = 0;
-    elseif scalein == 2 % sws
-        factor = pSWS2tot;
-    elseif scalein == 3 % free
-        factor = pFREE2tot;
-    elseif scalein == 4 % nbs
-        factor = pSWS2tot + pfH;
-    end
-    ph_tot  = phin + factor;
-    ph_nbs  = ph_tot + pSWS2tot + pfH;
-    ph_free = ph_tot + pFREE2tot;
-    ph_sws  = ph_tot + pSWS2tot;
+    % FREE2tot = ( 1 + TS/Ks ) = (TS + KS) / Ks
+    pFREE2tot = p(q(pTS) + q(pKs)) - pKs;
+    % SWS2tot = ( 1 + TS/Ks ) / ( 1 + TS/Ks + TF/Kf )
+    pSWS2tot = p(q(pTS) + q(pKs)) - pKs - ... 
+        p( 1 + (q(pTS)./q(pKs)) + (q(pTF)./q(pKf)) );
+    % pSWS2free = pFREE2tot - pSWS2tot = -p(1 + TS/Ks + TF/Kf)
+    pSWS2free = -p( 1 + (q(pTS)/q(pKs)) + (q(pTF)/q(pKf)) );
+    % if scalein == 1 % tot
+    %     factor = 0;
+    % elseif scalein == 2 % sws
+    %     factor = pSWS2tot;
+    % elseif scalein == 3 % free
+    %     factor = pFREE2tot;
+    % elseif scalein == 4 % nbs
+    %     factor = pSWS2tot + pfH;
+    % end
+    % ph_tot  = phin - factor;
+    % ph_nbs  = ph_tot - pSWS2tot + pfH;
+    % ph_free = ph_tot - pFREE2tot;
+    % ph_sws  = ph_tot - pSWS2tot;
+    % 
+    % ph_all = [ph_tot, ph_sws, ph_free, ph_nbs];
 
-    ph_all = [ph_tot, ph_sws, ph_free, ph_nbs];
+    if scalein == 1 % tot
+        ph_tot = phin;
+        ph_sws = phin - pSWS2tot;
+        ph_nbs = phin - pSWS2tot + pfH;        
+    elseif scalein == 2 % sws
+        ph_tot = phin + pSWS2tot;
+        ph_sws = phin;
+        ph_nbs = phin + pfH;
+    elseif scalein == 3 % free
+        ph_tot = phin + pFREE2tot;
+        ph_sws = phin - pSWS2free;
+        ph_nbs = phin - pSWS2free + pfH;
+    elseif scalein == 4 % nbs
+        ph_tot = phin + pSWS2tot - pfH;
+        ph_sws = phin - pfH;
+        ph_nbs = phin;
+    end
+    ph_out = [ph_tot, ph_sws, ph_nbs];
+    % ph_free calculated and output from parse_output
 end
 
 % ----------------------------------------------------------------------------------

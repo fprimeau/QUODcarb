@@ -397,11 +397,11 @@ function sys = mksysV8(obs,abr,phscale)
         % % rph_free = ph_tot - factor - ph_free; (r = RESIDUAL)
         
         % % convert to ph_tot with conversion factors FREE2tot & SWS2free
-        % % where FREE2tot = 1 + TS/Ks; pFREE2tot = p(TS + Ks) + pKs;
+        % % where FREE2tot = 1 + TS/Ks; pFREE2tot = p(TS + Ks) - pKs;
         % % and SWS2free = 1/(1 + TS/Ks + TF/Kf); 
             % pSWS2free = -p( 1 + (TS/Ks) + (TF/Kf) ); 
         pFREE2tot = @(z) ( p( q( z(iTS)) + q( z(m(j).iKs)) ) ) ...       
-                - (z(m(j).iKs)); % - pKs so can factor in -pFREE2tot
+                - (z(m(j).iKs)); % ( Ks/Ks + TS/Ks ) = (Ks + TS)/Ks
         pSWS2free = @(z) -p( 1 + ( q( z(iTS) ) / q( z(m(j).iKs) ) ) ...   
                 + ( q(z(iTF) ) / q( z(m(j).iKf) ) ) );
 
@@ -410,16 +410,16 @@ function sys = mksysV8(obs,abr,phscale)
             m(j).rph_free = @(z) z(m(j).iph) - pFREE2tot(z) ...
                 - z(m(j).iph_free);
         elseif phscale == 2 % sws
-            % ph_free = ph_sws - (-pSWS2free);
-            m(j).rph_free = @(z) z(m(j).iph) - pSWS2free(z) ...
+            % ph_free = ph_sws + (-pSWS2free);
+            m(j).rph_free = @(z) z(m(j).iph) + pSWS2free(z) ...
                 - z(m(j).iph_free);
         elseif phscale == 3 % free
             % ph_free = ph_free;
             m(j).rph_free = @(z) z(m(j).iph) - z(m(j).iph_free);
         elseif phscale == 4 % nbs
-            % ph_free = ph_nbs - (-pSWS2free) + pfH;
-            m(j).rph_free = @(z) z(m(j).iph) - pSWS2free(z) ...
-                + z(m(j).ipfH) - z(m(j).iph_free);
+            % ph_free = ph_nbs + (-pSWS2free) + pfH;
+            m(j).rph_free = @(z) z(m(j).iph) + pSWS2free(z) ...
+                - z(m(j).ipfH) - z(m(j).iph_free);
         end
 
         % % calculate rph_free first derivatives grph_free

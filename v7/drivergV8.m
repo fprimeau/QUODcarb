@@ -17,7 +17,7 @@ opt.K1K2 = 10; % option for K1K2 formulation
 opt.KSO4 = 1; % option for KSO4 formulation
 opt.KF   = 2; % option for KF formulation
 opt.TB   = 2; % option for TB formulation
-opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
+opt.phscale  = 4;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
 opt.printcsv = 1; % print est to CSV? 1 = on , 0 = off
 opt.fid      = 'CT_phv8.csv'; % don't need it if printcsv is off
 opt.printmes = 1; % print screen messages? 1 = on, 0 = off
