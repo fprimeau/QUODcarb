@@ -19,52 +19,52 @@ function out = PrintCSVv8(varargin)
         fn = fieldnames(est);
         fnl = length(fn)-1;
 
-        fprintf(fid,'obs_sal, '); % sal is first
-        fprintf(fid,'obs_esal, '); % esal
-        fprintf(fid,'est_sal, '); 
-        fprintf(fid,'est_esal, ');
+        fprintf(fid,'obs.sal, '); % sal is first
+        fprintf(fid,'obs.esal, '); % esal
+        fprintf(fid,'est.sal, '); 
+        fprintf(fid,'est.esal, ');
 
         for i = 5:6:fnl
-            fprintf(fid,'obs_%s, ',fn{i} );
-            fprintf(fid,'obs_e%s, ',fn{i} ); % e
-            fprintf(fid,'est_%s, ',fn{i} );
-            fprintf(fid,'est_e%s, ',fn{i} ); % e
+            fprintf(fid,'obs.%s, ',fn{i} );
+            fprintf(fid,'obs.e%s, ',fn{i} ); % e
+            fprintf(fid,'est.%s, ',fn{i} );
+            fprintf(fid,'est.e%s, ',fn{i} ); % e
         end
 
         fnm = fieldnames(est.m); % into T/P dependent
         for j = 1:nTP
             fnj = fieldnames(est.m(j));
             for i = 1:4:8 % T, P  
-                fprintf(fid,'obs_%s, ', fnj{i});
-                fprintf(fid,'obs_e%s, ', fnj{i}); % error
-                fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_e%s, ', fnj{i}); % error
+                fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
             end
             for i = 9:6:51 % ph, ph_free, ph_tot, ph_sws, ph_nbs, pfH, fco2, pco2
-                fprintf(fid,'obs_%s, ', fnj{i});
-                fprintf(fid,'obs_e%s, ', fnj{i}); % error
-                fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_e%s, ', fnj{i}); % error
+                fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
             end
             for i = 57 % hco3 
-                fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_e%s, ', fnj{i}); % error
+                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
             end
             for i = 63 % co3
-                fprintf(fid,'obs_%s, ', fnj{i});
-                fprintf(fid,'obs_e%s, ', fnj{i}); % error
-                fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_e%s, ', fnj{i}); % error
+                fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
             end
             for i = 69:6:75 % pco2st thru p2f
-                fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_e%s, ', fnj{i}); % error
+                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
             end
             for i = 81:6:93 % pK0, pK1, pK2
-                fprintf(fid,'obs_%s, ', fnj{i});
-                fprintf(fid,'obs_e%s, ', fnj{i}); % error
-                fprintf(fid,'est_%s, ', fnj{i});
-                fprintf(fid,'est_e%s, ', fnj{i}); % error
+                fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
+                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
             end
             for i = 99:6:length(fnj)
                 if (    (strcmp(fnj(i),'oh'))       || ...  % oh
@@ -87,8 +87,8 @@ function out = PrintCSVv8(varargin)
                         (strcmp(fnm(i),'ca'))       || ...  % ca
                         (strcmp(fnm(i),'OmegaAr'))  || ...  % OmegaAr
                         (strcmp(fnm(i),'OmegaCa'))      )   % OmegaCa
-                    fprintf(fid,'est_%s, ', fnj{i});
-                    fprintf(fid,'est_e%s, ', fnj{i});       
+                    fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
+                    fprintf(fid,'est.m(%i).e%s, ', j, fnj{i});       
                 elseif ( (strcmp(fnm(i),'pKw'))     || ...  % pKw
                         (strcmp(fnm(i),'pKb'))      || ...  % pKb
                         (strcmp(fnm(i),'pKs'))      || ...  % pKs
@@ -101,10 +101,10 @@ function out = PrintCSVv8(varargin)
                         (strcmp(fnm(i),'pKh2s'))    || ...  % pKh2s
                         (strcmp(fnm(i),'pKar'))     || ...  % pKar
                         (strcmp(fnm(i),'pKca'))         )   % pKca
-                    fprintf(fid,'obs_%s, ', fnj{i});
-                    fprintf(fid,'obs_e%s, ', fnj{i});
-                    fprintf(fid,'est_%s, ', fnj{i});
-                    fprintf(fid,'est_e%s, ', fnj{i}); % e = error
+                    fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
+                    fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i});
+                    fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
+                    fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % e = error
                 end
             end
         end

@@ -236,7 +236,6 @@ function [f,g] = limpco2(z,y,w,sys,opt)
                           sys.m(i).iph_free  ])                 ... % (d/dx) _ph_free
                                             = sys.m(i).grph_free(x);
         end
-
         % constraint eqns wrt -log10(concentrations)
         dcdx = [ M * diag( sys.dqdx( x ) ); ...
                 (-K + zgpK) ;               ... 
@@ -1130,6 +1129,16 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).m(ii).ph_nbs(i) = nan;
             end
 
+            if (isgood(obs(i).m(ii).eph))
+                obs(i).m(ii).eph_tot = obs(i).m(ii).eph;
+                obs(i).m(ii).eph_sws = obs(i).m(ii).eph;
+                obs(i).m(ii).eph_nbs = obs(i).m(ii).eph;
+            else
+                obs(i).m(ii).eph_tot = nan;
+                obs(i).m(ii).eph_sws = nan;
+                obs(i).m(ii).eph_nbs = nan;
+            end
+
             if (isgood(obs(i).m(ii).pfH)) % pfH activity coefficient
                 yobs(i,sys.m(ii).ipfH) = obs(i).m(ii).pfH ;
             else
@@ -1739,10 +1748,32 @@ function [est] = parse_output(z,sigy,opt,sys)
         % ph_tot, ph_sws, & ph_nbs calculate via 'phscales' function
         ph_out = phscales(est.m(i).ph, opt.phscale, est.pTS, ...
             z(sys.m(i).iKs), est.pTF, z(sys.m(i).iKf), z(sys.m(i).ipfH) );
-            % ph_all = phscales(phin,scalein,pTS,pKs,pTF,pKf,pfH)
-        est.m(i).ph_tot(i) = ph_out(1);
-        est.m(i).ph_sws(i) = ph_out(2);
-        est.m(i).ph_nbs(i) = ph_out(3);
+            % ph_out = phscales(phin,scalein,pTS,pKs,pTF,pKf,pfH)
+            % ph_out = [ph_tot, ph_sws, ph_nbs];
+
+        % ph_tot
+        est.m(i).ph_tot(i)  = ph_out(1);
+        est.m(i).eph_tot(i) = sigy(sys.m(i).iph); % same as iph
+        est.m(i).h_tot      = q(ph_out(1)) * 1e6; % H (tot) = q(ph_tot)
+        est.m(i).eh_tot     = ebar(sys.m(i).iph) * 1e6; % same as iph
+        est.m(i).eh_tot_l   = ebar_l(sys.m(i).iph) * 1e6;
+        est.m(i).eh_tot_u   = ebar_u(sys.m(i).iph) * 1e6;
+
+        % ph_sws
+        est.m(i).ph_sws(i)  = ph_out(2);
+        est.m(i).eph_sws(i) = sigy(sys.m(i).iph); % same as iph
+        est.m(i).h_sws      = q(ph_out(2)) * 1e6; % H (sws) = q(ph_sws)
+        est.m(i).eh_sws     = ebar(sys.m(i).iph) * 1e6; % same as iph
+        est.m(i).eh_sws_l   = ebar_l(sys.m(i).iph) * 1e6;
+        est.m(i).eh_sws_u   = ebar_u(sys.m(i).iph) * 1e6;
+
+        % ph_nbs
+        est.m(i).ph_nbs(i)  = ph_out(3);
+        est.m(i).eph_nbs(i) = sigy(sys.m(i).iph); % same as iph
+        est.m(i).h_nbs      = q(ph_out(3)) * 1e6; % H (nbs) = q(ph_nbs)
+        est.m(i).eh_nbs     = ebar(sys.m(i).iph) * 1e6; % same as iph
+        est.m(i).eh_nbs_l   = ebar_l(sys.m(i).iph) * 1e6;
+        est.m(i).eh_nbs_u   = ebar_u(sys.m(i).iph) * 1e6;
 
         % fH = activity coefficient
         est.m(i).pfH   = z(sys.m(i).ipfH);

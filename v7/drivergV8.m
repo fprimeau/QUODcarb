@@ -91,7 +91,7 @@ for i = 1:nD
     % obs(i).m(1).pco2 = nan; obs(i).m(1).epco2 = nan; % m(3)
     obs(i).m(1).co3 = nan;  obs(i).m(1).eco3 = nan; % m(2)
 end
-[est,obs,iflag] = QUODcarbV8(obs,opt);
+% [est,obs,iflag] = QUODcarbV8(obs,opt);
 % est04   = est;
 tp = 1;
 fid3 = 'compare_CT_phv8.csv';
