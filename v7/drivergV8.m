@@ -45,57 +45,57 @@ for i = 1:nD
     obs(i).eTSi  = in(i,18)*0.001; % 0.01% meas uncertainty
 
     % first (T,P)-dependent measurement
-    % obs(i).m(1).T = in(i,2); % deg C, CTD temp
-    % obs(i).m(1).eT = 0.02; % ±0.02 degC
-    % obs(i).m(1).P = in(i,1); % dbar
-    % obs(i).m(1).eP = 0.63; % (max) ± 0.63 dbar
+    obs(i).m(1).T = in(i,2); % deg C, CTD temp
+    obs(i).m(1).eT = 0.02; % ±0.02 degC
+    obs(i).m(1).P = in(i,1); % dbar
+    obs(i).m(1).eP = 0.63; % (max) ± 0.63 dbar
 
     % second(T,P)-dependent measurement
-    obs(i).m(1).T    = 25 ; % degC
-    obs(i).m(1).eT   = 0.05 ; % from cruise report
-    obs(i).m(1).P    = 0.0 ; %in(i+ad,1); % NOT in situ
-    obs(i).m(1).eP   = 0.63 ;
-    obs(i).m(1).ph   = in(i,9); % total scale
-    obs(i).m(1).eph  = 0.0004 ;
-    obs(i).m(1).co3  = in(i,15); % (µmol/kg)
-    obs(i).m(1).eco3 = 2.0 ;  % std ±2µmol/kg
+    obs(i).m(2).T    = 25 ; % degC
+    obs(i).m(2).eT   = 0.05 ; % from cruise report
+    obs(i).m(2).P    = 0.0 ; %in(i+ad,1); % NOT in situ
+    obs(i).m(2).eP   = 0.63 ;
+    obs(i).m(2).ph   = in(i,9); % total scale
+    obs(i).m(2).eph  = 0.0004 ;
+    obs(i).m(2).co3  = in(i,15); % (µmol/kg)
+    obs(i).m(2).eco3 = 2.0 ;  % std ±2µmol/kg
 
     % third (T,P)-dependent measurement
-    % obs(i).m(3).T   = 20 ; %degC
-    % obs(i).m(3).eT  = 0.03 ; % from cruise report
-    % obs(i).m(3).P   = 0.0 ; % dbar (surface pressure for pco2)
-    % obs(i).m(3).eP  = 0.63 ;
-    % obs(i).m(3).pco2  = in(i,12); % (µatm)
-    % obs(i).m(3).epco2 = in(i,12)*0.0021; % 0.21% relative std error (avg)
+    obs(i).m(3).T   = 20 ; %degC
+    obs(i).m(3).eT  = 0.03 ; % from cruise report
+    obs(i).m(3).P   = 0.0 ; % dbar (surface pressure for pco2)
+    obs(i).m(3).eP  = 0.63 ;
+    obs(i).m(3).pco2  = in(i,12); % (µatm)
+    obs(i).m(3).epco2 = in(i,12)*0.0021; % 0.21% relative std error (avg)
 end
 
-fid2 = 'compare_CT_ATv8.csv';
-% [A] = compare2(obs,est,opt,2,1,fid2);
 obs_backup = obs;
+tp = 2; % for compare3
 
-tp = 1;
-% % TA TC (Q2) (fid2)
+% TA TC (Q2) (fid2)
 for i = 1:nD
-    obs(i).m(1).ph = nan;   obs(i).m(1).eph = nan;
-    % obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
-    obs(i).m(1).co3 = nan;  obs(i).m(1).eco3 = nan;
+    obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
+    obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
+    obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
 end
+tp = 1;
 [est,obs,iflag] = QUODcarbV8(obs,opt);
-% est02   = est;
+est02   = est;
+fid2 = 'compare_outs/compare_CT_ATv8.csv';
 [A] = compare3(obs,est,opt,tp,1,fid2);
 
 % % TC ph (Q2) (fid4)
-obs = obs_backup;
-for i = 1:nD
-    obs(i).TA = nan;        obs(i).eTA = nan;
-    % obs(i).m(1).pco2 = nan; obs(i).m(1).epco2 = nan; % m(3)
-    obs(i).m(1).co3 = nan;  obs(i).m(1).eco3 = nan; % m(2)
-end
+% obs = obs_backup;
+% for i = 1:nD
+%     obs(i).TA = nan;        obs(i).eTA = nan;
+%     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan; % m(3)
+%     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan; % m(2)
+% end
 % [est,obs,iflag] = QUODcarbV8(obs,opt);
 % est04   = est;
-tp = 1;
-fid3 = 'compare_CT_phv8.csv';
-[A] = compare3(obs,est,opt,tp,2,fid3);
+% tp = 2;
+% fid4 = 'compare_outs/compare_CT_phv8.csv';
+% [A] = compare3(obs,est,opt,tp,2,fid4);
 
 
 % CT AT pH pCO2 CO3 (Q5) (fid5)
@@ -103,9 +103,6 @@ fid3 = 'compare_CT_phv8.csv';
 % [est,obs,iflag] = QUODcarbV8(obs,opt);
 % est33 = est;
 
-
-% 
-% 
 % % TA ph (Q2) (fid3)
 % obs = obs_backup;
 % for i = 1:nD
@@ -115,6 +112,9 @@ fid3 = 'compare_CT_phv8.csv';
 % end
 % [est,obs,iflag] = QUODcarbV8(obs,opt);
 % est03   = est;
+% tp = 2;
+% fid3 = 'compare_outs/compare_TA_phv8.csv';
+% [A] = compare3(obs,est,opt,tp,3,fid3);
  
 % % pH pCO2 (Q2) (fid10)
 % obs = obs_backup;
@@ -125,8 +125,10 @@ fid3 = 'compare_CT_phv8.csv';
 % end
 % [est,obs,iflag] = QUODcarbV8(obs,opt);
 % est10   = est;
-% 
-% 
+% fid10 = 'compare_outs/compare_ph_pCO2v8.csv';
+% [A] = compare3(obs,est,opt,tp,4,fid10);
+
+
 % % pCO2 CO3 (Q2) (fid11)
 % obs = obs_backup;
 % for i = 1:nD
@@ -136,8 +138,10 @@ fid3 = 'compare_CT_phv8.csv';
 % end
 % [est,obs,iflag] = QUODcarbV8(obs,opt);
 % est11   = est;
-% 
-% 
+% fid11 = 'compare_outs/compare_pco2_co3v8.csv';
+% [A] = compare3(obs,est,opt,tp,5,fid11);
+
+
 % % TC CO3 (Q2)(fid12)
 % obs = obs_backup;
 % for i = 1:nD
@@ -147,51 +151,62 @@ fid3 = 'compare_CT_phv8.csv';
 % end
 % [est,obs,iflag] = QUODcarbV8(obs,opt);
 % est12   = est;
-% 
-% 
-% % TC pCO2 (Q2)(fid13)
-% obs = obs_backup;
-% for i = 1:nD
-%     obs(i).TA = nan;        obs(i).eTA = nan;
-%     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
-%     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
-% end
-% [est,obs,iflag] = QUODcarbV8(obs,opt);
-% est13   = est;
-% 
-% % TA pCO2 (Q2)(fid14)
-% obs = obs_backup;
-% for i = 1:nD
-%     obs(i).TC = nan;        obs(i).eTC = nan;
-%     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
-%     obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
-% end
-% [est,obs,iflag] = QUODcarbV8(obs,opt);
-% est14   = est;
-% 
-% 
-% % TA CO3 (Q2)(fid15)
-% obs = obs_backup;
-% for i = 1:nD
-%     obs(i).TC = nan;        obs(i).eTC = nan;
-%     obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
-%     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
-% end
-% [est,obs,iflag] = QUODcarbV8(obs,opt);
-% est15   = est;
-% 
-% 
-% % pH CO3 (Q2) (fid16)
-% obs = obs_backup;
-% for i = 1:nD
-%     obs(i).TC = nan; obs(i).eTC = nan;
-%     obs(i).TA = nan; obs(i).eTA = nan;
-%     obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
-% end
-% [est,obs,iflag] = QUODcarbV8(obs,opt);
-% est16   = est;
-% 
-% 
+% fid12 = 'compare_outs/compare_TC_co3v8.csv';
+% [A] = compare3(obs,est,opt,tp,6,fid12);
+
+
+% TC pCO2 (Q2)(fid13)
+obs = obs_backup;
+for i = 1:nD
+    obs(i).TA = nan;        obs(i).eTA = nan;
+    obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
+    obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
+end
+[est,obs,iflag] = QUODcarbV8(obs,opt);
+est13   = est;
+fid13 = 'compare_outs/compare_TC_pco2v8.csv';
+[A] = compare3(obs,est,opt,tp,7,fid13);
+
+
+% TA pCO2 (Q2)(fid14)
+obs = obs_backup;
+for i = 1:nD
+    obs(i).TC = nan;        obs(i).eTC = nan;
+    obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
+    obs(i).m(2).co3 = nan;  obs(i).m(2).eco3 = nan;
+end
+[est,obs,iflag] = QUODcarbV8(obs,opt);
+est14   = est;
+fid14 = 'compare_outs/compare_TA_pco2v8.csv';
+[A] = compare3(obs,est,opt,tp,8,fid14);
+
+
+% TA CO3 (Q2)(fid15)
+obs = obs_backup;
+for i = 1:nD
+    obs(i).TC = nan;        obs(i).eTC = nan;
+    obs(i).m(2).ph = nan;   obs(i).m(2).eph = nan;
+    obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
+end
+[est,obs,iflag] = QUODcarbV8(obs,opt);
+est15   = est;
+fid15 = 'compare_outs/compare_TA_co3v8.csv';
+[A] = compare3(obs,est,opt,tp,9,fid15);
+
+
+% pH CO3 (Q2) (fid16)
+obs = obs_backup;
+for i = 1:nD
+    obs(i).TC = nan; obs(i).eTC = nan;
+    obs(i).TA = nan; obs(i).eTA = nan;
+    obs(i).m(3).pco2 = nan; obs(i).m(3).epco2 = nan;
+end
+[est,obs,iflag] = QUODcarbV8(obs,opt);
+est16   = est;
+fid16 = 'compare_outs/compare_ph_CO3v8.csv';
+[A] = compare3(obs,est,opt,tp,10,fid16);
+
+
 % % TC TA pH (Q3)
 % obs = obs_backup;
 % for i = 1:nD

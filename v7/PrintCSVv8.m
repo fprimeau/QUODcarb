@@ -14,7 +14,7 @@ function out = PrintCSVv8(varargin)
 
         nTP = length(est.m);
 
-        fprintf(fid,'%s, ','iflag');
+        fprintf(fid, '%s, ', '  ');
 
         fn = fieldnames(est);
         fnl = length(fn)-1;
@@ -35,36 +35,36 @@ function out = PrintCSVv8(varargin)
         for j = 1:nTP
             fnj = fieldnames(est.m(j));
             for i = 1:4:8 % T, P  
-                fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i}); % error
-                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'obs.%s, ',  fnj{i});
+                fprintf(fid,'obs.e%s, ', fnj{i});
+                fprintf(fid,'est.%s, ',  fnj{i});
+                fprintf(fid,'est.e%s, ', fnj{i}); % e = error
             end
             for i = 9:6:51 % ph, ph_free, ph_tot, ph_sws, ph_nbs, pfH, fco2, pco2
-                fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i}); % error
-                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'obs.%s, ',  fnj{i});
+                fprintf(fid,'obs.e%s, ', fnj{i});
+                fprintf(fid,'est.%s, ',  fnj{i});
+                fprintf(fid,'est.e%s, ', fnj{i}); % e = error
             end
             for i = 57 % hco3 
-                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'est.%s, ',  fnj{i});
+                fprintf(fid,'est.e%s, ', fnj{i}); % e = error
             end
             for i = 63 % co3
-                fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i}); % error
-                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'obs.%s, ',  fnj{i});
+                fprintf(fid,'obs.e%s, ', fnj{i});
+                fprintf(fid,'est.%s, ',  fnj{i});
+                fprintf(fid,'est.e%s, ', fnj{i}); % e = error
             end
             for i = 69:6:75 % pco2st thru p2f
-                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'est.%s, ',  fnj{i});
+                fprintf(fid,'est.e%s, ', fnj{i}); % e = error
             end
             for i = 81:6:93 % pK0, pK1, pK2
-                fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i}); % error
-                fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
-                fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % error
+                fprintf(fid,'obs.%s, ',  fnj{i});
+                fprintf(fid,'obs.e%s, ', fnj{i});
+                fprintf(fid,'est.%s, ',  fnj{i});
+                fprintf(fid,'est.e%s, ', fnj{i}); % e = error
             end
             for i = 99:6:length(fnj)
                 if (    (strcmp(fnj(i),'oh'))       || ...  % oh
@@ -87,8 +87,8 @@ function out = PrintCSVv8(varargin)
                         (strcmp(fnm(i),'ca'))       || ...  % ca
                         (strcmp(fnm(i),'OmegaAr'))  || ...  % OmegaAr
                         (strcmp(fnm(i),'OmegaCa'))      )   % OmegaCa
-                    fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
-                    fprintf(fid,'est.m(%i).e%s, ', j, fnj{i});       
+                    fprintf(fid,'est.%s, ',  fnj{i});
+                    fprintf(fid,'est.e%s, ', fnj{i}); % e = error
                 elseif ( (strcmp(fnm(i),'pKw'))     || ...  % pKw
                         (strcmp(fnm(i),'pKb'))      || ...  % pKb
                         (strcmp(fnm(i),'pKs'))      || ...  % pKs
@@ -101,15 +101,109 @@ function out = PrintCSVv8(varargin)
                         (strcmp(fnm(i),'pKh2s'))    || ...  % pKh2s
                         (strcmp(fnm(i),'pKar'))     || ...  % pKar
                         (strcmp(fnm(i),'pKca'))         )   % pKca
-                    fprintf(fid,'obs.m(%i).%s, ', j, fnj{i});
-                    fprintf(fid,'obs.m(%i).e%s, ', j, fnj{i});
-                    fprintf(fid,'est.m(%i).%s, ', j, fnj{i});
-                    fprintf(fid,'est.m(%i).e%s, ', j, fnj{i}); % e = error
+                    fprintf(fid,'obs.%s, ',  fnj{i});
+                    fprintf(fid,'obs.e%s, ', fnj{i});
+                    fprintf(fid,'est.%s, ',  fnj{i});
+                    fprintf(fid,'est.e%s, ', fnj{i}); % e = error
                 end
             end
         end
 
-        fprintf(fid,'\n');
+        fprintf(fid,'\n'); % finish first line
+
+        % second line, for m(1), m(2) etc. so mostly blank
+        fprintf(fid, '%s, ','iflag');
+        fprintf(fid, '%s, ', '  ');
+        fprintf(fid, '%s, ', '  ');
+        fprintf(fid, '%s, ', '  ');
+        fprintf(fid, '%s, ', '  ');
+
+        for i = 5:6:fnl % temperature independent
+            fprintf(fid, '%s, ', '  ');
+            fprintf(fid, '%s, ', '  ');
+            fprintf(fid, '%s, ', '  ');
+            fprintf(fid, '%s, ', '  ');
+        end
+        for j = 1:nTP
+            fnj = fieldnames(est.m(j));
+            for i = 1:4:8
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+            end
+            for i = 9:6:51
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+            end
+            for i = 57
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+            end
+            for i = 63
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+            end
+            for i = 69:6:75
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+            end
+            for i = 81:6:93
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, '%s, ', '  ');
+            end
+            for i = 99:6:length(fnj)
+                if (    (strcmp(fnj(i),'oh'))       || ...  % oh
+                        (strcmp(fnj(i),'boh4'))     || ...  % boh4
+                        (strcmp(fnj(i),'boh3'))     || ...  % boh3
+                        (strcmp(fnj(i),'so4'))      || ...  % so4
+                        (strcmp(fnj(i),'hso4'))     || ...  % hso4
+                        (strcmp(fnj(i),'F'))        || ...  % F
+                        (strcmp(fnj(i),'HF'))       || ...  % HF
+                        (strcmp(fnj(i),'po4'))      || ...  % po4
+                        (strcmp(fnm(i),'hpo4'))     || ...  % hpo4
+                        (strcmp(fnm(i),'h2po4'))    || ...  % h2po4
+                        (strcmp(fnm(i),'h3po4'))    || ...  % h3po4
+                        (strcmp(fnm(i),'sioh4'))    || ...  % sioh4
+                        (strcmp(fnm(i),'siooh3'))   || ...  % siooh3
+                        (strcmp(fnm(i),'nh3'))      || ...  % nh3
+                        (strcmp(fnm(i),'nh4'))      || ...  % nh4
+                        (strcmp(fnm(i),'hs'))       || ...  % hs
+                        (strcmp(fnm(i),'h2s'))      || ...  % h2s
+                        (strcmp(fnm(i),'ca'))       || ...  % ca
+                        (strcmp(fnm(i),'OmegaAr'))  || ...  % OmegaAr
+                        (strcmp(fnm(i),'OmegaCa'))      )   % OmegaCa
+                    fprintf(fid, 'm(%i), ', j);
+                    fprintf(fid, '%s, ', '  ');
+                elseif ( (strcmp(fnm(i),'pKw'))     || ...  % pKw
+                        (strcmp(fnm(i),'pKb'))      || ...  % pKb
+                        (strcmp(fnm(i),'pKs'))      || ...  % pKs
+                        (strcmp(fnm(i),'pKf'))      || ...  % pKf
+                        (strcmp(fnm(i),'pK1p'))     || ...  % pK1p
+                        (strcmp(fnm(i),'pK2p'))     || ...  % pK2p
+                        (strcmp(fnm(i),'pK3p'))     || ...  % pK3p
+                        (strcmp(fnm(i),'pKsi'))     || ...  % pKsi
+                        (strcmp(fnm(i),'pKnh4'))    || ...  % pKnh4
+                        (strcmp(fnm(i),'pKh2s'))    || ...  % pKh2s
+                        (strcmp(fnm(i),'pKar'))     || ...  % pKar
+                        (strcmp(fnm(i),'pKca'))         )   % pKca
+                    fprintf(fid, 'm(%i), ', j);
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, 'm(%i), ', j);
+                    fprintf(fid, '%s, ', '  ');
+                end
+            end
+        end
+
+        fprintf(fid,'\n'); % finish second line
+
+        % third line, units
         fprintf(fid,'%s, ','0=good');
         
         fprintf(fid,'%s, ', '(PSU)');
@@ -269,7 +363,7 @@ function out = PrintCSVv8(varargin)
             end % for i = 9:6:length(fnm)
         end % for j = 1:nTP
     
-        fprintf(fid,'\n'); % 'return'
+        fprintf(fid,'\n'); % 'return' i.e. finish third line
 
     else
         % Print the output
@@ -383,6 +477,7 @@ function out = PrintCSVv8(varargin)
             fprintf(fid,'%f, ', obs.m(j).eph);
             fprintf(fid,'%f, ', est.m(j).ph_tot); 
             fprintf(fid,'%f, ', est.m(j).eph);
+            % keyboard
              % ph_sws
             fprintf(fid,'%f, ', obs.m(j).ph_sws); 
             fprintf(fid,'%f, ', obs.m(j).eph);

@@ -1124,9 +1124,9 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).m(ii).ph_sws = ph_out(2);
                 obs(i).m(ii).ph_nbs = ph_out(3);
             else 
-                obs(i).m(ii).ph_tot(i) = nan;
-                obs(i).m(ii).ph_sws(i) = nan;
-                obs(i).m(ii).ph_nbs(i) = nan;
+                obs(i).m(ii).ph_tot = nan;
+                obs(i).m(ii).ph_sws = nan;
+                obs(i).m(ii).ph_nbs = nan;
             end
 
             if (isgood(obs(i).m(ii).eph))
@@ -1752,24 +1752,24 @@ function [est] = parse_output(z,sigy,opt,sys)
             % ph_out = [ph_tot, ph_sws, ph_nbs];
 
         % ph_tot
-        est.m(i).ph_tot(i)  = ph_out(1);
-        est.m(i).eph_tot(i) = sigy(sys.m(i).iph); % same as iph
+        est.m(i).ph_tot     = ph_out(1);
+        est.m(i).eph_tot    = sigy(sys.m(i).iph); % same as iph
         est.m(i).h_tot      = q(ph_out(1)) * 1e6; % H (tot) = q(ph_tot)
         est.m(i).eh_tot     = ebar(sys.m(i).iph) * 1e6; % same as iph
         est.m(i).eh_tot_l   = ebar_l(sys.m(i).iph) * 1e6;
         est.m(i).eh_tot_u   = ebar_u(sys.m(i).iph) * 1e6;
 
         % ph_sws
-        est.m(i).ph_sws(i)  = ph_out(2);
-        est.m(i).eph_sws(i) = sigy(sys.m(i).iph); % same as iph
+        est.m(i).ph_sws     = ph_out(2);
+        est.m(i).eph_sws    = sigy(sys.m(i).iph); % same as iph
         est.m(i).h_sws      = q(ph_out(2)) * 1e6; % H (sws) = q(ph_sws)
         est.m(i).eh_sws     = ebar(sys.m(i).iph) * 1e6; % same as iph
         est.m(i).eh_sws_l   = ebar_l(sys.m(i).iph) * 1e6;
         est.m(i).eh_sws_u   = ebar_u(sys.m(i).iph) * 1e6;
 
         % ph_nbs
-        est.m(i).ph_nbs(i)  = ph_out(3);
-        est.m(i).eph_nbs(i) = sigy(sys.m(i).iph); % same as iph
+        est.m(i).ph_nbs     = ph_out(3);
+        est.m(i).eph_nbs    = sigy(sys.m(i).iph); % same as iph
         est.m(i).h_nbs      = q(ph_out(3)) * 1e6; % H (nbs) = q(ph_nbs)
         est.m(i).eh_nbs     = ebar(sys.m(i).iph) * 1e6; % same as iph
         est.m(i).eh_nbs_l   = ebar_l(sys.m(i).iph) * 1e6;

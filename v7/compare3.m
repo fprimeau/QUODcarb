@@ -43,7 +43,6 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
                 fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pK1p', 'Q_pK1p', 'C_pK2p', 'Q_pK2p' ); % no error for CO2SYS K1p thru KH2S
                 fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pK3p', 'Q_pK3p', 'C_pKsi', 'Q_pKsi' );
                 fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pKNH4', 'Q_pKNH4', 'C_pKH2S', 'Q_pKH2S' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', 'C_pKar', 'Q_pKar', 'C_pKca', 'Q_pKca' );
                 fprintf(fid,'%s, %s, %s, %s, %s ', 'C_OmegaAr', 'C_eOmegaAr', 'Q_OmegaAr', 'Q_eOmegaAr' );
                 fprintf(fid,'%s, %s, %s, %s, %s ', 'C_OmegaCa', 'C_eOmegaCa', 'Q_OmegaCa', 'Q_eOmegaCa' );
                 fprintf(fid,'%s, %s, %s, %s, ', 'C_CAL', 'Q_TCal','Q_eTCal');
@@ -149,7 +148,8 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
                     presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
                 err = errors(par1,par5,par1type,par5type,sal,tempin,tempout, ...
                     presin,presout,sil,po4,nh4,h2s,epar1,epar5,esal,etemp,esi, ...
-                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal); 
+                    epo4,enh4,eh2s,epK,eBt,r,pHscale,k1k2c,kso4c,kfc,tbc,ecal);
+                % keyboard
             elseif pair == 10 % pH CO3
                 OUT = CO2SYS(par3,par5,par3type,par5type,sal,tempin,tempout, ...
                     presin,presout,sil,po4,nh4,h2s,pHscale,k1k2c,kso4c,kfc,tbc,'co2_press',X);
@@ -159,17 +159,15 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
                 % par1 = alk, par2 = dic, par3 = ph, par4 = pco2; par5 = co3
             end
 
-    % '93 - KCaoutput        ()          ';
-    % '94 - KAroutput        ()          ';
-    % '95 - TB               (umol/kgSW) ';
-    % '96 - TF               (umol/kgSW) ';
-    % '97 - TS               (umol/kgSW) ';
-    % '98 - TP               (umol/kgSW) ';
-    % '99 - TSi              (umol/kgSW) ';
-    % '100 - TNH4            (umol/kgSW) ';
-    % '101 - TH2S            (umol/kgSW) ';
-    % '102 - TCal            (umol/kgSW) ';
-    % '103 - fH              (umol/kgSW) '};
+    % '93 - TB               (umol/kgSW) ';
+    % '94 - TF               (umol/kgSW) ';
+    % '95 - TS               (umol/kgSW) ';
+    % '96 - TP               (umol/kgSW) ';
+    % '96 - TSi              (umol/kgSW) ';
+    % '98 - TNH4            (umol/kgSW) ';
+    % '99 - TH2S            (umol/kgSW) ';
+    % '100 - TCal            (umol/kgSW) ';
+    % '101 - fH              (umol/kgSW) '};
             % exit struct
             out.TA = OUT(1);
             out.eTA = err(1); % sigma, not precision
@@ -189,7 +187,7 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
             out.ph_free = OUT(45);
             out.ph_nbs = OUT(46);
             out.ph_tot = OUT(43);
-            out.pfH = -log10(OUT(103));
+            out.pfH = -log10(OUT(101));
             out.pco2 = OUT(22);
             out.epco2 = err(14);
             out.co3 = OUT(25);
@@ -212,13 +210,11 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
             out.pKSi = p(OUT(90));
             out.pKnh4 = p(OUT(91));
             out.pKh2s = p(OUT(92));
-            out.pKar = p(OUT(94));
-            out.pKca = p(OUT(93));
             out.OmegaAr = OUT(36);
             out.eOmegaAr = err(21);
             out.OmegaCa = OUT(35);
             out.eOmegaCa = err(20);
-            out.CAL = OUT(102)*1e-6;
+            out.CAL = OUT(100)*1e-6;
 
             % exit matrix at chosen tp temp
             A = [];
@@ -281,9 +277,6 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
                 out.pKnh4, est(i).m(tp).pKnh4, ...
                 out.pKh2s, est(i).m(tp).pKh2s);
             fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
-                out.pKar,  est(i).m(tp).pKar, ...
-                out.pKca,  est(i).m(tp).pKca);
-            fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ...
                 out.OmegaAr,          out.eOmegaAr, ...
                 est(i).m(tp).OmegaAr, est(i).m(tp).eOmegaAr);
             fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... 
@@ -299,11 +292,13 @@ end
 %
 %
 % CO2SYSv3 ----------------------------------------------------------------
-%  --> 01/30/23 MF edited it slightly to output KCA, KAr, and CAL so output
+%  --> 01/30/23 MF edited it slightly to output CAL so output
 %       vector is slightly different than listed in documentation
 
 
-function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE,SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,NH4,H2S,pHSCALEIN,K1K2CONSTANTS,KSO4CONSTANT,KFCONSTANT,BORON,varargin)
+function [DATA,HEADERS,NICEHEADERS]=CO2SYS(PAR1,PAR2,PAR1TYPE,PAR2TYPE, ...
+    SAL,TEMPIN,TEMPOUT,PRESIN,PRESOUT,SI,PO4,NH4,H2S,pHSCALEIN, ...
+    K1K2CONSTANTS,KSO4CONSTANT,KFCONSTANT,BORON,varargin)
 %**************************************************************************
 %
 % Current: CO2SYS.m v3.1.2   (Jan  2023: https://github.com/jonathansharp/CO2-System-Extd)
@@ -989,7 +984,7 @@ F=(~isnan(PHic)); % if PHic = NaN, pH calculation was not performed or did not c
     HSAlkinp(F), Hfreeinp(F),HSO4inp(F),HFinp(F)] = CalculateAlkParts(PHic(F));
 PAlkinp(F)                = PAlkinp(F)+PengCorrection(F);
 Revelleinp(F)             = RevelleFactor(TAc(F)-PengCorrection(F), TCc(F));
-[OmegaCainp(F),OmegaArinp(F)] = CaSolubility(Sal(F), TempCi(F), Pdbari(F), TCc(F), PHic(F));
+[OmegaCainp(F),OmegaArinp(F),CAL] = CaSolubility(Sal(F), TempCi(F), Pdbari(F), TCc(F), PHic(F));
 xCO2dryinp(~isnan(PCic),1) = PCic(~isnan(PCic),1)./VPFac(~isnan(PCic),1); % ' this assumes pTot = 1 atm
 SIRinp = HCO3ic./(Hfreeinp.*1e6);
 
@@ -1049,7 +1044,7 @@ F=(~isnan(PHoc)); % if PHoc = NaN, pH calculation was not performed or did not c
     HSAlkout(F), Hfreeout(F),HSO4out(F),HFout(F)] = CalculateAlkParts(PHoc(F));
 PAlkout(F)                 = PAlkout(F)+PengCorrection(F);
 Revelleout(F)              = RevelleFactor(TAc(F)-PengCorrection(F), TCc(F));
-[OmegaCaout(F),OmegaArout(F),KCa,KAr,CAL] = CaSolubility(Sal(F), TempCo(F), Pdbaro(F), TCc(F), PHoc(F));
+[OmegaCaout(F),OmegaArout(F),CAL] = CaSolubility(Sal(F), TempCo(F), Pdbaro(F), TCc(F), PHoc(F));
 xCO2dryout(~isnan(PCoc),1)    = PCoc(~isnan(PCoc))./VPFac(~isnan(PCoc)); % ' this assumes pTot = 1 atm
 SIRout = HCO3oc./(Hfreeout.*1e6);
 
@@ -1060,7 +1055,7 @@ pHocF = nan(ntps,1);
 pHocN = nan(ntps,1);
 [pHocT(F),pHocS(F),pHocF(F),pHocN(F)]=FindpHOnAllScales(PHoc(F));
 
-KOVEC=[K0 K1 K2 -log10(K1) -log10(K2) KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S KCa KAr];
+KOVEC=[K0 K1 K2 -log10(K1) -log10(K2) KW KB KF KS KP1 KP2 KP3 KSi KNH4 KH2S];
 TVEC =[TB TF TS TP TSi TNH4 TH2S CAL];
 % keyboard
 % Saving data in array, 99 columns, as many rows as samples input
@@ -1076,7 +1071,7 @@ DATA=[TAc*1e6         TCc*1e6        PHic           PCic*1e6        FCic*1e6...
       pHocN           TEMPIN         TEMPOUT        PRESIN          PRESOUT...
       PAR1TYPE        PAR2TYPE       K1K2CONSTANTS  KSO4CONSTANT    KFCONSTANT...
       BORON           pHSCALEIN      SAL            PO4             SI...
-      NH4             H2S            KIVEC          KOVEC           TVEC*1e6  fH];
+      NH4             H2S            KIVEC          KOVEC           TVEC*1e6       fH];
 DATA(isnan(DATA))=-999;
 
 HEADERS={'TAlk';'TCO2';'pHin';'pCO2in';'fCO2in';'HCO3in';'CO3in';...
@@ -1092,8 +1087,7 @@ HEADERS={'TAlk';'TCO2';'pHin';'pCO2in';'fCO2in';'HCO3in';'CO3in';...
     'KSinput';'KP1input';'KP2input';'KP3input';'KSiinput';'KNH4input';...
     'KH2Sinput';'K0output';'K1output';'K2output';'pK1output';'pK2output';...
     'KWoutput';'KBoutput';'KFoutput';'KSoutput';'KP1output';'KP2output';...
-    'KP3output';'KSioutput';'KNH4output';'KH2Soutput';'KCaoutput';...
-    'KAroutput';'TB';'TF';'TS';...
+    'KP3output';'KSioutput';'KNH4output';'KH2Soutput';'TB';'TF';'TS';...
     'TP';'TSi';'TNH4';'TH2S';'TCal';'fH'};
 
 NICEHEADERS={...
@@ -3069,9 +3063,7 @@ H = 10.^(-pH);
 CO3 = TC.*K1(F).*K2(F)./(K1(F).*H + H.*H + K1(F).*K2(F));
 varargout{1} = CO3.*Ca./KCa; % OmegaCa, dimensionless
 varargout{2} = CO3.*Ca./KAr; % OmegaAr, dimensionless
-varargout{3} = KCa ;
-varargout{4} = KAr ;
-varargout{5} = CAL ;
+varargout{3} = CAL ;
 end % end nested function
 
 function varargout=FindpHOnAllScales(pH)
@@ -3106,9 +3098,15 @@ varargout{4}=pHNBS;
 end % end nested function
 
 
+
+
+
 %
 % errors for CO2SYSv3 -----------------------------------------------------
 %
+
+
+
 
 % errors()
 % This subroutine propagates uncertainties for the marine carbonate chemistry calculations
