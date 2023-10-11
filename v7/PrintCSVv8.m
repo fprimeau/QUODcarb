@@ -12,7 +12,7 @@ function out = PrintCSVv8(varargin)
         fid = varargin{2};
         opt = varargin{3};
 
-        nTP = length(est.m);
+        nTP = length(est.tp);
 
         fprintf(fid, '%s, ', '  ');
 
@@ -31,9 +31,9 @@ function out = PrintCSVv8(varargin)
             fprintf(fid,'est.e%s, ',fn{i} ); % e
         end
 
-        fnm = fieldnames(est.m); % into T/P dependent
+        fnm = fieldnames(est.tp); % into T/P dependent
         for j = 1:nTP
-            fnj = fieldnames(est.m(j));
+            fnj = fieldnames(est.tp(j));
             for i = 1:4:8 % T, P  
                 fprintf(fid,'obs.%s, ',  fnj{i});
                 fprintf(fid,'obs.e%s, ', fnj{i});
@@ -75,32 +75,32 @@ function out = PrintCSVv8(varargin)
                         (strcmp(fnj(i),'F'))        || ...  % F
                         (strcmp(fnj(i),'HF'))       || ...  % HF
                         (strcmp(fnj(i),'po4'))      || ...  % po4
-                        (strcmp(fnm(i),'hpo4'))     || ...  % hpo4
-                        (strcmp(fnm(i),'h2po4'))    || ...  % h2po4
-                        (strcmp(fnm(i),'h3po4'))    || ...  % h3po4
-                        (strcmp(fnm(i),'sioh4'))    || ...  % sioh4
-                        (strcmp(fnm(i),'siooh3'))   || ...  % siooh3
-                        (strcmp(fnm(i),'nh3'))      || ...  % nh3
-                        (strcmp(fnm(i),'nh4'))      || ...  % nh4
-                        (strcmp(fnm(i),'hs'))       || ...  % hs
-                        (strcmp(fnm(i),'h2s'))      || ...  % h2s
-                        (strcmp(fnm(i),'ca'))       || ...  % ca
-                        (strcmp(fnm(i),'OmegaAr'))  || ...  % OmegaAr
-                        (strcmp(fnm(i),'OmegaCa'))      )   % OmegaCa
+                        (strcmp(fnj(i),'hpo4'))     || ...  % hpo4
+                        (strcmp(fnj(i),'h2po4'))    || ...  % h2po4
+                        (strcmp(fnj(i),'h3po4'))    || ...  % h3po4
+                        (strcmp(fnj(i),'sioh4'))    || ...  % sioh4
+                        (strcmp(fnj(i),'siooh3'))   || ...  % siooh3
+                        (strcmp(fnj(i),'nh3'))      || ...  % nh3
+                        (strcmp(fnj(i),'nh4'))      || ...  % nh4
+                        (strcmp(fnj(i),'hs'))       || ...  % hs
+                        (strcmp(fnj(i),'h2s'))      || ...  % h2s
+                        (strcmp(fnj(i),'ca'))       || ...  % ca
+                        (strcmp(fnj(i),'OmegaAr'))  || ...  % OmegaAr
+                        (strcmp(fnj(i),'OmegaCa'))      )   % OmegaCa
                     fprintf(fid,'est.%s, ',  fnj{i});
                     fprintf(fid,'est.e%s, ', fnj{i}); % e = error
-                elseif ( (strcmp(fnm(i),'pKw'))     || ...  % pKw
-                        (strcmp(fnm(i),'pKb'))      || ...  % pKb
-                        (strcmp(fnm(i),'pKs'))      || ...  % pKs
-                        (strcmp(fnm(i),'pKf'))      || ...  % pKf
-                        (strcmp(fnm(i),'pK1p'))     || ...  % pK1p
-                        (strcmp(fnm(i),'pK2p'))     || ...  % pK2p
-                        (strcmp(fnm(i),'pK3p'))     || ...  % pK3p
-                        (strcmp(fnm(i),'pKsi'))     || ...  % pKsi
-                        (strcmp(fnm(i),'pKnh4'))    || ...  % pKnh4
-                        (strcmp(fnm(i),'pKh2s'))    || ...  % pKh2s
-                        (strcmp(fnm(i),'pKar'))     || ...  % pKar
-                        (strcmp(fnm(i),'pKca'))         )   % pKca
+                elseif ( (strcmp(fnj(i),'pKw'))     || ...  % pKw
+                        (strcmp(fnj(i),'pKb'))      || ...  % pKb
+                        (strcmp(fnj(i),'pKs'))      || ...  % pKs
+                        (strcmp(fnj(i),'pKf'))      || ...  % pKf
+                        (strcmp(fnj(i),'pK1p'))     || ...  % pK1p
+                        (strcmp(fnj(i),'pK2p'))     || ...  % pK2p
+                        (strcmp(fnj(i),'pK3p'))     || ...  % pK3p
+                        (strcmp(fnj(i),'pKsi'))     || ...  % pKsi
+                        (strcmp(fnj(i),'pKnh4'))    || ...  % pKnh4
+                        (strcmp(fnj(i),'pKh2s'))    || ...  % pKh2s
+                        (strcmp(fnj(i),'pKar'))     || ...  % pKar
+                        (strcmp(fnj(i),'pKca'))         )   % pKca
                     fprintf(fid,'obs.%s, ',  fnj{i});
                     fprintf(fid,'obs.e%s, ', fnj{i});
                     fprintf(fid,'est.%s, ',  fnj{i});
@@ -111,7 +111,7 @@ function out = PrintCSVv8(varargin)
 
         fprintf(fid,'\n'); % finish first line
 
-        % second line, for m(1), m(2) etc. so mostly blank
+        % second line, for tp(1), tp(2) etc. so mostly blank
         fprintf(fid, '%s, ','iflag');
         fprintf(fid, '%s, ', '  ');
         fprintf(fid, '%s, ', '  ');
@@ -125,37 +125,37 @@ function out = PrintCSVv8(varargin)
             fprintf(fid, '%s, ', '  ');
         end
         for j = 1:nTP
-            fnj = fieldnames(est.m(j));
+            fnj = fieldnames(est.tp(j));
             for i = 1:4:8
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
             end
             for i = 9:6:51
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
             end
             for i = 57
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
             end
             for i = 63
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
             end
             for i = 69:6:75
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
             end
             for i = 81:6:93
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
-                fprintf(fid, 'm(%i), ', j);
+                fprintf(fid, 'tp(%i), ', j);
                 fprintf(fid, '%s, ', '  ');
             end
             for i = 99:6:length(fnj)
@@ -167,35 +167,35 @@ function out = PrintCSVv8(varargin)
                         (strcmp(fnj(i),'F'))        || ...  % F
                         (strcmp(fnj(i),'HF'))       || ...  % HF
                         (strcmp(fnj(i),'po4'))      || ...  % po4
-                        (strcmp(fnm(i),'hpo4'))     || ...  % hpo4
-                        (strcmp(fnm(i),'h2po4'))    || ...  % h2po4
-                        (strcmp(fnm(i),'h3po4'))    || ...  % h3po4
-                        (strcmp(fnm(i),'sioh4'))    || ...  % sioh4
-                        (strcmp(fnm(i),'siooh3'))   || ...  % siooh3
-                        (strcmp(fnm(i),'nh3'))      || ...  % nh3
-                        (strcmp(fnm(i),'nh4'))      || ...  % nh4
-                        (strcmp(fnm(i),'hs'))       || ...  % hs
-                        (strcmp(fnm(i),'h2s'))      || ...  % h2s
-                        (strcmp(fnm(i),'ca'))       || ...  % ca
-                        (strcmp(fnm(i),'OmegaAr'))  || ...  % OmegaAr
-                        (strcmp(fnm(i),'OmegaCa'))      )   % OmegaCa
-                    fprintf(fid, 'm(%i), ', j);
+                        (strcmp(fnj(i),'hpo4'))     || ...  % hpo4
+                        (strcmp(fnj(i),'h2po4'))    || ...  % h2po4
+                        (strcmp(fnj(i),'h3po4'))    || ...  % h3po4
+                        (strcmp(fnj(i),'sioh4'))    || ...  % sioh4
+                        (strcmp(fnj(i),'siooh3'))   || ...  % siooh3
+                        (strcmp(fnj(i),'nh3'))      || ...  % nh3
+                        (strcmp(fnj(i),'nh4'))      || ...  % nh4
+                        (strcmp(fnj(i),'hs'))       || ...  % hs
+                        (strcmp(fnj(i),'h2s'))      || ...  % h2s
+                        (strcmp(fnj(i),'ca'))       || ...  % ca
+                        (strcmp(fnj(i),'OmegaAr'))  || ...  % OmegaAr
+                        (strcmp(fnj(i),'OmegaCa'))      )   % OmegaCa
+                    fprintf(fid, 'tp(%i), ', j);
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'pKw'))     || ...  % pKw
-                        (strcmp(fnm(i),'pKb'))      || ...  % pKb
-                        (strcmp(fnm(i),'pKs'))      || ...  % pKs
-                        (strcmp(fnm(i),'pKf'))      || ...  % pKf
-                        (strcmp(fnm(i),'pK1p'))     || ...  % pK1p
-                        (strcmp(fnm(i),'pK2p'))     || ...  % pK2p
-                        (strcmp(fnm(i),'pK3p'))     || ...  % pK3p
-                        (strcmp(fnm(i),'pKsi'))     || ...  % pKsi
-                        (strcmp(fnm(i),'pKnh4'))    || ...  % pKnh4
-                        (strcmp(fnm(i),'pKh2s'))    || ...  % pKh2s
-                        (strcmp(fnm(i),'pKar'))     || ...  % pKar
-                        (strcmp(fnm(i),'pKca'))         )   % pKca
-                    fprintf(fid, 'm(%i), ', j);
+                elseif ( (strcmp(fnj(i),'pKw'))     || ...  % pKw
+                        (strcmp(fnj(i),'pKb'))      || ...  % pKb
+                        (strcmp(fnj(i),'pKs'))      || ...  % pKs
+                        (strcmp(fnj(i),'pKf'))      || ...  % pKf
+                        (strcmp(fnj(i),'pK1p'))     || ...  % pK1p
+                        (strcmp(fnj(i),'pK2p'))     || ...  % pK2p
+                        (strcmp(fnj(i),'pK3p'))     || ...  % pK3p
+                        (strcmp(fnj(i),'pKsi'))     || ...  % pKsi
+                        (strcmp(fnj(i),'pKnh4'))    || ...  % pKnh4
+                        (strcmp(fnj(i),'pKh2s'))    || ...  % pKh2s
+                        (strcmp(fnj(i),'pKar'))     || ...  % pKar
+                        (strcmp(fnj(i),'pKca'))         )   % pKca
+                    fprintf(fid, 'tp(%i), ', j);
                     fprintf(fid, '%s, ', '  ');
-                    fprintf(fid, 'm(%i), ', j);
+                    fprintf(fid, 'tp(%i), ', j);
                     fprintf(fid, '%s, ', '  ');
                 end
             end
@@ -224,7 +224,7 @@ function out = PrintCSVv8(varargin)
             end
         end
         for j = 1:nTP
-            fnm = fieldnames(est.m(j));
+            fnj = fieldnames(est.tp(j));
             fprintf(fid, '%s, ', 'deg C'); % T
             fprintf(fid, '%s, ', 'deg C');
             fprintf(fid, '%s, ', 'deg C');
@@ -233,134 +233,134 @@ function out = PrintCSVv8(varargin)
             fprintf(fid, '%s, ', 'dbar');
             fprintf(fid, '%s, ', 'dbar');
             fprintf(fid, '%s, ', 'dbar');
-            for i = 9:6:length(fnm)
-                if  ( (strcmp(fnm(i),'ph'))         || ...  % ph (chosen scale)
-                        (strcmp(fnm(i),'ph_free'))  || ...  % ph_free
-                        (strcmp(fnm(i),'ph_tot'))   || ...  % ph_tot
-                        (strcmp(fnm(i),'ph_sws'))   || ...  % ph_sws
-                        (strcmp(fnm(i),'ph_nbs'))   || ...  % ph_nbs
-                        (strcmp(fnm(i),'pfH')) ) % )        % pfH
+            for i = 9:6:length(fnj)
+                if  ( (strcmp(fnj(i),'ph'))         || ...  % ph (chosen scale)
+                        (strcmp(fnj(i),'ph_free'))  || ...  % ph_free
+                        (strcmp(fnj(i),'ph_tot'))   || ...  % ph_tot
+                        (strcmp(fnj(i),'ph_sws'))   || ...  % ph_sws
+                        (strcmp(fnj(i),'ph_nbs'))   || ...  % ph_nbs
+                        (strcmp(fnj(i),'pfH')) ) % )        % pfH
                     fprintf(fid, '%s, ', '(p units)');      % log10 unitless
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'fco2')) || ...     % fco2
-                        (strcmp(fnm(i),'pco2'))  )          % pco2
+                elseif ( (strcmp(fnj(i),'fco2')) || ...     % fco2
+                        (strcmp(fnj(i),'pco2'))  )          % pco2
                     fprintf(fid, '%s, ', '(uatm)');
                     fprintf(fid, '%s, ', '(uatm)');
                     fprintf(fid, '%s, ', '(uatm)');
                     fprintf(fid, '%s, ', '(uatm)');
-                elseif ( strcmp(fnm(i),'hco3'))             % hco3
+                elseif ( strcmp(fnj(i),'hco3'))             % hco3
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif (strcmp(fnm(i),'co3'))               % co3
+                elseif (strcmp(fnj(i),'co3'))               % co3
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pco2st')) || ...   % pco2st
-                        (strcmp(fnm(i),'pp2f'))  )          % pp2f
+                elseif ( (strcmp(fnj(i),'pco2st')) || ...   % pco2st
+                        (strcmp(fnj(i),'pp2f'))  )          % pp2f
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'pK0')) || ...      % pK0
-                        (strcmp(fnm(i),'pK1')) || ...       % pK1
-                        (strcmp(fnm(i),'pK2')) )            % pK2
-                    fprintf(fid, '%s, ', '(p units)');
-                    fprintf(fid, '%s, ', '  ');
-                    fprintf(fid, '%s, ', '(p units)');
-                    fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'oh')) )            % oh
-                    fprintf(fid, '%s, ', '(umol/kg)');
-                    fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKw')) )           % pKw
+                elseif ( (strcmp(fnj(i),'pK0')) || ...      % pK0
+                        (strcmp(fnj(i),'pK1')) || ...       % pK1
+                        (strcmp(fnj(i),'pK2')) )            % pK2
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'boh4')) || ...     % boh4
-                        (strcmp(fnm(i),'boh3')) )           % boh3
+                elseif ( (strcmp(fnj(i),'oh')) )            % oh
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKb')) )           % pKb
+                elseif ( (strcmp(fnj(i),'pKw')) )           % pKw
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( strcmp(fnm(i),'so4'))              % so4
+                elseif ( (strcmp(fnj(i),'boh4')) || ...     % boh4
+                        (strcmp(fnj(i),'boh3')) )           % boh3
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                    fprintf(fid, '%s, ', '(umol/kg)');
+                elseif ( (strcmp(fnj(i),'pKb')) )           % pKb
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+                    fprintf(fid, '%s, ', '(p units)');
+                    fprintf(fid, '%s, ', '  ');
+                elseif ( strcmp(fnj(i),'so4'))              % so4
                     fprintf(fid, '%s, ', '(mol/kg)');
                     fprintf(fid, '%s, ', '(mol/kg)');
-                elseif (strcmp(fnm(i),'hso4'))              % hso4
+                elseif (strcmp(fnj(i),'hso4'))              % hso4
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif (strcmp(fnm(i),'pKs'))               % pKs
+                elseif (strcmp(fnj(i),'pKs'))               % pKs
                     fprintf(fid, '%s, ', '(p units)'); 
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'F')) || ...        % F
-                        (strcmp(fnm(i),'HF'))  )            % HF
+                elseif ( (strcmp(fnj(i),'F')) || ...        % F
+                        (strcmp(fnj(i),'HF'))  )            % HF
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKf')) )           % pKf
+                elseif ( (strcmp(fnj(i),'pKf')) )           % pKf
                     fprintf(fid, '%s, ', '(p units)'); 
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'po4')) || ...      % po4
-                        (strcmp(fnm(i),'hpo4')) || ...      % hpo4
-                        (strcmp(fnm(i),'h2po4')) || ...     % h2po4
-                        (strcmp(fnm(i),'h3po4')) )          % h3po4
+                elseif ( (strcmp(fnj(i),'po4')) || ...      % po4
+                        (strcmp(fnj(i),'hpo4')) || ...      % hpo4
+                        (strcmp(fnj(i),'h2po4')) || ...     % h2po4
+                        (strcmp(fnj(i),'h3po4')) )          % h3po4
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pK1p')) || ...     % pK1p
-                        (strcmp(fnm(i),'pK2p')) || ...      % pK2p
-                        (strcmp(fnm(i),'pK3p')) )           % pK3p
+                elseif ( (strcmp(fnj(i),'pK1p')) || ...     % pK1p
+                        (strcmp(fnj(i),'pK2p')) || ...      % pK2p
+                        (strcmp(fnj(i),'pK3p')) )           % pK3p
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'sioh4')) || ...    % sioh4
-                        (strcmp(fnm(i),'siooh3')) )         % siooh3
+                elseif ( (strcmp(fnj(i),'sioh4')) || ...    % sioh4
+                        (strcmp(fnj(i),'siooh3')) )         % siooh3
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKsi'))  )         % pKsi
+                elseif ( (strcmp(fnj(i),'pKsi'))  )         % pKsi
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'nh3')) || ...      % nh3
-                        (strcmp(fnm(i),'nh4')) )            % nh4
+                elseif ( (strcmp(fnj(i),'nh3')) || ...      % nh3
+                        (strcmp(fnj(i),'nh4')) )            % nh4
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKnh4')) )         % pKnh4
+                elseif ( (strcmp(fnj(i),'pKnh4')) )         % pKnh4
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'hs')) || ...       % hs
-                        (strcmp(fnm(i),'h2s')) )            % h2s
+                elseif ( (strcmp(fnj(i),'hs')) || ...       % hs
+                        (strcmp(fnj(i),'h2s')) )            % h2s
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'pKh2s')) )         % pKh2s
+                elseif ( (strcmp(fnj(i),'pKh2s')) )         % pKh2s
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
-                elseif ( (strcmp(fnm(i),'ca')) )            % ca ( = TCal)
+                elseif ( (strcmp(fnj(i),'ca')) )            % ca ( = TCal)
                     fprintf(fid, '%s, ', '(umol/kg)');
                     fprintf(fid, '%s, ', '(umol/kg)');
-                elseif ( (strcmp(fnm(i),'OmegaAr')) || ...  % OmegaAr
-                        (strcmp(fnm(i),'OmegaCa')) )        % OmegaCa
+                elseif ( (strcmp(fnj(i),'OmegaAr')) || ...  % OmegaAr
+                        (strcmp(fnj(i),'OmegaCa')) )        % OmegaCa
                     fprintf(fid, '%s, ', '   ');            % dimensionless
                     fprintf(fid, '%s, ', '   ');
-                elseif ( (strcmp(fnm(i),'pKar')) || ...     % pKar
-                        (strcmp(fnm(i),'pKca')) )           % pKca
+                elseif ( (strcmp(fnj(i),'pKar')) || ...     % pKar
+                        (strcmp(fnj(i),'pKca')) )           % pKca
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                     fprintf(fid, '%s, ', '(p units)');
                     fprintf(fid, '%s, ', '  ');
                 end
-            end % for i = 9:6:length(fnm)
+            end % for i = 9:6:length(fnj)
         end % for j = 1:nTP
     
         fprintf(fid,'\n'); % 'return' i.e. finish third line
@@ -374,7 +374,7 @@ function out = PrintCSVv8(varargin)
         iflag   = varargin{4}; % Newton solver convergence flag: 0 converged, 1 not converged
         fid     = varargin{5}; % file id
           
-        nTP = length(est.m);
+        nTP = length(est.tp);
 
         fprintf(fid,'%i, ',iflag);
         
@@ -453,218 +453,218 @@ function out = PrintCSVv8(varargin)
         end
         for j = 1:nTP
             % Temp
-            fprintf(fid,'%f, ', obs.m(j).T); 
-            fprintf(fid,'%f, ', obs.m(j).eT);
-            fprintf(fid,'%f, ', est.m(j).T); 
-            fprintf(fid,'%f, ', est.m(j).eT);
+            fprintf(fid,'%f, ', obs.tp(j).T); 
+            fprintf(fid,'%f, ', obs.tp(j).eT);
+            fprintf(fid,'%f, ', est.tp(j).T); 
+            fprintf(fid,'%f, ', est.tp(j).eT);
             % pres
-            fprintf(fid,'%f, ', obs.m(j).P); 
-            fprintf(fid,'%f, ', obs.m(j).eP);
-            fprintf(fid,'%f, ', est.m(j).P); 
-            fprintf(fid,'%f, ', est.m(j).eP);
+            fprintf(fid,'%f, ', obs.tp(j).P); 
+            fprintf(fid,'%f, ', obs.tp(j).eP);
+            fprintf(fid,'%f, ', est.tp(j).P); 
+            fprintf(fid,'%f, ', est.tp(j).eP);
             % ph
-            fprintf(fid,'%f, ', obs.m(j).ph); 
-            fprintf(fid,'%f, ', obs.m(j).eph);
-            fprintf(fid,'%f, ', est.m(j).ph); 
-            fprintf(fid,'%f, ', est.m(j).eph);
+            fprintf(fid,'%f, ', obs.tp(j).ph); 
+            fprintf(fid,'%f, ', obs.tp(j).eph);
+            fprintf(fid,'%f, ', est.tp(j).ph); 
+            fprintf(fid,'%f, ', est.tp(j).eph);
             % ph_free
-            fprintf(fid,'%f, ', obs.m(j).ph_free); 
-            fprintf(fid,'%f, ', obs.m(j).eph_free);
-            fprintf(fid,'%f, ', est.m(j).ph_free); 
-            fprintf(fid,'%f, ', est.m(j).eph_free);
+            fprintf(fid,'%f, ', obs.tp(j).ph_free); 
+            fprintf(fid,'%f, ', obs.tp(j).eph_free);
+            fprintf(fid,'%f, ', est.tp(j).ph_free); 
+            fprintf(fid,'%f, ', est.tp(j).eph_free);
             % ph_tot
-            fprintf(fid,'%f, ', obs.m(j).ph_tot); 
-            fprintf(fid,'%f, ', obs.m(j).eph);
-            fprintf(fid,'%f, ', est.m(j).ph_tot); 
-            fprintf(fid,'%f, ', est.m(j).eph);
+            fprintf(fid,'%f, ', obs.tp(j).ph_tot); 
+            fprintf(fid,'%f, ', obs.tp(j).eph);
+            fprintf(fid,'%f, ', est.tp(j).ph_tot); 
+            fprintf(fid,'%f, ', est.tp(j).eph);
             % keyboard
              % ph_sws
-            fprintf(fid,'%f, ', obs.m(j).ph_sws); 
-            fprintf(fid,'%f, ', obs.m(j).eph);
-            fprintf(fid,'%f, ', est.m(j).ph_sws); 
-            fprintf(fid,'%f, ', est.m(j).eph);
+            fprintf(fid,'%f, ', obs.tp(j).ph_sws); 
+            fprintf(fid,'%f, ', obs.tp(j).eph);
+            fprintf(fid,'%f, ', est.tp(j).ph_sws); 
+            fprintf(fid,'%f, ', est.tp(j).eph);
             % ph_nbs
-            fprintf(fid,'%f, ', obs.m(j).ph_nbs); 
-            fprintf(fid,'%f, ', obs.m(j).eph);
-            fprintf(fid,'%f, ', est.m(j).ph_nbs); 
-            fprintf(fid,'%f, ', est.m(j).eph);
+            fprintf(fid,'%f, ', obs.tp(j).ph_nbs); 
+            fprintf(fid,'%f, ', obs.tp(j).eph);
+            fprintf(fid,'%f, ', est.tp(j).ph_nbs); 
+            fprintf(fid,'%f, ', est.tp(j).eph);
             % pfH
-            fprintf(fid,'%f, ', obs.m(j).pfH); 
-            fprintf(fid,'%f, ', obs.m(j).epfH);
-            fprintf(fid,'%f, ', est.m(j).pfH); 
-            fprintf(fid,'%f, ', est.m(j).epfH);
+            fprintf(fid,'%f, ', obs.tp(j).pfH); 
+            fprintf(fid,'%f, ', obs.tp(j).epfH);
+            fprintf(fid,'%f, ', est.tp(j).pfH); 
+            fprintf(fid,'%f, ', est.tp(j).epfH);
             % fco2
-            fprintf(fid,'%f, ', obs.m(j).fco2); 
-            fprintf(fid,'%f, ', obs.m(j).efco2);
-            fprintf(fid,'%f, ', est.m(j).fco2); 
-            fprintf(fid,'%f, ', est.m(j).efco2);
+            fprintf(fid,'%f, ', obs.tp(j).fco2); 
+            fprintf(fid,'%f, ', obs.tp(j).efco2);
+            fprintf(fid,'%f, ', est.tp(j).fco2); 
+            fprintf(fid,'%f, ', est.tp(j).efco2);
             % pco2
-            fprintf(fid,'%f, ', obs.m(j).pco2); 
-            fprintf(fid,'%f, ', obs.m(j).epco2);
-            fprintf(fid,'%f, ', est.m(j).pco2); 
-            fprintf(fid,'%f, ', est.m(j).epco2);
+            fprintf(fid,'%f, ', obs.tp(j).pco2); 
+            fprintf(fid,'%f, ', obs.tp(j).epco2);
+            fprintf(fid,'%f, ', est.tp(j).pco2); 
+            fprintf(fid,'%f, ', est.tp(j).epco2);
             % hco3
-            fprintf(fid,'%f, ', est.m(j).hco3); 
-            fprintf(fid,'%f, ', est.m(j).ehco3);
+            fprintf(fid,'%f, ', est.tp(j).hco3); 
+            fprintf(fid,'%f, ', est.tp(j).ehco3);
             % co3
-            fprintf(fid,'%f, ', obs.m(j).co3); 
-            fprintf(fid,'%f, ', obs.m(j).eco3);
-            fprintf(fid,'%f, ', est.m(j).co3); 
-            fprintf(fid,'%f, ', est.m(j).eco3);            
+            fprintf(fid,'%f, ', obs.tp(j).co3); 
+            fprintf(fid,'%f, ', obs.tp(j).eco3);
+            fprintf(fid,'%f, ', est.tp(j).co3); 
+            fprintf(fid,'%f, ', est.tp(j).eco3);            
             % pco2* (co2st)
-            fprintf(fid,'%f, ', est.m(j).pco2st); 
-            fprintf(fid,'%f, ', est.m(j).epco2st);
+            fprintf(fid,'%f, ', est.tp(j).pco2st); 
+            fprintf(fid,'%f, ', est.tp(j).epco2st);
             % pp2f
-            fprintf(fid,'%f, ', est.m(j).pp2f); 
-            fprintf(fid,'%f, ', est.m(j).epp2f);
+            fprintf(fid,'%f, ', est.tp(j).pp2f); 
+            fprintf(fid,'%f, ', est.tp(j).epp2f);
             % pK0
-            fprintf(fid,'%f, ', obs.m(j).pK0); 
-            fprintf(fid,'%f, ', obs.m(j).epK0);
-            fprintf(fid,'%f, ', est.m(j).pK0); 
-            fprintf(fid,'%f, ', est.m(j).epK0);
+            fprintf(fid,'%f, ', obs.tp(j).pK0); 
+            fprintf(fid,'%f, ', obs.tp(j).epK0);
+            fprintf(fid,'%f, ', est.tp(j).pK0); 
+            fprintf(fid,'%f, ', est.tp(j).epK0);
             % pK1
-            fprintf(fid,'%f, ', obs.m(j).pK1); 
-            fprintf(fid,'%f, ', obs.m(j).epK1);
-            fprintf(fid,'%f, ', est.m(j).pK1); 
-            fprintf(fid,'%f, ', est.m(j).epK1);
+            fprintf(fid,'%f, ', obs.tp(j).pK1); 
+            fprintf(fid,'%f, ', obs.tp(j).epK1);
+            fprintf(fid,'%f, ', est.tp(j).pK1); 
+            fprintf(fid,'%f, ', est.tp(j).epK1);
             % pK2
-            fprintf(fid,'%f, ', obs.m(j).pK2); 
-            fprintf(fid,'%f, ', obs.m(j).epK2);
-            fprintf(fid,'%f, ', est.m(j).pK2); 
-            fprintf(fid,'%f, ', est.m(j).epK2); 
+            fprintf(fid,'%f, ', obs.tp(j).pK2); 
+            fprintf(fid,'%f, ', obs.tp(j).epK2);
+            fprintf(fid,'%f, ', est.tp(j).pK2); 
+            fprintf(fid,'%f, ', est.tp(j).epK2); 
             % oh
-            fprintf(fid,'%f, ', est.m(j).oh);
-            fprintf(fid,'%f, ', est.m(j).eoh);
+            fprintf(fid,'%f, ', est.tp(j).oh);
+            fprintf(fid,'%f, ', est.tp(j).eoh);
             % pKw = [h][oh]
-            fprintf(fid,'%f, ', obs.m(j).pKw);
-            fprintf(fid,'%f, ', obs.m(j).epKw);
-            fprintf(fid,'%f, ', est.m(j).pKw);
-            fprintf(fid,'%f, ', est.m(j).epKw);
+            fprintf(fid,'%f, ', obs.tp(j).pKw);
+            fprintf(fid,'%f, ', obs.tp(j).epKw);
+            fprintf(fid,'%f, ', est.tp(j).pKw);
+            fprintf(fid,'%f, ', est.tp(j).epKw);
 
             % boh4
-            fprintf(fid,'%f, ', est.m(j).boh4);
-            fprintf(fid,'%f, ', est.m(j).eboh4);
+            fprintf(fid,'%f, ', est.tp(j).boh4);
+            fprintf(fid,'%f, ', est.tp(j).eboh4);
             % boh3
-            fprintf(fid,'%f, ', est.m(j).boh3);
-            fprintf(fid,'%f, ', est.m(j).eboh3);
+            fprintf(fid,'%f, ', est.tp(j).boh3);
+            fprintf(fid,'%f, ', est.tp(j).eboh3);
             % pKb = [h][boh4]/[boh3]
-            fprintf(fid,'%f, ', obs.m(j).pKb);
-            fprintf(fid,'%f, ', obs.m(j).epKb);
-            fprintf(fid,'%f, ', est.m(j).pKb);
-            fprintf(fid,'%f, ', est.m(j).epKb);
+            fprintf(fid,'%f, ', obs.tp(j).pKb);
+            fprintf(fid,'%f, ', obs.tp(j).epKb);
+            fprintf(fid,'%f, ', est.tp(j).pKb);
+            fprintf(fid,'%f, ', est.tp(j).epKb);
 
             % so4
-            fprintf(fid,'%f, ', est.m(j).so4);
-            fprintf(fid,'%f, ', est.m(j).eso4);
+            fprintf(fid,'%f, ', est.tp(j).so4);
+            fprintf(fid,'%f, ', est.tp(j).eso4);
             % hso4
-            fprintf(fid,'%f, ', est.m(j).hso4);
-            fprintf(fid,'%f, ', est.m(j).ehso4);
+            fprintf(fid,'%f, ', est.tp(j).hso4);
+            fprintf(fid,'%f, ', est.tp(j).ehso4);
             % pKs  = [hf][so4]/[hso4]
-            fprintf(fid,'%f, ', obs.m(j).pKs);
-            fprintf(fid,'%f, ', obs.m(j).epKs);
-            fprintf(fid,'%f, ', est.m(j).pKs);
-            fprintf(fid,'%f, ', est.m(j).epKs);
+            fprintf(fid,'%f, ', obs.tp(j).pKs);
+            fprintf(fid,'%f, ', obs.tp(j).epKs);
+            fprintf(fid,'%f, ', est.tp(j).pKs);
+            fprintf(fid,'%f, ', est.tp(j).epKs);
 
             % [F]
-            fprintf(fid,'%f, ', est.m(j).F);
-            fprintf(fid,'%f, ', est.m(j).eF);
+            fprintf(fid,'%f, ', est.tp(j).F);
+            fprintf(fid,'%f, ', est.tp(j).eF);
             % [HF] hydrogen fluoride
-            fprintf(fid,'%f, ', est.m(j).HF);
-            fprintf(fid,'%f, ', est.m(j).eHF);
+            fprintf(fid,'%f, ', est.tp(j).HF);
+            fprintf(fid,'%f, ', est.tp(j).eHF);
             % pKf = [h][F]/[HF]
-            fprintf(fid,'%f, ', obs.m(j).pKf);
-            fprintf(fid,'%f, ', obs.m(j).epKf);
-            fprintf(fid,'%f, ', est.m(j).pKf);
-            fprintf(fid,'%f, ', est.m(j).epKf);
+            fprintf(fid,'%f, ', obs.tp(j).pKf);
+            fprintf(fid,'%f, ', obs.tp(j).epKf);
+            fprintf(fid,'%f, ', est.tp(j).pKf);
+            fprintf(fid,'%f, ', est.tp(j).epKf);
 
             if ismember('phosphate',opt.abr)
                 % po4
-                fprintf(fid,'%f, ', est.m(j).po4); 
-                fprintf(fid,'%f, ', est.m(j).epo4);                
+                fprintf(fid,'%f, ', est.tp(j).po4); 
+                fprintf(fid,'%f, ', est.tp(j).epo4);                
                 % hpo4
-                fprintf(fid,'%f, ', est.m(j).hpo4); 
-                fprintf(fid,'%f, ', est.m(j).ehpo4);                
+                fprintf(fid,'%f, ', est.tp(j).hpo4); 
+                fprintf(fid,'%f, ', est.tp(j).ehpo4);                
                 % h2po4
-                fprintf(fid,'%f, ', est.m(j).h2po4); 
-                fprintf(fid,'%f, ', est.m(j).eh2po4);                
+                fprintf(fid,'%f, ', est.tp(j).h2po4); 
+                fprintf(fid,'%f, ', est.tp(j).eh2po4);                
                 % h3po4
-                fprintf(fid,'%f, ', est.m(j).h3po4); 
-                fprintf(fid,'%f, ', est.m(j).eh3po4);                
+                fprintf(fid,'%f, ', est.tp(j).h3po4); 
+                fprintf(fid,'%f, ', est.tp(j).eh3po4);                
                 % pK1p = [h][h2po4]/[h3po4]
-                fprintf(fid,'%f, ', obs.m(j).pK1p); 
-                fprintf(fid,'%f, ', obs.m(j).epK1p);
-                fprintf(fid,'%f, ', est.m(j).pK1p); 
-                fprintf(fid,'%f, ', est.m(j).epK1p);                
+                fprintf(fid,'%f, ', obs.tp(j).pK1p); 
+                fprintf(fid,'%f, ', obs.tp(j).epK1p);
+                fprintf(fid,'%f, ', est.tp(j).pK1p); 
+                fprintf(fid,'%f, ', est.tp(j).epK1p);                
                 % pK2p = [h][hpo4]/[h2po4]
-                fprintf(fid,'%f, ', obs.m(j).pK2p); 
-                fprintf(fid,'%f, ', obs.m(j).epK2p);
-                fprintf(fid,'%f, ', est.m(j).pK2p); 
-                fprintf(fid,'%f, ', est.m(j).epK2p);                
+                fprintf(fid,'%f, ', obs.tp(j).pK2p); 
+                fprintf(fid,'%f, ', obs.tp(j).epK2p);
+                fprintf(fid,'%f, ', est.tp(j).pK2p); 
+                fprintf(fid,'%f, ', est.tp(j).epK2p);                
                 % pK3p = [h][po4]/[hpo4]
-                fprintf(fid,'%f, ', obs.m(j).pK3p); 
-                fprintf(fid,'%f, ', obs.m(j).epK3p);
-                fprintf(fid,'%f, ', est.m(j).pK3p); 
-                fprintf(fid,'%f, ', est.m(j).epK3p);                                              
+                fprintf(fid,'%f, ', obs.tp(j).pK3p); 
+                fprintf(fid,'%f, ', obs.tp(j).epK3p);
+                fprintf(fid,'%f, ', est.tp(j).pK3p); 
+                fprintf(fid,'%f, ', est.tp(j).epK3p);                                              
             end
             if ismember('silicate',opt.abr)
                 % sioh4
-                fprintf(fid,'%f, ', est.m(j).sioh4); 
-                fprintf(fid,'%f, ', est.m(j).esioh4);                
+                fprintf(fid,'%f, ', est.tp(j).sioh4); 
+                fprintf(fid,'%f, ', est.tp(j).esioh4);                
                 % siooh3
-                fprintf(fid,'%f, ', est.m(j).siooh3); 
-                fprintf(fid,'%f, ', est.m(j).esiooh3);                
+                fprintf(fid,'%f, ', est.tp(j).siooh3); 
+                fprintf(fid,'%f, ', est.tp(j).esiooh3);                
                 % pKSi = [h][siooh3]/[sioh4]
-                fprintf(fid,'%f, ', obs.m(j).pKsi); 
-                fprintf(fid,'%f, ', obs.m(j).epKsi); 
-                fprintf(fid,'%f, ', est.m(j).pKsi); 
-                fprintf(fid,'%f, ', est.m(j).epKsi);                              
+                fprintf(fid,'%f, ', obs.tp(j).pKsi); 
+                fprintf(fid,'%f, ', obs.tp(j).epKsi); 
+                fprintf(fid,'%f, ', est.tp(j).pKsi); 
+                fprintf(fid,'%f, ', est.tp(j).epKsi);                              
             end
             if ismember('ammonia',opt.abr)
                 % nh3
-                fprintf(fid,'%f, ', est.m(j).nh3); 
-                fprintf(fid,'%f, ', est.m(j).enh3);                
+                fprintf(fid,'%f, ', est.tp(j).nh3); 
+                fprintf(fid,'%f, ', est.tp(j).enh3);                
                 % nh4
-                fprintf(fid,'%f, ', est.m(j).nh4); 
-                fprintf(fid,'%f, ', est.m(j).enh4);                
+                fprintf(fid,'%f, ', est.tp(j).nh4); 
+                fprintf(fid,'%f, ', est.tp(j).enh4);                
                 % pKnh4 = [h][nh3]/[nh4]
-                fprintf(fid,'%f, ', obs.m(j).pKnh4); 
-                fprintf(fid,'%f, ', obs.m(j).epKnh4);
-                fprintf(fid,'%f, ', est.m(j).pKnh4); 
-                fprintf(fid,'%f, ', est.m(j).epKnh4);                
+                fprintf(fid,'%f, ', obs.tp(j).pKnh4); 
+                fprintf(fid,'%f, ', obs.tp(j).epKnh4);
+                fprintf(fid,'%f, ', est.tp(j).pKnh4); 
+                fprintf(fid,'%f, ', est.tp(j).epKnh4);                
             end
             if ismember('sulfide',opt.abr)                
                 % hs
-                fprintf(fid,'%f, ', est.m(j).hs); 
-                fprintf(fid,'%f, ', est.m(j).ehs);                
+                fprintf(fid,'%f, ', est.tp(j).hs); 
+                fprintf(fid,'%f, ', est.tp(j).ehs);                
                 % h2s
-                fprintf(fid,'%f, ', est.m(j).h2s); 
-                fprintf(fid,'%f, ', est.m(j).eh2s);                
+                fprintf(fid,'%f, ', est.tp(j).h2s); 
+                fprintf(fid,'%f, ', est.tp(j).eh2s);                
                 % pKh2s = [h][hs]/[h2s]
-                fprintf(fid,'%f, ', obs.m(j).pKh2s); 
-                fprintf(fid,'%f, ', obs.m(j).epKh2s);
-                fprintf(fid,'%f, ', est.m(j).pKh2s); 
-                fprintf(fid,'%f, ', est.m(j).epKh2s);                
+                fprintf(fid,'%f, ', obs.tp(j).pKh2s); 
+                fprintf(fid,'%f, ', obs.tp(j).epKh2s);
+                fprintf(fid,'%f, ', est.tp(j).pKh2s); 
+                fprintf(fid,'%f, ', est.tp(j).epKh2s);                
             end
             if ismember('solubility',opt.abr)
                 % ca
-                fprintf(fid,'%f, ', est.m(j).ca); 
-                fprintf(fid,'%f, ', est.m(j).eca);   
+                fprintf(fid,'%f, ', est.tp(j).ca); 
+                fprintf(fid,'%f, ', est.tp(j).eca);   
                 % OmegaAr
-                fprintf(fid,'%f, ', est.m(j).OmegaAr); 
-                fprintf(fid,'%f, ', est.m(j).eOmegaAr);    
+                fprintf(fid,'%f, ', est.tp(j).OmegaAr); 
+                fprintf(fid,'%f, ', est.tp(j).eOmegaAr);    
                 % OmegaCa
-                fprintf(fid,'%f, ', est.m(j).OmegaCa); 
-                fprintf(fid,'%f, ', est.m(j).eOmegaCa);   
+                fprintf(fid,'%f, ', est.tp(j).OmegaCa); 
+                fprintf(fid,'%f, ', est.tp(j).eOmegaCa);   
                 % pKar = [ca][co3]/[omegaAr]
-                fprintf(fid,'%f, ', obs.m(j).pKar); 
-                fprintf(fid,'%f, ', obs.m(j).epKar);
-                fprintf(fid,'%f, ', est.m(j).pKar); 
-                fprintf(fid,'%f, ', est.m(j).epKar);                              
+                fprintf(fid,'%f, ', obs.tp(j).pKar); 
+                fprintf(fid,'%f, ', obs.tp(j).epKar);
+                fprintf(fid,'%f, ', est.tp(j).pKar); 
+                fprintf(fid,'%f, ', est.tp(j).epKar);                              
                 % pKca = [ca][co3]/[omegaCa]
-                fprintf(fid,'%f, ', obs.m(j).pKca); 
-                fprintf(fid,'%f, ', obs.m(j).epKca);
-                fprintf(fid,'%f, ', est.m(j).pKca); 
-                fprintf(fid,'%f, ', est.m(j).epKca);
+                fprintf(fid,'%f, ', obs.tp(j).pKca); 
+                fprintf(fid,'%f, ', obs.tp(j).epKca);
+                fprintf(fid,'%f, ', est.tp(j).pKca); 
+                fprintf(fid,'%f, ', est.tp(j).epKca);
             end
         end
         
