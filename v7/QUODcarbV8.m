@@ -57,9 +57,9 @@ function [est,obs,iflag] = QUODcarbV8(obs,opt)
 %           4 = Mehrbach et al., 1973  REFIT by Dickson and Millero, 1987
 %           5 = Hansson, 1973 and Mehrbach, 1973 
 %                                      REFIT by Dickson and Millero, 1987
-%           6 = GEOSECS                ~NOT AVAILABLE IN QUODCARB~
-%           7 = Peng                   ~NOT AVAILABLE IN QUODCARB~
-%           8 = Millero, 1979          ~NOT AVAILABLE IN QUODCARB~
+%          x6 = GEOSECS                ~NOT AVAILABLE IN QUODCARB~
+%          x7 = Peng                   ~NOT AVAILABLE IN QUODCARB~
+%          x8 = Millero, 1979          ~NOT AVAILABLE IN QUODCARB~
 %           9 = Cai and Wang, 1998
 %          10 = Lueker et al., 2000    (DEFAULT)
 %          11 = Mojica Prieto and Millero, 2002

@@ -22,9 +22,9 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
                 fprintf(fid,'%s, %s, %s, %s ', 'C_TB', 'Q_TB', 'Q_eTB' );
                 fprintf(fid,'%s, %s, %s, %s, %s ', 'C_ph', 'C_eph', 'Q_ph', 'Q_eph' );
                 fprintf(fid,'%s, %s, %s, %s ', 'C_phfree', 'Q_phfree', 'Q_ephfree' );
+                fprintf(fid,'%s, %s, %s, %s ', 'C_phtot', 'Q_phtot', 'Q_ephtot' );
                 fprintf(fid,'%s, %s, %s, %s ', 'C_phsws', 'Q_phsws', 'Q_ephsws' );
                 fprintf(fid,'%s, %s, %s, %s ', 'C_phnbs', 'Q_phnbs', 'Q_ephnbs' );
-                fprintf(fid,'%s, %s, %s, %s ', 'C_phtot', 'Q_phtot', 'Q_ephtot' );
                 fprintf(fid,'%s, %s, %s, %s ', 'C_TF', 'Q_TF', 'Q_eTF' );
                 fprintf(fid,'%s, %s, %s, %s ', 'C_TS', 'Q_TS', 'Q_eTS' );
                 fprintf(fid,'%s, %s, %s, %s ', 'C_TP', 'Q_TP', 'Q_eTP' );
@@ -59,12 +59,24 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
             par3type = 3; % pH
             par3 = obs(i).m(tp).ph;
             epar3 = obs(i).m(tp).eph;
+            if isnan(par3)
+                par3 = est(i).m(tp).ph; % if obs NaN'ed out, use est
+                epar3 = est(i).m(tp).eph;
+            end
             par4 = est(i).m(tp).pco2;  % pCO2 converted to pH's temp
             epar4 = est(i).m(tp).epco2; %
             par4type = 4;
+            if isnan(par4)
+                par4 = est(i).m(tp).pco2; % if obs NaN'ed out, use est
+                epar4 = est(i).m(tp).epco2;
+            end
             par5 = obs(i).m(tp).co3; % CO3
             epar5 = obs(i).m(tp).eco3;
             par5type = 7;
+            if isnan(par5)
+                par5 = est(i).m(tp).co3; % if obs NaN'ed out, use est
+                epar5 = est(i).m(tp).eco3;
+            end
 
             sal = obs(i).sal; % salinity of sample
             esal = obs(i).esal; % salinity error
@@ -80,7 +92,7 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
             pHscale = opt.phscale; % 1 = tot; 2 = sws; 3 = free; 4 = nbs
             k1k2c = opt.K1K2;
             epK = [0.002,0.01,0.02,0.01,0.01,0.04,0.039]; % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02]
-            kso4c = 1; % 1 or 3 is Dickson 1990
+            kso4c = opt.KSO4; % 1 or 3 is Dickson 1990
             %eBt = q(wobs(sys.iTB))^(-1/2)*1e6; % error total boron, 0.02
             eBt = 0.0373;
             r = 0; % correlation coefficient
@@ -163,7 +175,7 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
     % '94 - TF               (umol/kgSW) ';
     % '95 - TS               (umol/kgSW) ';
     % '96 - TP               (umol/kgSW) ';
-    % '96 - TSi              (umol/kgSW) ';
+    % '97 - TSi              (umol/kgSW) ';
     % '98 - TNH4            (umol/kgSW) ';
     % '99 - TH2S            (umol/kgSW) ';
     % '100 - TCal            (umol/kgSW) ';
@@ -173,13 +185,13 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
             out.eTA = err(1); % sigma, not precision
             out.TC = OUT(2);
             out.eTC = err(2);
-            out.TB = OUT(95);
-            out.TF = OUT(96);
-            out.TS = OUT(97);
-            out.TP = OUT(98);
-            out.TSi = OUT(99);
-            out.TNH4 = OUT(100);
-            out.TH2S = OUT(101);
+            out.TB = OUT(93);
+            out.TF = OUT(94);
+            out.TS = OUT(95);
+            out.TP = OUT(96);
+            out.TSi = OUT(97);
+            out.TNH4 = OUT(98);
+            out.TH2S = OUT(99);
             out.ph = OUT(21);
             out.eh = (err(13)*1e-9); % was nano units
             out.eph = (out.eh/(10^(-out.ph)))*(1/log(10)); % dph = (-1/ln(10))*(dH/H) from Orr's 'errors'
@@ -215,7 +227,7 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
             out.OmegaCa = OUT(35);
             out.eOmegaCa = err(20);
             out.CAL = OUT(100)*1e-6;
-
+        
             % exit matrix at chosen tp temp
             A = [];
             fprintf(fid,'%s,',' ');
@@ -231,11 +243,11 @@ function [A] = compare3(obs,est,opt,tp,pair,fid)
             fprintf(fid,'%0.6g, %0.6g, %0.6g,',...
                 out.ph_free,       est(i).m(tp).ph_free,  est(i).m(tp).eph_free);
             fprintf(fid,'%0.6g, %0.6g, %0.6g,',...
+                out.ph_tot,        est(i).m(tp).ph_tot,  est(i).m(tp).eph);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g,',...
                 out.ph_sws,        est(i).m(tp).ph_sws,  est(i).m(tp).eph);
             fprintf(fid,'%0.6g, %0.6g, %0.6g,',...
                 out.ph_nbs,        est(i).m(tp).ph_nbs,  est(i).m(tp).eph);
-            fprintf(fid,'%0.6g, %0.6g, %0.6g,',...
-                out.ph_tot,        est(i).m(tp).ph_tot,  est(i).m(tp).eph);
             fprintf(fid,'%0.6g, %0.6g, %0.6g,', ... 
                 out.TF,   est(i).TF,   est(i).eTF);
             fprintf(fid,'%0.6g, %0.6g, %0.6g, ', ... 
