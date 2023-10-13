@@ -1,8 +1,20 @@
 
-
 % v7/printCSVv8
 
-function out = PrintCSVv8(varargin)
+function PrintCSVv8(opt,est,obs,iflag,fid,nD)
+    if opt.printcsv == 1
+          for i = 1:nD
+              if i == 1
+                  fid = fopen(opt.fid,'w');
+                  parse_CSV(est(i),fid,opt); % make column headers
+              end
+              % fill one row with data
+              parse_CSV(opt,est(i),obs(i),iflag(i),fid);
+          end % for i = 1:nD
+    end % if opt.printcsv == 1
+end % function
+
+function parse_CSV(varargin)
     
     if (nargin == 3)
         %

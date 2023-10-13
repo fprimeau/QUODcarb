@@ -15,64 +15,65 @@ function [A] = compare3(obs,est,opt,tpopt,pair,fid)
 
                 fprintf(fid, '%s, ','C_ = CO2SYS');
                 fprintf(fid, '%s, ','Q_ = QUODcarb');
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % TA
                     'C_TA', 'C_eTA', 'Q_TA', 'Q_eTA' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
-                    'C_TC', 'C_eTC', 'Q_TC', 'Q_eTC' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % TC
+                    'C_TC', 'C_eTC', 'Q_TC', 'Q_eTC' ); 
+                fprintf(fid,'%s, %s, %s, %s ', ...      % TB
                     'C_TB', 'Q_TB', 'Q_eTB' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % ph
                     'C_ph', 'C_eph', 'Q_ph', 'Q_eph' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % ph_free
                     'C_phfree', 'Q_phfree', 'Q_ephfree' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % ph_tot
                     'C_phtot', 'Q_phtot', 'Q_ephtot' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % ph_sws
                     'C_phsws', 'Q_phsws', 'Q_ephsws' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % ph_nbs
                     'C_phnbs', 'Q_phnbs', 'Q_ephnbs' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % TF
                     'C_TF', 'Q_TF', 'Q_eTF' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % TS
                     'C_TS', 'Q_TS', 'Q_eTS' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % TP
                     'C_TP', 'Q_TP', 'Q_eTP' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % TSi
                     'C_TSi', 'Q_TSi', 'Q_eTSi' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
-                    'C_TNH4', 'Q_TNH4', 'Q_eTNH4' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % TNH3
+                    'C_TNH4', 'Q_TNH3', 'Q_eTNH3' );
+                fprintf(fid,'%s, %s, %s, %s ', ...      % TH2S
                     'C_TH2S', 'Q_TH2S', 'Q_eTH2S' );
-                fprintf(fid,'%s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s ', ...      % pfH
                     'C_pfH', 'Q_pfH', 'Q_epfH' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pCO2
                     'C_pCO2', 'C_epCO2', 'Q_pCO2', 'Q_epCO2' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % CO3
                     'C_CO3', 'C_eCO3', 'Q_CO3', 'Q_eCO3' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pK0
                     'C_pK0', 'C_epK0', 'Q_pK0', 'Q_epK0' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pK1
                     'C_pK1', 'C_epK1', 'Q_pK1', 'Q_epK1' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pK2
                     'C_pK2', 'C_epK2', 'Q_pK2', 'Q_epK2' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pKw
                     'C_pKw', 'C_epKw', 'Q_pKw', 'Q_epKw' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pKb
                     'C_pKb', 'C_epKb', 'Q_pKb', 'Q_epKb' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pKf
                     'C_pKs', 'Q_pKs', 'C_pKf', 'Q_pKf' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pK1p & pK2p
                     'C_pK1p', 'Q_pK1p', 'C_pK2p', 'Q_pK2p' ); % no error for CO2SYS K1p thru KH2S
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pK3p & pKsi
                     'C_pK3p', 'Q_pK3p', 'C_pKsi', 'Q_pKsi' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % pKnh4 & pKh2s
                     'C_pKNH4', 'Q_pKNH4', 'C_pKH2S', 'Q_pKH2S' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % OmegaAr
                     'C_OmegaAr', 'C_eOmegaAr', 'Q_OmegaAr', 'Q_eOmegaAr' );
-                fprintf(fid,'%s, %s, %s, %s, %s ', ...
+                fprintf(fid,'%s, %s, %s, %s, %s ', ...  % OmegaCa
                     'C_OmegaCa', 'C_eOmegaCa', 'Q_OmegaCa', 'Q_eOmegaCa' );
-                fprintf(fid,'%s, %s, %s, %s, ', ...
+                fprintf(fid,'%s, %s, %s, %s, ', ...     % TCal
                     'C_CAL', 'Q_TCal','Q_eTCal');
+                fprintf(fid,'%s, %s, %s, ', 'C_Rev', 'Q_Rev'); % Revelle
                 fprintf(fid, '\n');
                 [A] = ' ';
             end
@@ -118,9 +119,10 @@ function [A] = compare3(obs,est,opt,tpopt,pair,fid)
             epo4    = obs(i).eTP; % error PO4
             pHscale = opt.phscale; % 1 = tot; 2 = sws; 3 = free; 4 = nbs
             k1k2c   = opt.K1K2;
-            epK     = [0.002,0.01,0.02,0.01,0.01,0.04,0.039]; % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02]
+            epK     = [0.002,0.01,0.02,0.01,0.01,0.04,0.039]; 
+               % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02];
             kso4c   = opt.KSO4; % 1 or 3 is Dickson 1990
-            eBt     = obs(i).eTB;
+            eBt     = (obs(i).eTB/obs(i).TB); % wants it in frac form
             r       = 0; % correlation coefficient
             nh4     = obs(i).TNH3;
             enh4    = obs(i).eTNH3;
@@ -257,11 +259,12 @@ function [A] = compare3(obs,est,opt,tpopt,pair,fid)
             out.pKSi    = p(OUT(90));
             out.pKnh4   = p(OUT(91));
             out.pKh2s   = p(OUT(92));
-            out.OmegaAr  = OUT(36);
-            out.eOmegaAr = err(21);
-            out.OmegaCa  = OUT(35);
-            out.eOmegaCa = err(20);
-            out.CAL      = OUT(100)*1e-6;
+            out.OmegaAr     = OUT(36);
+            out.eOmegaAr    = err(21);
+            out.OmegaCa     = OUT(35);
+            out.eOmegaCa    = err(20);
+            out.CAL         = OUT(100)*1e-6;
+            out.Rev         = OUT(34);
         
             % exit matrix at chosen tp temp
             A = [];
@@ -343,6 +346,8 @@ function [A] = compare3(obs,est,opt,tpopt,pair,fid)
                 est(i).tp(tpopt).OmegaCa, est(i).tp(tpopt).eOmegaCa);
             fprintf(fid,'%0.6g, %0.6g, %0.6g,', ... 
                 out.CAL, est(i).TCal, est(i).eTCal);
+            fprintf(fid,'%0.6g, %0.6g, ', ... 
+                out.Rev, est(i).tp(tpopt).Revelle);
             fprintf(fid,'\n');
         end
 end
@@ -2962,7 +2967,7 @@ fCO2c= CalculatefCO2fromTCpH(TCi, pHc);
 fCO2minus = fCO2c;
 % CalculateRevelleFactor:
 Revelle = (fCO2plus - fCO2minus)./dTC./((fCO2plus + fCO2minus)./TC0); % Corrected error pointed out by MP Humphreys (https://pyco2sys.readthedocs.io/en/latest/validate/)
-varargout{1}=Revelle;
+varargout{1}=Revelle; % keyboard
 end % end nested function
 
 

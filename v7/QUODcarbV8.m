@@ -105,9 +105,9 @@ function [est,obs,iflag] = QUODcarbV8(obs,opt)
 %--------------------------------------------------------------------------
 
 
-    opt = check_opt(opt); % check opt structure
+    opt = check_opt(opt);                       % check opt structure
 
-    sys = mksysV8(obs(1),opt.abr,opt.phscale); % create indexing
+    sys = mksysV8(obs(1),opt.abr,opt.phscale);  % create indexing
 
     nD = length(obs);  nv = size(sys.K,2);
 
@@ -116,16 +116,17 @@ function [est,obs,iflag] = QUODcarbV8(obs,opt)
   
     for i = 1:nD
 
-        z0 = init(yobs(i,:),sys,opt); % initialize
+        z0 = init(yobs(i,:),sys,opt);           % initialize
         tol = 1e-8;
 
         gun = @(z) grad_limpco2(z,yobs(i,:),wobs(i,:),sys,opt);
         [z,J,iflag(i)] = newtn(z0,gun,tol);
+
         if (iflag(i) ~=0) && (opt.printmes ~= 0)
             fprintf('Newton''s method iflag = %i at i = %i \n',iflag(i),i);
         end
        
-        % posterior uncertainty
+        % calculate posterior uncertainty
         warning('off');
         C = inv(J);
         warning('on');
@@ -136,21 +137,80 @@ function [est,obs,iflag] = QUODcarbV8(obs,opt)
         if (sum(isnan(sigy)) > 0) && (opt.printmes ~= 0)
             fprintf('NaN found in output means faulty run. i = %i\n',i)
         end
-        % populate est
-        [est(i)] = parse_output(z,sigy,opt,sys);
+        
+        [est(i)] = parse_output(z,sigy,opt,sys);    % populate est
+        [est(i)] = calc_revelle(z0,yobs(i,:),wobs(i,:),est(i),sys,opt,tol);
 
-        if opt.printcsv == 1
-            % make QUODcarb.CSV if requested
-            if i == 1
-                fid = fopen(opt.fid,'w');
-                PrintCSVv8(est(i),fid,opt); % make column headers
-            end
-             % fill with one row of data
-            PrintCSVv8(opt,est(i),obs(i),iflag(i),fid);
-        end
     end
+
+    PrintCSVv8(opt,est,obs,iflag,(opt.fid),nD);
 end
 
+function [est] = calc_revelle(z0,yobs,wobs,est,sys,opt,tol)
+    p       = sys.p;
+    q       = sys.q;
+
+    nTP = length(est.tp);
+    % NaN out previous inputs
+    for j = 1:nTP
+        yobs(sys.tp(j).iph)      = nan; % ph
+        wobs(sys.tp(j).iph)      = nan;
+        yobs(sys.tp(j).ifco2)    = nan; % pco2
+        wobs(sys.tp(j).ifco2)    = nan;
+        yobs(sys.tp(j).ico3)     = nan; % co3
+        wobs(sys.tp(j).ico3)     = nan;
+        yobs(sys.tp(j).ifco2)    = nan; % fco2
+        wobs(sys.tp(j).ifco2)    = nan;
+    end
+
+    yobs(sys.iTA)   = est.pTA;      % use output TA as input 'obs'
+    wobs(sys.iTA)   = est.epTA;
+
+    dTC             = 0.00000001;   % pert = 1e-8           
+    pdTC            = p(dTC);               
+    TC_pert         = (est.TC + dTC);
+    % update yobs with new pTC_pert
+    yobs(sys.iTC)   = p(TC_pert*1e-6); % 1e-6 converts to mol/kg 
+
+    gun             = @(z) grad_limpco2(z,yobs,wobs,sys,opt);
+    [z,J,iflag]     = newtn(z0,gun,tol);
+    zplus = z;
+
+    TC_pert         = (est.TC - dTC);
+    % update yobs with new pTC_pert
+    yobs(sys.iTC)   = p(TC_pert*1e-6); % 1e-6 converts to mol/kg 
+
+    gun             = @(z) grad_limpco2(z,yobs,wobs,sys,opt);
+    [z,J,iflag]     = newtn(z0,gun,tol);
+    zminus = z;
+
+    for j = 1:nTP
+        fco2plus(j)     = q( zplus( sys.tp(j).ifco2) );
+        fco2minus(j)    = q( zminus( sys.tp(j).ifco2) );
+
+        RevFac(j) = ( fco2plus(j) - fco2minus(j) ) / dTC / ...
+            ( ( fco2plus(j) + fco2minus(j) ) / est.TC );
+
+        est.tp(j).Revelle   = RevFac(j);
+        est.tp(j).pRevelle  = p(RevFac(j));
+        
+        % pfco2out(j) = z( sys.tp(j).ifco2 );
+        % fco2out(j)  = q( pfco2out(j) );
+        % pfco2in(j)  = est.tp(j).pfco2;
+        % fco2in(j)   = est.tp(j).fco2*1e-6;
+        % % dfCO2     = fCO2in - fCO2out => p(dfco2) = pfco2in / pfco2out?
+        % dfco2(j)    = fco2in(j) - fco2out(j);
+        % pdfco2(j)   = p( abs( dfco2(j) ) ); 
+        % 
+        % % Revelle   = (dfco2 / dTC) * (TC / fco2)
+        % % pRevelle  = pdfco2 - pdTC + (pTC - pfco2)
+        % pRevFac(j)  = pdfco2(j) - pdTC + est.pTC - pfco2in(j);
+
+        % est.tp(j).pRevelle  = pRevFac(j);
+        % est.tp(j).Revelle   = q(pRevFac(j));
+    end
+    
+end
 % -------------------------------------------------------------------------
 
 function [g,H] = grad_limpco2(z,y,w,sys,opt)

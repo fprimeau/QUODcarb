@@ -240,7 +240,7 @@ function sys = mksysV8(obs,abr,phscale)
             % K1p = [H][H2PO4]/[H3PO4]
             row = row+1;
             K(row,[ tp(j).iK1p, tp(j).iph, tp(j).ih2po4, ...
-                ih3po4]) = [-1, 1, 1, -1];
+                tp(j).ih3po4]) = [-1, 1, 1, -1];
             row = row + 1;
             tp(j).kK1p = row;
             K(row, tp(j).iK1p) = 1; % K1p
