@@ -6,7 +6,7 @@
 function sys = mksysV8(obs,abr,phscale)
 %
 % Private function for QUODcarb.m
-% it creates the K amd M matrices and rph functions (residual ph)
+% it creates the K and M matrices and rph functions (residual ph)
 %
 % utility functions and constants
     LOG10 = log(10);
@@ -25,24 +25,24 @@ function sys = mksysV8(obs,abr,phscale)
     sys.d2qdx2 = d2qdx2;
     
     isgood = @(thing) (~sum(isnan(thing)) & ~isempty(thing));
-    if (~isfield(obs,'m'))
+    if (~isfield(obs,'tp'))
         if opt.printmes ~= 0
             error('Need to provide temperature and pressure measurement.')
         end
     end
-    field_names = union( fieldnames(obs), fieldnames(obs.m) );
+    field_names = union( fieldnames(obs), fieldnames(obs.tp) );
     if ~ismember('sal',field_names)
         error('Error no salinity specified (obs.sal is missing).')
     end
     if ~ismember('T',field_names)
-        error('Error no temperature specified (obs.m(:).T is missing).')
+        error('Error no temperature specified (obs.tp(:).T is missing).')
     end
     if ~ismember('P',field_names)
-        error('Error no pressure specified (obs.m(:).P is missing).')
+        error('Error no pressure specified (obs.tp(:).P is missing).')
     end
     i = 0;
     % carbonate:
-    i = i + 1; isal = i; sys.isal = isal;
+    i = i + 1; isal = i;  sys.isal = isal;
     i = i + 1;  iTC = i;  sys.iTC  = iTC;
     i = i + 1;  iTA = i;  sys.iTA  = iTA;
     % borate: Kb = [h][boh4]/[boh3]
@@ -75,99 +75,99 @@ function sys = mksysV8(obs,abr,phscale)
         i = i + 1;  iTCal = i; sys.iTCal = iTCal ;
     end
 
-    nTP = length(obs.m); % number of different (T,P) systems
+    nTP = length(obs.tp); % number of different (T,P) systems
 
     for j = 1:nTP
-        if (isgood(obs.m(j).T) && isgood(obs.m(j).P))
-            i = i + 1;    iT = i;  m(j).iT = iT; 
-            i = i + 1;    iP = i;  m(j).iP = iP;
+        if (isgood(obs.tp(j).T) && isgood(obs.tp(j).P))
+            i = i + 1;    iT = i;     tp(j).iT = iT; 
+            i = i + 1;    iP = i;     tp(j).iP = iP;
         else
             error('Error must specify temperature and pressure.');
         end
         % K0 = [co2st]/fco2   
         % K1 = [h][hco3]/[co2st]
         % K2 = [h][co3]/[hco3]
-        nrk = 3;            i = i + 1;
-        m(j).iK0      = i;  i = i + 1;
-        m(j).iK1      = i;  i = i + 1;
-        m(j).iK2      = i;  i = i + 1;
-        m(j).ifco2    = i;  i = i + 1;
-        m(j).ico2st   = i;  i = i + 1;
-        m(j).ihco3    = i;  i = i + 1;
-        m(j).ico3     = i;  i = i + 1;
-        m(j).iph      = i;  i = i + 1;
-        m(j).iph_free = i;  i = i + 1;
-        m(j).ip2f     = i;  i = i + 1;
-        m(j).ipco2    = i;  i = i + 1; 
-        m(j).ipfH     = i; % fH activity coefficient
+        nrk = 3;             i = i + 1;
+        tp(j).iK0      = i;  i = i + 1;
+        tp(j).iK1      = i;  i = i + 1;
+        tp(j).iK2      = i;  i = i + 1;
+        tp(j).ifco2    = i;  i = i + 1;
+        tp(j).ico2st   = i;  i = i + 1;
+        tp(j).ihco3    = i;  i = i + 1;
+        tp(j).ico3     = i;  i = i + 1;
+        tp(j).iph      = i;  i = i + 1;
+        tp(j).iph_free = i;  i = i + 1;
+        tp(j).ip2f     = i;  i = i + 1;
+        tp(j).ipco2    = i;  i = i + 1; 
+        tp(j).ipfH     = i; % fH activity coefficient
 
         % Kw = [h][oh] water = {'Kw','oh' };
-        nrk = nrk + 1;      i = i + 1;
-        m(j).iKw = i;       i = i + 1;
-        m(j).ioh = i;
+        nrk = nrk + 1;       i = i + 1;
+        tp(j).iKw = i;       i = i + 1;
+        tp(j).ioh = i;
 
         % Kb = [h][boh4]/[boh3]
-        nrk = nrk + 1;      i = i + 1;
-        m(j).iKb   = i;     i = i + 1;
-        m(j).iboh4 = i;     i = i + 1;
-        m(j).iboh3 = i;
+        nrk = nrk + 1;       i = i + 1;
+        tp(j).iKb   = i;     i = i + 1;
+        tp(j).iboh4 = i;     i = i + 1;
+        tp(j).iboh3 = i;
 
         % Ks  = [hf][so4]/[hso4]
-        nrk = nrk + 1;      i = i + 1;
-        m(j).iKs     = i;   i = i + 1;
-        m(j).iso4    = i;   i = i + 1;
-        m(j).ihso4   = i;
+        nrk = nrk + 1;       i = i + 1;
+        tp(j).iKs     = i;   i = i + 1;
+        tp(j).iso4    = i;   i = i + 1;
+        tp(j).ihso4   = i;
 
         % Kf = [h][F]/[HF]
-        nrk = nrk + 1;      i = i + 1;
-        m(j).iKf = i;       i = i + 1;
-        m(j).iF  = i;       i = i + 1;
-        m(j).iHF = i;
+        nrk = nrk + 1;       i = i + 1;
+        tp(j).iKf = i;       i = i + 1;
+        tp(j).iF  = i;       i = i + 1;
+        tp(j).iHF = i;
 
         if ismember('phosphate',abr)
             % K1p = [h][h2po4]/[h3po4]
             % K2p = [h][hpo4]/[h2po4]
             % K3p = [h][po4]/[hpo4]
-            nrk = nrk + 3;      i = i + 1;
-            m(j).iK1p   = i;    i = i + 1;
-            m(j).iK2p   = i;    i = i + 1;
-            m(j).iK3p   = i;    i = i + 1;
-            m(j).ih3po4 = i;    i = i + 1;
-            m(j).ih2po4 = i;    i = i + 1;
-            m(j).ihpo4  = i;    i = i + 1;
-            m(j).ipo4   = i;
+            nrk = nrk + 3;       i = i + 1;
+            tp(j).iK1p   = i;    i = i + 1;
+            tp(j).iK2p   = i;    i = i + 1;
+            tp(j).iK3p   = i;    i = i + 1;
+            tp(j).ih3po4 = i;    i = i + 1;
+            tp(j).ih2po4 = i;    i = i + 1;
+            tp(j).ihpo4  = i;    i = i + 1;
+            tp(j).ipo4   = i;
         end
         if ismember('silicate',abr)
             % KSi = [h][siooh3]/[sioh4]
-            nrk = nrk + 1;      i = i + 1;
-            m(j).iKsi    = i;   i = i + 1;
-            m(j).isiooh3 = i;   i = i + 1;
-            m(j).isioh4  = i;
+            nrk = nrk + 1;       i = i + 1;
+            tp(j).iKsi    = i;   i = i + 1;
+            tp(j).isiooh3 = i;   i = i + 1;
+            tp(j).isioh4  = i;
         end
         if ismember('ammonia',abr)
             % Knh4 = [h][nh3]/[nh4]
-            nrk = nrk + 1;      i = i + 1;
-            m(j).iKnh4 = i;     i = i + 1;
-            m(j).inh3  = i;     i = i + 1;
-            m(j).inh4  = i;
+            nrk = nrk + 1;       i = i + 1;
+            tp(j).iKnh4 = i;     i = i + 1;
+            tp(j).inh3  = i;     i = i + 1;
+            tp(j).inh4  = i;
         end
         if ismember('sulfide',abr)
             % Kh2s = [h][hs]/[h2s]
-            nrk = nrk + 1;      i = i + 1;
-            m(j).iKh2s = i;     i = i + 1;
-            m(j).ihs   = i;     i = i + 1;
-            m(j).ih2s  = i;
+            nrk = nrk + 1;       i = i + 1;
+            tp(j).iKh2s = i;     i = i + 1;
+            tp(j).ihs   = i;     i = i + 1;
+            tp(j).ih2s  = i;
         end
         if ismember('solubility',abr)
             % Kar = [co3][ca]/OmegaAr
             % Kca = [co3][ca]/OmegaCa
-            nrk = nrk + 1;      i = i + 1;
-            m(j).iKar     = i;  i = i + 1;
-            m(j).ica      = i;  i = i + 1;
-            m(j).iOmegaAr = i;
-            nrk = nrk + 1;      i = i + 1;
-            m(j).iKca     = i;  i = i + 1;
-            m(j).iOmegaCa = i;
+            nrk = nrk + 1;       i = i + 1;
+            tp(j).iKar     = i;  i = i + 1;
+            tp(j).ica      = i;  i = i + 1;
+            tp(j).iOmegaAr = i;
+            nrk = nrk + 1;       i = i + 1;
+            tp(j).iKca     = i;  i = i + 1;
+            tp(j).iOmegaCa = i;
         end
     end
     %
@@ -177,133 +177,133 @@ function sys = mksysV8(obs,abr,phscale)
     for j = 1:nTP
         % K0 = [CO2*]/fCO2 ==> -pK0 + pco2st - pfco2 = 0         
         row = row + 1;
-        K(row,[ m(j).iK0, m(j).ico2st, m(j).ifco2]) = [-1, 1, -1];
+        K(row,[ tp(j).iK0, tp(j).ico2st, tp(j).ifco2]) = [-1, 1, -1];
         row = row + 1;
-        m(j).kK0 = row;
-        K(row, m(j).iK0) = 1; 
+        tp(j).kK0 = row;
+        K(row, tp(j).iK0) = 1; 
         
         % K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pco2st = 0
         row = row + 1;
-        K(row,[ m(j).iK1, m(j).iph, m(j).ihco3, m(j).ico2st]) = ...
+        K(row,[ tp(j).iK1, tp(j).iph, tp(j).ihco3, tp(j).ico2st]) = ...
             [-1, 1, 1, -1];
         row = row + 1;
-        m(j).kK1 = row;
-        K(row, m(j).iK1) = 1;
+        tp(j).kK1 = row;
+        K(row, tp(j).iK1) = 1;
         
         % K2 = [CO3][H]/[HCO3]
         row = row + 1;
-        K(row,[ m(j).iK2, m(j).iph, m(j).ico3, m(j).ihco3 ]) = ...
+        K(row,[ tp(j).iK2, tp(j).iph, tp(j).ico3, tp(j).ihco3 ]) = ...
             [-1, 1, 1, -1];
         row = row + 1;
-        m(j).kK2 = row;
-        K(row, m(j).iK2) = 1; 
+        tp(j).kK2 = row;
+        K(row, tp(j).iK2) = 1; 
         
         % fco2 = pco2 * p2f;
         row = row + 1;
-        K(row,[ m(j).ifco2, m(j).ipco2, m(j).ip2f ]) = [-1 1 1];
+        K(row,[ tp(j).ifco2, tp(j).ipco2, tp(j).ip2f ]) = [-1 1 1];
         row = row + 1;
-        m(j).kp2f = row;
-        K(row, m(j).ip2f) = 1; 
+        tp(j).kp2f = row;
+        K(row, tp(j).ip2f) = 1; 
         
         % Kw = [OH][H]
         row = row + 1;
-        K(row,[ m(j).iKw, m(j).iph, m(j).ioh ]) = [-1, 1, 1];
+        K(row,[ tp(j).iKw, tp(j).iph, tp(j).ioh ]) = [-1, 1, 1];
         row = row+1;
-        m(j).kKw = row;
-        K(row, m(j).iKw) = 1; % Kw
+        tp(j).kKw = row;
+        K(row, tp(j).iKw) = 1; % Kw
 
         % Kb = [H][BOH4]/[BOH3]
         row = row+1;
-        K(row,[ m(j).iKb, m(j).iph, m(j).iboh4, m(j).iboh3 ]) = ...
+        K(row,[ tp(j).iKb, tp(j).iph, tp(j).iboh4, tp(j).iboh3 ]) = ...
             [-1, 1, 1, -1];
         row = row+1;
-        m(j).kKb = row;
-        K(row, m(j).iKb) = 1; % Kb
+        tp(j).kKb = row;
+        K(row, tp(j).iKb) = 1; % Kb
 
         % KS  = [H]F[SO4]/[HSO4]
         row = row+1;
-        K(row,[ m(j).iKs, m(j).iph_free, m(j).iso4, m(j).ihso4 ]) = ...
+        K(row,[ tp(j).iKs, tp(j).iph_free, tp(j).iso4, tp(j).ihso4 ]) = ...
             [-1, 1, 1, -1];
         row = row+1;
-        m(j).kKs = row;
-        K(row, m(j).iKs) = 1; % Ks
+        tp(j).kKs = row;
+        K(row, tp(j).iKs) = 1; % Ks
 
         % Kf = [H]F[F]/[HF]     [H]Free like in CO2SYS
         row = row+1;
-        K(row,[ m(j).iKf, m(j).iph_free, m(j).iF, m(j).iHF ]) = ...
+        K(row,[ tp(j).iKf, tp(j).iph_free, tp(j).iF, tp(j).iHF ]) = ...
             [-1, 1, 1, -1];
         row = row+1;
-        m(j).kKf = row;
-        K(row, m(j).iKf) = 1; % Kf
+        tp(j).kKf = row;
+        K(row, tp(j).iKf) = 1; % Kf
 
         if (ismember('phosphate',abr))
             % K1p = [H][H2PO4]/[H3PO4]
             row = row+1;
-            K(row,[ m(j).iK1p, m(j).iph, m(j).ih2po4, m(j).ih3po4]) = ...
-                [-1, 1, 1, -1];
+            K(row,[ tp(j).iK1p, tp(j).iph, tp(j).ih2po4, ...
+                tp(j).ih3po4]) = [-1, 1, 1, -1];
             row = row + 1;
-            m(j).kK1p = row;
-            K(row, m(j).iK1p) = 1; % K1p
+            tp(j).kK1p = row;
+            K(row, tp(j).iK1p) = 1; % K1p
 
             % K2p = [H][HPO4]/[H2PO4]
             row = row + 1;
-            K(row,[ m(j).iK2p, m(j).iph, m(j).ihpo4, m(j).ih2po4 ]) = ...
-                [-1, 1, 1, -1];
+            K(row,[ tp(j).iK2p, tp(j).iph, tp(j).ihpo4, ...
+                tp(j).ih2po4 ]) = [-1, 1, 1, -1];
             row = row + 1;
-            m(j).kK2p = row;
-            K(row, m(j).iK2p) = 1; % K2p
+            tp(j).kK2p = row;
+            K(row, tp(j).iK2p) = 1; % K2p
 
             % K3p = [H][PO4]/[HPO4]        
             row = row + 1;
-            K(row,[ m(j).iK3p, m(j).iph, m(j).ipo4, m(j).ihpo4 ]) = ...
-                [-1, 1, 1, -1];
+            K(row,[ tp(j).iK3p, tp(j).iph, tp(j).ipo4, ...
+                tp(j).ihpo4 ]) = [-1, 1, 1, -1];
             row = row+1;
-            m(j).kK3p = row;
-            K(row, m(j).iK3p) = 1; % K3p
+            tp(j).kK3p = row;
+            K(row, tp(j).iK3p) = 1; % K3p
         end
         if (ismember('silicate',abr))
             % KSi = [H][SiO(OH)3]/[Si(OH)4]
             row = row + 1;
-            K(row,[ m(j).iKsi, m(j).iph, m(j).isiooh3, m(j).isioh4 ]) = ...
-                [-1, 1, 1, -1];
+            K(row,[ tp(j).iKsi, tp(j).iph, tp(j).isiooh3, ...
+                tp(j).isioh4 ]) = [-1, 1, 1, -1];
             row = row + 1;
-            m(j).kKsi = row;
-            K(row, m(j).iKsi) = 1; % Ksi
+            tp(j).kKsi = row;
+            K(row, tp(j).iKsi) = 1; % Ksi
         end
         if (ismember('ammonia',abr))
             % Knh4 = [H][NH3]/[NH4+]
             row = row + 1;
-            K(row,[ m(j).iKnh4, m(j).iph, m(j).inh3, m(j).inh4]) = ...
+            K(row,[ tp(j).iKnh4, tp(j).iph, tp(j).inh3, tp(j).inh4]) = ...
                 [-1, 1, 1, -1];
             row = row + 1;
-            m(j).kKnh4 = row;
-            K(row, m(j).iKnh4) = 1; % Knh4
+            tp(j).kKnh4 = row;
+            K(row, tp(j).iKnh4) = 1; % Knh4
         end    
         if (ismember('sulfide',abr))
             % Kh2s = [H][HS]/[H2S]
             row = row + 1;
-            K(row,[ m(j).iKh2s, m(j).iph, m(j).ihs, m(j).ih2s]) = ...
+            K(row,[ tp(j).iKh2s, tp(j).iph, tp(j).ihs, tp(j).ih2s]) = ...
                 [-1, 1, 1, -1];
             row = row + 1;
-            m(j).kKh2s = row;
-            K(row, m(j).iKh2s) = 1; % Kh2s
+            tp(j).kKh2s = row;
+            K(row, tp(j).iKh2s) = 1; % Kh2s
         end
         if ismember('solubility',abr)
             % Kar = [co3][ca]/OmegaAr ==> -pKar + pco3 + pca - pOmegaAr = 0
             row = row + 1;
-            K(row,[ m(j).iKar, m(j).ico3, m(j).ica, m(j).iOmegaAr]) = ...
-                [-1, 1, 1, -1];
+            K(row,[ tp(j).iKar, tp(j).ico3, tp(j).ica, ...
+                tp(j).iOmegaAr]) = [-1, 1, 1, -1];
             row = row + 1;
-            m(j).kKar = row;
-            K(row, m(j).iKar) = 1; 
+            tp(j).kKar = row;
+            K(row, tp(j).iKar) = 1; 
 
             % Kca = [co3][ca]/OmegaCa ==> -pKca + pco3 + pca - pOmegaCa = 0
             row = row + 1;
-            K(row, [ m(j).iKca, m(j).ico3, m(j).ica, m(j).iOmegaCa]) = ...
-                [-1, 1, 1, -1];
+            K(row, [ tp(j).iKca, tp(j).ico3, tp(j).ica, ...
+                tp(j).iOmegaCa]) = [-1, 1, 1, -1];
             row = row + 1;
-            m(j).kKca = row;
-            K(row, m(j).iKca) = 1;
+            tp(j).kKca = row;
+            K(row, tp(j).iKca) = 1;
         end
     end
     % "mass conservation" equations
@@ -330,64 +330,64 @@ function sys = mksysV8(obs,abr,phscale)
         % Total alkalinity: TA - [HCO3] - 2[CO3] - [OH] ...
         row = row + 1;
         row_alk = row;
-        m(j).jTA = row_alk;
-        M(row_alk,[ iTA, m(j).ihco3, m(j).ico3, m(j).ioh ]) = ...
+        tp(j).jTA = row_alk;
+        M(row_alk,[ iTA, tp(j).ihco3, tp(j).ico3, tp(j).ioh ]) = ...
             [1, -1, -2, -1];
 
         % Total carbonate: TC - [CO2*] - [HCO3] - [CO3] = 0
         row = row + 1;
-        M(row, [ iTC, m(j).ico2st, m(j).ihco3, m(j).ico3 ]) = ...
+        M(row, [ iTC, tp(j).ico2st, tp(j).ihco3, tp(j).ico3 ]) = ...
             [1, -1, -1, -1];
-        m(j).jTC = row;
+        tp(j).jTC = row;
         
         % Total borate
         row = row + 1;
-        M(row,[ iTB, m(j).iboh3, m(j).iboh4 ])   =  [1, -1, -1];
-        M(row_alk, m(j).iboh4) = -1;
-        m(j).jTB = row;
+        M(row,[ iTB, tp(j).iboh3, tp(j).iboh4 ])   =  [1, -1, -1];
+        M(row_alk, tp(j).iboh4) = -1;
+        tp(j).jTB = row;
         
         % Total sulfate
         row = row + 1;
-        M(row, [ iTS, m(j).ihso4, m(j).iso4 ])   =  [1, -1, -1];
-        M(row_alk,[ m(j).iph_free, m(j).ihso4 ])  =  [1, 1]; 
-        m(j).jTS = row;
+        M(row, [ iTS, tp(j).ihso4, tp(j).iso4 ])   =  [1, -1, -1];
+        M(row_alk,[ tp(j).iph_free, tp(j).ihso4 ])  =  [1, 1]; 
+        tp(j).jTS = row;
 
         % Total fluoride
         row = row + 1;
-        M(row, [ iTF, m(j).iHF, m(j).iF ]) =  [1, -1, -1];
-        M(row_alk, m(j).iHF) =  1;
-        m(j).jTF = row;
+        M(row, [ iTF, tp(j).iHF, tp(j).iF ]) =  [1, -1, -1];
+        M(row_alk, tp(j).iHF) =  1;
+        tp(j).jTF = row;
         
         if (ismember('phosphate',abr))
             row = row + 1;
-            M(row, [ iTP,m(j).ih3po4, m(j).ih2po4, m(j).ihpo4, m(j).ipo4 ]) ...
-                = [1, -1, -1, -1, -1];
-            M(row_alk, [ m(j).ihpo4, m(j).ipo4, m(j).ih3po4 ]) ...
+            M(row, [ iTP,tp(j).ih3po4, tp(j).ih2po4, tp(j).ihpo4, ...
+                tp(j).ipo4 ]) = [1, -1, -1, -1, -1];
+            M(row_alk, [ tp(j).ihpo4, tp(j).ipo4, tp(j).ih3po4 ]) ...
                 = [-1, -2, 1]; 
-            m(j).jTP = row;
+            tp(j).jTP = row;
         end
         if (ismember('silicate',abr))
             row = row + 1;
-            M(row, [ iTSi, m(j).isioh4, m(j).isiooh3]) = [1, -1, -1];
-            M(row_alk, m(j).isiooh3) = -1; 
-            m(j).jTSi = row;
+            M(row, [ iTSi, tp(j).isioh4, tp(j).isiooh3]) = [1, -1, -1];
+            M(row_alk, tp(j).isiooh3) = -1; 
+            tp(j).jTSi = row;
         end
         if (ismember('ammonia',abr))
             row = row+1;
-            M(row, [ iTNH3, m(j).inh4, m(j).inh3 ]) = [1, -1, -1];
-            M(row_alk,m(j).inh3) = -1; 
-            m(j).jTNH3 = row;
+            M(row, [ iTNH3, tp(j).inh4, tp(j).inh3 ]) = [1, -1, -1];
+            M(row_alk,tp(j).inh3) = -1; 
+            tp(j).jTNH3 = row;
         end
         if (ismember('sulfide',abr)) % H2S
             row = row+1;
-            M(row,[ iTH2S, m(j).ih2s, m(j).ihs ]) = [1, -1, -1];
-            M(row_alk,m(j).ihs) = -1; 
-            m(j).jTH2S = row;
+            M(row,[ iTH2S, tp(j).ih2s, tp(j).ihs ]) = [1, -1, -1];
+            M(row_alk,tp(j).ihs) = -1; 
+            tp(j).jTH2S = row;
         end
         if (ismember('solubility',abr)) % total Calcium
             row = row + 1;
-            M(row, [ iTCal, m(j).ica]) = [1, -1];
-            m(j).jTCal = row;
+            M(row, [ iTCal, tp(j).ica]) = [1, -1];
+            tp(j).jTCal = row;
         end
 
         % % RESIDUALS of ph_free equations based on input phscale 
@@ -400,72 +400,74 @@ function sys = mksysV8(obs,abr,phscale)
         % % where FREE2tot = 1 + TS/Ks; pFREE2tot = p(TS + Ks) - pKs;
         % % and SWS2free = 1/(1 + TS/Ks + TF/Kf); 
             % pSWS2free = -p( 1 + (TS/Ks) + (TF/Kf) ); 
-        pFREE2tot = @(z) ( p( q( z(iTS)) + q( z(m(j).iKs)) ) ) ...       
-                - (z(m(j).iKs)); % ( Ks/Ks + TS/Ks ) = (Ks + TS)/Ks
-        pSWS2free = @(z) -p( 1 + ( q( z(iTS) ) / q( z(m(j).iKs) ) ) ...   
-                + ( q(z(iTF) ) / q( z(m(j).iKf) ) ) );
+        pFREE2tot = @(z) ( p( q( z(iTS)) + q( z(tp(j).iKs)) ) ) ...       
+                - (z(tp(j).iKs)); % ( Ks/Ks + TS/Ks ) = (Ks + TS)/Ks
+        pSWS2free = @(z) -p( 1 + ( q( z(iTS) ) / q( z(tp(j).iKs) ) ) ...   
+                + ( q(z(iTF) ) / q( z(tp(j).iKf) ) ) );
 
         if phscale == 1 % total
             % ph_free = ph_tot - p(FREE2tot);
-            m(j).rph_free = @(z) z(m(j).iph) - pFREE2tot(z) ...
-                - z(m(j).iph_free);
+            tp(j).rph_free = @(z) z(tp(j).iph) - pFREE2tot(z) ...
+                - z(tp(j).iph_free);
         elseif phscale == 2 % sws
             % ph_free = ph_sws + (-pSWS2free);
-            m(j).rph_free = @(z) z(m(j).iph) + pSWS2free(z) ...
-                - z(m(j).iph_free);
+            tp(j).rph_free = @(z) z(tp(j).iph) + pSWS2free(z) ...
+                - z(tp(j).iph_free);
         elseif phscale == 3 % free
             % ph_free = ph_free;
-            m(j).rph_free = @(z) z(m(j).iph) - z(m(j).iph_free);
+            tp(j).rph_free = @(z) z(tp(j).iph) - z(tp(j).iph_free);
         elseif phscale == 4 % nbs
             % ph_free = ph_nbs + (-pSWS2free) + pfH;
-            m(j).rph_free = @(z) z(m(j).iph) + pSWS2free(z) ...
-                - z(m(j).ipfH) - z(m(j).iph_free);
+            tp(j).rph_free = @(z) z(tp(j).iph) + pSWS2free(z) ...
+                - z(tp(j).ipfH) - z(tp(j).iph_free);
         end
 
         % % calculate rph_free first derivatives grph_free
         if phscale == 2 || phscale == 4 % sws or nbs
-            gpSWS2free_outer = @(z) -dpdx( 1 + ( q( z(iTS) ) / ... % outer of chain rule
-                q( z(m(j).iKs) ) ) + ( q( z(iTF) ) / q( z(m(j).iKf) ) ) );
+            gpSWS2free_outer = @(z) -dpdx( 1 + ...  % outer of chain rule
+                ( q( z(iTS) ) / q( z(tp(j).iKs) ) ) + ...
+                ( q( z(iTF) ) / q( z(tp(j).iKf) ) ) );
             gpSWS2free_pTS = @(z) gpSWS2free_outer(z) * ...
-                ( dqdx(z(iTS) ) / q( z(m(j).iKs) ) );
+                ( dqdx(z(iTS) ) / q( z(tp(j).iKs) ) );
             gpSWS2free_pKs = @(z) gpSWS2free_outer(z) * ...
-                q( z(iTS) ) * -1 * ( q( z(m(j).iKs) )^(-2)) * ...
-                dqdx( z(m(j).iKs) );
+                q( z(iTS) ) * -1 * ( q( z(tp(j).iKs) )^(-2)) * ...
+                dqdx( z(tp(j).iKs) );
             gpSWS2free_pTF = @(z) gpSWS2free_outer(z) * ...
-                ( dqdx( z(iTF)) / q( z(m(j).iKf) ) );
+                ( dqdx( z(iTF)) / q( z(tp(j).iKf) ) );
             gpSWS2free_pKf = @(z) gpSWS2free_outer(z) * ...
-                q( z(iTF) ) * -1 * ( q( z(m(j).iKf) )^(-2)) * ...
-                dqdx( z(m(j).iKf) );
+                q( z(iTF) ) * -1 * ( q( z(tp(j).iKf) )^(-2)) * ...
+                dqdx( z(tp(j).iKf) );
             if phscale == 2 % sws
                 g_pfH = @(z) 0;
-                m(j).grph_free = @(z) [ gpSWS2free_pTS(z); ...
-                    gpSWS2free_pKs(z);  gpSWS2free_pTF(z); ...
-                    gpSWS2free_pKf(z);           g_pfH(z); ...
-                      1              ;                -1 ];
-                    % ^ grph_free_ph |grph_free_phfree ^
+                tp(j).grph_free = @(z) [ gpSWS2free_pTS(z); ...
+                    gpSWS2free_pKs(z);   gpSWS2free_pTF(z); ...
+                    gpSWS2free_pKf(z);            g_pfH(z); ...
+                      1              ;                 -1 ];
+                    % ^ grph_free_ph | grph_free_phfree ^
             elseif phscale == 4 % nbs
                 g_pfH = @(z) -1;
-                m(j).grph_free = @(z) [ gpSWS2free_pTS(z); gpSWS2free_pKs(z); ...
-                    gpSWS2free_pTF(z); gpSWS2free_pKf(z); ...
-                    g_pfH(z); 1              ; -1];
-                    %         ^ grph_free_ph |  ^ grph_free_phfree
+                tp(j).grph_free = @(z) [   gpSWS2free_pTS(z); ...
+                    gpSWS2free_pKs(z);     gpSWS2free_pTF(z); ...
+                    gpSWS2free_pKf(z);              g_pfH(z); ...
+                       1             ;                  -1   ];
+                    %  ^ grph_free_ph| grph_free_phfree ^
             end
         elseif phscale == 1 % tot
-            gpF2t_outside = @(z) -dpdx( q( z(iTS)) + q( z(m(j).iKs)) );
+            gpF2t_outside = @(z) -dpdx( q( z(iTS)) + q( z(tp(j).iKs)) );
             gpF2t_pTS = @(z) gpF2t_outside(z) * dqdx( z(iTS) );
-            gpF2t_pKs = @(z) gpF2t_outside(z) * dqdx( z(m(j).iKs) ) + 1;
-            m(j).grph_free = @(z) [ gpF2t_pTS(z); gpF2t_pKs(z); ...
+            gpF2t_pKs = @(z) gpF2t_outside(z) * dqdx( z(tp(j).iKs) ) + 1;
+            tp(j).grph_free = @(z) [ gpF2t_pTS(z); gpF2t_pKs(z); ...
                 0       ; 0     ; ...   % g_pTF; g_pKf;
                 0       ; 1     ; -1 ]; % g_pfH; g_ph; g_phfree;
         elseif phscale == 3 % free
-            m(j).grph_free = @(z) [ 0; 0; 0; 0; 0; 1; -1 ];
+            tp(j).grph_free = @(z) [ 0; 0; 0; 0; 0; 1; -1 ];
             % g_pTS; g_pKs; g_pTF; g_pKf; g_pfH; g_ph; g_phfree;
         end
 
 
     end
-    sys.M = M;
-    sys.K = K;
-    sys.m = m;   
+    sys.M  = M;
+    sys.K  = K;
+    sys.tp = tp;   
 end
 
