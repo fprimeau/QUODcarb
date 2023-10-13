@@ -107,32 +107,42 @@ function [A] = compare3(obs,est,opt,tpopt,pair,fid)
             end
 
             sal     = obs(i).sal; % salinity of sample
-            esal    = obs(i).esal; % salinity error
             tempin  = obs(i).tp(tpopt).T; % temp of sample at tp chosen
-            etemp   = obs(i).tp(tpopt).eT; % error temp
             presin  = obs(i).tp(tpopt).P; % pressure of sample (dbars)
             tempout = obs(i).tp(tpopt).T;
             presout = obs(i).tp(tpopt).P;
             sil     = obs(i).TSi; % total Si of sample
             esi     = obs(i).eTSi; % error Si
             po4     = obs(i).TP; % phosphate of sample
-            epo4    = obs(i).eTP; % error PO4
             pHscale = opt.phscale; % 1 = tot; 2 = sws; 3 = free; 4 = nbs
             k1k2c   = opt.K1K2;
-            epK     = [0.002,0.01,0.02,0.01,0.01,0.04,0.039]; 
-               % '' = [0.02, 0.0075, 0.015, 0.01, 0.01, 0.02, 0.02];
             kso4c   = opt.KSO4; % 1 or 3 is Dickson 1990
-            eBt     = (obs(i).eTB/obs(i).TB); % wants it in frac form
             r       = 0; % correlation coefficient
             nh4     = obs(i).TNH3;
             enh4    = obs(i).eTNH3;
             h2s     = obs(i).TH2S;
-            eh2s    = obs(i).eTH2S;
             kfc     = opt.KF;
             tbc     = opt.TB;
-            ecal    = obs(i).eTCal; % 60 umol/kg = 6e-5 mol/kg = 0.06 mmol/kg
             X       = opt.co2press; % calls for 'co2press,1' not just '1'
             
+            % errors
+            esal    = obs(i).esal; % salinity error
+            etemp   = obs(i).tp(tpopt).eT; % error temp
+            epo4    = obs(i).eTP; % error PO4
+            eBt     = (obs(i).eTB/obs(i).TB); % wants it in frac form
+            eh2s    = obs(i).eTH2S;
+            ecal    = obs(i).eTCal; % 60 umol/kg = 6e-5 mol/kg = 0.06 mmol/kg
+            epK0    = obs(i).tp(tpopt).epK0;
+            epK1    = obs(i).tp(tpopt).epK1;
+            epK2    = obs(i).tp(tpopt).epK2;
+            epKb    = obs(i).tp(tpopt).epKb;
+            epKw    = obs(i).tp(tpopt).epKw;
+            epKar   = obs(i).tp(tpopt).epKar;
+            epKca   = obs(i).tp(tpopt).epKca;
+            epK     = [epK0, epK1, epK2, epKb, epKw, epKar, epKca]; 
+               %    = [ pK0, pK1, pK2, pKb, pKw, pKspa, pKspc]
+               % '' = [0.02,0.0075,0.015,0.01, 0.01, 0.02, 0.02];
+
 
             % par1 = alk, par2 = dic, par3 = ph, par4 = pco2; par5 = co3
             if pair == 1 % TA TC
@@ -242,15 +252,15 @@ function [A] = compare3(obs,est,opt,tpopt,pair,fid)
             out.co3     = OUT(25);
             out.eco3    = err(17);
             out.pK0     = p(OUT(78));
-            out.epK0    = (0.002);
+            out.epK0    = epK0; % not an output of 'errors'
             out.pK1     = p(OUT(79));
-            out.epK1    = (0.01);
+            out.epK1    = epK1; % not an output of 'errors'
             out.pK2     = p(OUT(80));
-            out.epK2    = (0.02);
+            out.epK2    = epK2; % not an output of 'errors'
             out.pKw     = p(OUT(83));
-            out.epKw    = (0.01);
+            out.epKw    = epKw; % not an output of 'errors'
             out.pKb     = p(OUT(84));
-            out.epKb    = (0.01);
+            out.epKb    = epKb; % not an output of 'errors'
             out.pKs     = p(OUT(86));
             out.pKf     = p(OUT(85));
             out.pK1p    = p(OUT(87));
