@@ -134,9 +134,15 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         % calculate the Revelle factor 
         for j = 1:length(sys.tp(:))
             ifree = sys.tp(j).ifree;
-            jac = full( sys.tp(j).dcdx(zhat(ifree)));
+            jac = full( sys.tp(j).dcdx_pTAfixed(zhat(ifree)));
             z = null( jac );
-            est(i).tp(j).Revelle = z(1)/z(2);
+            est(i).tp(j).Revelle = z(2)/z(1);
+
+            jfree = sys.tp(j).jfree;
+            jac = full( sys.tp(j).dcdx_pTCfixed(zhat(jfree)) );
+            z = null( jac );
+            est(i).tp(j).dpfco2dpTA = z(2)/z(1);
+
         end
     end
 end
@@ -1043,10 +1049,10 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             
             % water dissociation
             if (isgood(obs(i).tp(ii).epKw))
-                wobs(i,sys.tp(ii).iKw) = (obs(i).tp(ii).epKw).^(-2);
+                wobs(i,sys.tp(ii).ipKw) = (obs(i).tp(ii).epKw).^(-2);
             else
-                    obs(i).tp(ii).epKw = epKw;
-                    wobs(i,sys.tp(ii).ipKw) = (obs(i).tp(ii).epKw).^(-2);
+                obs(i).tp(ii).epKw = epKw;
+                wobs(i,sys.tp(ii).ipKw) = (obs(i).tp(ii).epKw).^(-2);
             end
             if (isgood(obs(i).tp(ii).pKw))
                 yobs(i,sys.tp(ii).ipKw) = obs(i).tp(ii).pKw;
