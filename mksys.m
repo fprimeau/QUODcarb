@@ -279,7 +279,7 @@ function sys = mksys(obs,phscale)
         row = row + 1;
         K(row,[ tp(j).ipKar, tp(j).ipco3, tp(j).ipca, tp(j).ipOmegaAr]) = [ -1, 1, 1, -1 ];
         kc = union(kc, [ tp(j).ipKar, tp(j).ipco3, tp(j).ipca, tp(j).ipOmegaAr]);
-        tp(j).kKar = row;
+        tp(j).kpKar = row;
         kr = [kr, row];
         
         % Kca = [co3][ca]/OmegaCa ==> -pKca + pco3 + pca - pOmegaCa = 0
@@ -362,10 +362,10 @@ function sys = mksys(obs,phscale)
         mc = union(mc,[ipTF, tp(j).ipHF, tp(j).ipF]);
         M(row_alk, tp(j).ipHF) =  1;
         tp(j).jpTF = row;
-        row = row + 1;
         mr = [mr,row];
         
         % Total phosphate
+        row = row + 1;
         M(row, [ ipTP, tp(j).iph3po4, tp(j).iph2po4, tp(j).iphpo4, tp(j).ippo4 ]) = [ 1, -1, -1, -1, -1 ];
         mc = union(mc,[ipTP, tp(j).iph3po4, tp(j).iph2po4, tp(j).iphpo4, tp(j).ippo4]);
         M(row_alk, [ tp(j).iphpo4, tp(j).ippo4, tp(j).iph3po4 ]) = [ -1, -2, 1 ]; 

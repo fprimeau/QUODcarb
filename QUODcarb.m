@@ -131,42 +131,13 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         end
         [est(i)] = parse_output(zhat,sigx,opt,sys);    % populate est
 
-        
+        % calculate the Revelle factor 
         for j = 1:length(sys.tp(:))
             ifree = sys.tp(j).ifree;
-            z = null( full( sys.tp(j).dcdx(zhat(ifree) ) ) );
+            jac = full( sys.tp(j).dcdx(zhat(ifree)));
+            z = null( jac );
             est(i).tp(j).Revelle = z(1)/z(2);
         end
-
-
-        %
-        % finite difference Revelle factor computation
-        %
-        %dpTC = 100*sqrt(eps);
-        %yobs_pert_plus = yobs;
-        %yobs_pert_plus(i,sys.ipTC) = yobs(i,sys.ipTC) + dpTC;
-
-        %yobs_pert_minus = yobs;
-        %yobs_pert_minus(i,sys.ipTC) = yobs(i,sys.ipTC) - dpTC;
-
-        %fun_pert_plus = @(z) limp(z,yobs_pert_plus(i,:),wobs(i,:),obs(i),sys,opt);
-        %fun_pert_minus = @(z) limp(z,yobs_pert_minus(i,:),wobs(i,:),obs(i),sys,opt);
-        %z0 = zhat; 
-        %[z_pert_plus,dJ,iflag(i)] = newtn(z0,fun_pert_plus,tol/100);
-        %[z_pert_minus,dJ,iflag(i)] = newtn(z0,fun_pert_minus,tol/100);
-        %for j = 1:length(sys.tp(:))
-        %    dpfco2 = z_pert_plus(sys.tp(j).ipfco2)-z_pert_minus(sys.tp(j).ipfco2);
-        %    est(i).tp(j).Revelle = dpfco2./(2*dpTC);
-        %end
-        
-        
-
-        %Jac = [ML*diag(sys.dqdx(zhat(free)));...
-        %       -KL];
-        %keyboard
-        %rhs = [MR*sys.q(zhat(fixed));...
-        %       -KR*zhat(fixed)];
-        %keyboard
     end
 end
 
