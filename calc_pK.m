@@ -1,5 +1,3 @@
-
-
 function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 % base equations COPIED FROM co2sys.m Orr et al. (2018)  Github
 % Originally from  van Heuven et al. (2011)
@@ -21,61 +19,64 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     
     Pbar = P / 10; % convert from dbar to bar
     Pbar_P = 1 / 10;
-    ions   = @(S) 19.924 * S / ( 1000 - 1.005 * S); % from DOE handbook
-    ions_S = @(S) 19.924 / ( 1000 - 1.005 * S ) + ...
-             1.005 * 19.924 * S / ( 1000 -1.005 * S )^2 ; 
-    
+    A = 19.924; B = 1000; C = 1.005;
+    ions   = @(S) A * S / ( B - C * S); % from DOE handbook
+    ions_S = @(S) ( A * B) / ( B - C * S)^2;
     LOG10 = log(10);
     p = @(x) -log10(x);
     q = @(x) 10.^(-x);  % inverse p, i.e., a backward p
-    dpdx = @(x) -1 / (x * LOG10);     % p'
-    dqdx = @(x) -LOG10 * 10.^( -x );  % q'
+    dpdx = @(x) -1 / (x * LOG10);        % p'
+    d2pdx2 = @(x) 1 / (x^2 * LOG10);     % p''
+    dqdx = @(x) -LOG10 * 10.^( -x );     % q'
+    d2qdx2 = @(x) LOG10^2 * 10.^( -x );  % q''
     
     % corrections for pressure---------------------------------------------
     % Millero 1995, 1992, 1982, 1979; Takahashi et al. 1982;
     %   Culberson & Pytkowicz 1968; Edmond & Gieskes 1970.
     dV   = @(T,a) a(1) + a(2) * T +     a(3) * T^2; 
     dV_T = @(T,a)        a(2)     + 2 * a(3) * T;
+    dV_TT = @(T,a) 2 * a(3);
     Ka   = @(T,b) ( b(1) + b(2) * T ) / 1000;
     Ka_T = @(T,b) b(2) / 1000;
+    Ka_TT = @(T,b) 0;
     ppfac   = @(T,Pbar,a,b)... 
-              -(( -dV(T,a)   * Pbar   + 0.5 * Ka(T,b)   * Pbar^2 ) / RT )   / ( LOG10 );
-    ppfac_T = @(T,Pbar,a,b)... 
-              -( -dV_T(T,a) * Pbar   + 0.5 * Ka_T(T,b) * Pbar^2 )      / ( RT   * LOG10 ) ...
-              -( -dV(T,a)   * Pbar   + 0.5 * Ka(T,b)   * Pbar^2 ) * (RT_T / ( RT^2 * LOG10 ));
-    ppfac_P = @(T,Pbar,a,b)... 
-              -( -dV(T,a)         +       Ka(T,b)   * Pbar ) / (10 * RT * LOG10 ) ;
-
+              -(( -dV(T,a)    * Pbar  + 0.5 * Ka(T,b)   * Pbar^2 ) / RT )   / ( LOG10 );
+    ppfac_T = @(T,Pbar,a,b)...
+              -(( -dV_T(T,a) * Pbar   + 0.5 * Ka_T(T,b) * Pbar^2 ) / RT )   / ( LOG10 ) ...
+              -(-( -dV(T,a)   * Pbar  + 0.5 * Ka(T,b)   * Pbar^2 ) * RT_T / RT^2 ) / ( LOG10 );        
+    ppfac_P = @(T,Pbar,Pbar_P,a,b)... 
+              -(( -dV(T,a)         +    Ka(T,b)  * Pbar ) * Pbar_P / RT) / ( LOG10 ) ;
     
     % compute the pK's and their derivatives w.r.t. T,P,and S -------------
-    [pp2f    , gpp2f         ] = calc_p2f(T,RT,RT_T,Pbar,opt); 
-    [pKs     , gpKs  , epKs  ] = calc_pKs(opt,T,S,Pbar); 
-    [pKf     , gpKf  , epKf  ] = calc_pKf(opt,T,S,Pbar); 
-    [pSWS2tot, gpSWS2tot     ] = calc_pSWS2tot(S,pKs,gpKs,pKf,gpKf);
-    [phf     , gphf          ] = calc_phf(opt,T,S);
-    [pK0     , gpK0  , epK0  ] = calc_pK0(T,S,Pbar,opt); 
-    [pKb     , gpKb  , epKb  ] = calc_pKb(opt,T,S,Pbar,pSWS2tot,gpSWS2tot,phf,gphf); 
-    [pKw     , gpKw  , epKw  ] = calc_pKw(opt,T,S,Pbar); 
-    [pK1p    , gpK1p , epK1p ] = calc_pK1p(opt,T,S,Pbar,phf,gphf); 
-    [pK2p    , gpK2p , epK2p ] = calc_pK2p(opt,T,S,Pbar,phf,gphf); 
-    [pK3p    , gpK3p , epK3p ] = calc_pK3p(opt,T,S,Pbar,phf,gphf); 
-    [pKsi    , gpKsi , epKsi ] = calc_pKsi(opt,T,S,Pbar,phf,gphf); 
-    [pK1     , gpK1  , epK1  ] = calc_pK1(opt,T,S,Pbar,phf,gphf,pSWS2tot,gpSWS2tot); 
-    [pK2     , gpK2  , epK2  ] = calc_pK2(opt,T,S,Pbar,phf,gphf,pSWS2tot,gpSWS2tot);
-    [pKnh4   , gpKnh4, epKnh4] = calc_pKnh4(opt,T,S,Pbar,pSWS2tot,gpSWS2tot);
-    [pKh2s   , gpKh2s, epKh2s] = calc_pKh2s(opt,T,S,Pbar,pSWS2tot,gpSWS2tot);
-    [pKar    , gpKar , epKar ] = calc_pKar(opt,T,S,Pbar,phf,gphf);
-    [pKca    , gpKca , epKca ] = calc_pKca(opt,T,S,Pbar,phf,gphf);
-
+    [pp2f    , gpp2f , epp2f ] = calc_p2f(opt,T,RT,RT_T,Pbar,Pbar_P); 
+    [pKs     , gpKs  , epKs  ] = calc_pKs(opt,T,S,Pbar,Pbar_P); 
+    [pKf     , gpKf  , epKf  ] = calc_pKf(opt,T,S,Pbar,Pbar_P); 
+    [pSWS2tot, gpSWS2tot     ] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf);
+    [pfH     , gpfH  , epfH  ] = calc_pfH(opt,T,S);
+    [pK0     , gpK0  , epK0  ] = calc_pK0(opt,T,RT,RT_T,S,Pbar,Pbar_P); 
+    [pKb     , gpKb  , epKb  ] = calc_pKb(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot,pfH,gpfH); 
+    [pKw     , gpKw  , epKw  ] = calc_pKw(opt,T,S,Pbar,Pbar_P); 
+    [pK1p    , gpK1p , epK1p ] = calc_pK1p(opt,T,S,Pbar,Pbar_P,pfH,gpfH); 
+    [pK2p    , gpK2p , epK2p ] = calc_pK2p(opt,T,S,Pbar,Pbar_P,pfH,gpfH); 
+    [pK3p    , gpK3p , epK3p ] = calc_pK3p(opt,T,S,Pbar,Pbar_P,pfH,gpfH); 
+    [pKsi    , gpKsi , epKsi ] = calc_pKsi(opt,T,S,Pbar,Pbar_P,pfH,gpfH); 
+    [pK1     , gpK1  , epK1  ] = calc_pK1(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot); 
+    [pK2     , gpK2  , epK2  ] = calc_pK2(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot);
+    [pKnh4   , gpKnh4, epKnh4] = calc_pKnh4(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot);
+    [pKh2s   , gpKh2s, epKh2s] = calc_pKh2s(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot);
+    [pKar    , gpKar , epKar ] = calc_pKar(opt,T,S,Pbar,Pbar_P,pfH,gpfH);
+    [pKca    , gpKca , epKca ] = calc_pKca(opt,T,S,Pbar,Pbar_P,pfH,gpfH);
 
 
     % pressure correction for Ks (Millero, 1995) --------------------------
     a = [ -18.03; 0.0466; 0.000316 ];
     b = [-4.53; 0.09 ];
-        
+
     pKs = pKs + ppfac(T,Pbar,a,b);
+    pKs_T = gpKs(1); % isn't this needed?
+    pKs_P = gpKs(3);
     pKs_T = pKs_T + ppfac_T(T,Pbar,a,b);
-    pKs_P = ppfac_P(T,Pbar,a,b);
+    pKs_P = pKs_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpKs(1) = pKs_T;
     gpKs(3) = pKs_P;
 
@@ -84,8 +85,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [ -3.91; 0.054 ];
         
     pKf = pKf + ppfac(T,Pbar,a,b);
+    pKf_T = gpKf(1);
+    pKf_P = gpKf(3);
     pKf_T = pKf_T + ppfac_T(T,Pbar,a,b);
-    pKf_P = ppfac_P(T,Pbar,a,b);
+    pKf_P = pKf_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpKf(1) = pKf_T;
     gpKf(3) = pKf_P;
 
@@ -94,8 +97,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [  -2.84;   0.0 ];
         
     pKb = pKb + ppfac(T,Pbar,a,b);
+    pKb_T = gpKb(1);
+    pKb_P = gpKb(3);
     pKb_T = pKb_T + ppfac_T(T,Pbar,a,b);
-    pKb_P = ppfac_P(T,Pbar,a,b);
+    pKb_P = pKb_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpKb(1) = pKb_T;
     gpKb(3) = pKb_P;
 
@@ -104,8 +109,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [ -5.13; 0.0794 ];
 
     pKw   = pKw + ppfac(T,Pbar,a,b);
+    pKw_T = gpKw(1);
+    pKw_P = gpKw(3);
     pKw_T = pKw_T + ppfac_T(T,Pbar,a,b);
-    pKw_P = ppfac_P(T,Pbar,a,b);
+    pKw_P = pKw_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpKw(1) = pKw_T;
     gpKw(3) = pKw_P;
 
@@ -114,8 +121,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [  -2.67; 0.0427 ];
 
     pK1p = pK1p + ppfac(T,Pbar,a,b);
+    pK1p_T = gpK1p(1);
+    pK1p_P = gpK1p(3);
     pK1p_T = pK1p_T + ppfac_T(T,Pbar,a,b);
-    pK1p_P = ppfac_P(T,Pbar,a,b);
+    pK1p_P = pK1p_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpK1p(1) = pK1p_T;
     gpK1p(3) = pK1p_P;
         
@@ -124,8 +133,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [ -5.15; 0.09 ]; 
 
     pK2p = pK2p + ppfac(T,Pbar,a,b);
+    pK2p_T = gpK2p(1);
+    pK2p_P = gpK2p(3);
     pK2p_T = pK2p_T + ppfac_T(T,Pbar,a,b);
-    pK2p_P = pK2p_P + ppfac_P(T,Pbar,a,b);
+    pK2p_P = pK2p_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpK2p(1) = pK2p_T;
     gpK2p(3) = pK2p_P;
         
@@ -134,19 +145,23 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [ -4.08; 0.0714 ];
 
     pK3p = pK3p + ppfac(T,Pbar,a,b);
+    pK3p_T = gpK3p(1);
+    pK3p_P = gpK3p(3);
     pK3p_T = pK3p_T + ppfac_T(T,Pbar,a,b);
-    pK3p_P = pK3p_P + ppfac_P(T,Pbar,a,b);
+    pK3p_P = pK3p_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpK3p(1) = pK3p_T;
     gpK3p(3) = pK3p_P;
 
-    % pressure correction for Ksi (Millero, 1995; used the values from
-    % boric acid)
+    % pressure correction for Ksi 
+    % (Millero, 1995; used the values from boric acid)
     a = [ -29.48; 0.1622; -0.002608 ];
     b =[ -2.84; 0];
         
     pKsi = pKsi + ppfac(T,Pbar,a,b);
+    pKsi_T = gpKsi(1);
+    pKsi_P = gpKsi(3);
     pKsi_T = pKsi_T + ppfac_T(T,Pbar,a,b);
-    pKsi_P = ppfac_P(T,Pbar,a,b);
+    pKsi_P = pKsi_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpKsi(1) = pKsi_T;
     gpKsi(3) = pKsi_P;
 
@@ -156,8 +171,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [ -3.08; 0.0877 ];
 
     pK1   = pK1 + ppfac(T,Pbar,a,b);
+    pK1_T = gpK1(1);
+    pK1_P = gpK1(3);
     pK1_T = pK1_T + ppfac_T(T,Pbar,a,b);
-    pK1_P = ppfac_P(T,Pbar,a,b);
+    pK1_P = pK1_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpK1(1) = pK1_T;
     gpK1(3) = pK1_P;
 
@@ -167,8 +184,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [ 1.13; -0.1475 ];
         
     pK2 = pK2 + ppfac(T,Pbar,a,b);
+    pK2_T = gpK2(1);
+    pK2_P = gpK2(3);
     pK2_T = pK2_T + ppfac_T(T,Pbar,a,b);
-    pK2_P = ppfac_P(T,Pbar,a,b);
+    pK2_P = pK2_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpK2(1) = pK2_T;
     gpK2(3) = pK2_P;
 
@@ -177,8 +196,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [ -5.03; 0.0814 ];
 
     pKnh4 = pKnh4 + ppfac(T,Pbar,a,b);
+    pKnh4_T = gpKnh4(1);
+    pKnh4_P = gpKnh4(3);
     pKnh4_T = pKnh4_T + ppfac_T(T,Pbar,a,b);
-    pKnh4_P = ppfac_P(T,Pbar,a,b);
+    pKnh4_P = pKnh4_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpKnh4(1) = pKnh4_T;
     gpKnh4(3) = pKnh4_P;
         
@@ -187,32 +208,34 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     b = [ -2.89;  0.054 ];
         
     pKh2s = pKh2s + ppfac(T,Pbar,a,b);
+    pKh2s_T = gpKh2s(1);
+    pKh2s_P = gpKh2s(3);
     pKh2s_T = pKh2s_T + ppfac_T(T,Pbar,a,b);
-    pKh2s_P = ppfac_P(T,Pbar,a,b);
+    pKh2s_P = pKh2s_P + ppfac_P(T,Pbar,Pbar_P,a,b);
     gpKh2s(1) = pKh2s_T;
     gpKh2s(3) = pKh2s_P;
         
     % correct pH scale conversion factors for pressure --------------------
-    [pSWS2tot, gpSWS2tot, pFREE2tot, gpFREE2tot] = calc_pSWS2tot(S,pKs,gpKs,pKf,gpKf);
-
+    [pSWS2tot, gpSWS2tot, pFREE2tot, gpFREE2tot] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf);
 
     % find pH scale conversion factor -------------------------------------
     % (pressure corrected)
-    if opt.phscale == 1 % pHtotal
+    if opt.phscale == 1 % pH_total
         phfac = pSWS2tot;
         gphfac = gpSWS2tot;
-    elseif opt.phscale == 2 % pHSWS, they are all on this now
+    elseif opt.phscale == 2 % pH_SWS, they are all on this now
         phfac = 0;
         gphfac = 0;
-    elseif opt.phscale == 3 % pHfree
+    elseif opt.phscale == 3 % pH_free
         phfac = pSWS2tot - pFREE2tot;
         gphfac = gpSWS2tot - gpFREE2tot;
-    elseif opt.phscale == 4 % pHNBS
-        phfac = phf;
-        gphfac = gphf;
+    elseif opt.phscale == 4 % pH_NBS
+        phfac = pfH;
+        gphfac = gpfH;
     else 
         error('Need to input valid pH scale 1-4');
     end
+    
 
     % convert from SWS to chosen pH scale ---------------------------------    
     pK1   = pK1   + phfac;  gpK1   = gpK1   + gphfac;
@@ -225,28 +248,26 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     pKsi  = pKsi  + phfac;  gpKsi  = gpKsi  + gphfac;
     pKnh4 = pKnh4 + phfac;  gpKnh4 = gpKnh4 + gphfac;
     pKh2s = pKh2s + phfac;  gpKh2s = gpKh2s + gphfac;
-    % pKar, pKca, pKs, and pKf are not converted in CO2SYS
+    % pKar, pKca, pKs, and pKf do not need the conversion
 
-    % default uncertainty, if does not change with options
-    epp2f = 0.001;
-    
+   
     % ---------------------------------------------------------------------
     % output
     % ---------------------------------------------------------------------
     pK   = [  pK0;   pK1;   pK2;    pKb;    pKw;   pKs;   pKf;  pK1p; ...
-             pK2p;  pK3p;  pKsi;  pKnh4;  pKh2s;  pp2f;  pKar;  pKca];
+             pK2p;  pK3p;  pKsi;  pKnh4;  pKh2s;  pp2f;  pKar;  pKca; pfH];
     gpK  = [ gpK0;  gpK1;  gpK2;   gpKb;   gpKw;  gpKs;  gpKf; gpK1p; ...
-            gpK2p; gpK3p; gpKsi; gpKnh4; gpKh2s; gpp2f; gpKar; gpKca];
-    epK = [ epK0;  epK1;  epK2;   epKb;   epKw;  epKs;  epKf; epK1p; ...
-            epK2p; epK3p; epKsi; epKnh4; epKh2s; epp2f; epKar; epKca];
-
-    
+            gpK2p; gpK3p; gpKsi; gpKnh4; gpKh2s; gpp2f; gpKar; gpKca; gpfH];
+    epK = [  epK0;  epK1;  epK2;   epKb;   epKw;  epKs;  epKf; epK1p; ...
+            epK2p; epK3p; epKsi; epKnh4; epKh2s; epp2f; epKar; epKca; epfH];
+    % pK0 = 1, pK1 = 2, pK2 = 3, pKb = 4, pKw = 5, pKs = 6, pKf = 7, 
+    % pK1p = 8, pK2p= 9, pK3p = 10, pKsi = 11, pKnh4 = 12, pKh2s = 13, 
+    % pp2f = 14, pKar = 15, pKca = 16, pfH = 17 
     % ---------------------------------------------------------------------
     % subfunctions
     % ---------------------------------------------------------------------
- 
 
-    function [pp2f,gpp2f] = calc_p2f(T,RT,RT_T,Pbar,opt)
+    function [pp2f,gpp2f,epp2f] = calc_p2f(opt,T,RT,RT_T,Pbar,Pbar_P)
     % pCO2 to fCO2 conversion (Weiss 1974) valid to within 0.1% -----------
         TK = T + 273.15; % convert to Kelvin
         Pstd = 1.01325;
@@ -272,13 +293,17 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
            pp2f_T = -( ( df(TK,a) + 2 * delC_T ) * (Pstd+Pbar) / RT - ...
                    ( f(TK,a) + 2 * delC ) * (Pstd+Pbar) * RT_T / RT^2 ) / LOG10;
            pp2f_S = 0;
-           pp2f_P = -( ( f(TK,a) + 2 * delC ) / (10*RT) ) / LOG10;
+           pp2f_P = -( ( f(TK,a) + 2 * delC )*Pbar_P / RT ) / LOG10;
         end
-        
         gpp2f = [pp2f_T, pp2f_S, pp2f_P]; % gradient of p(p2f);
+
+        p2f = q(pp2f);
+        ep2f = 0.001 * p2f; % 0.1% relative uncertainty
+        my_abs = @(x) sqrt(x*x);
+        epp2f = my_abs( p(p2f + ep2f) - pp2f );
     end
     
-    function [pK0,gpK0,epK0] = calc_pK0(T,S,Pbar,opt)
+    function [pK0,gpK0,epK0] = calc_pK0(opt,T,RT,RT_T,S,Pbar,Pbar_P)
     % calculate K0 (Weiss 1974)--------------------------------------------
         TK = T + 273.15; % convert to Kelvin
         TK100 = TK./100;
@@ -305,16 +330,24 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             % pressure correction at in situ pressure
             ppfacK0 = - ( ((-Pbar)*vCO2) / RT ) / LOG10 ;
-            ppfacK0_P = - ( (-vCO2 / (10*RT) ) ) / LOG10;
+            ppfacK0_T = - ( ((-Pbar)*vCO2) * (-RT_T) / RT^2 ) / LOG10 ;
+            ppfacK0_P = - ( (-vCO2 *Pbar_P / RT ) ) / LOG10;
 
             pK0 = pK0 + ppfacK0 ;
+            pK0_T = pK0_T + ppfacK0_T;
             pK0_P = pK0_P + ppfacK0_P ;
         end
-        epK0 = p( 0.003 * q(pK0) ); % Weiss (1974) reports 0.2 - 0.3% uncertainty 
+        % derivatives aka gradient
         gpK0 = [pK0_T, pK0_S, pK0_P];
+
+        % Weiss (1974) reports 0.2 - 0.3% uncertainty on K0
+        K0 = q(pK0);
+        eK0 = K0 * 0.003; % 0.3% relative on K0
+        my_abs = @(x) sqrt(x*x);
+        epK0 = my_abs( p(K0 + eK0) - pK0 );
     end
     
-    function [pKs,gpKs,epKs] = calc_pKs(opt,T,S,Pbar)
+    function [pKs,gpKs,epKs] = calc_pKs(opt,T,S,Pbar,Pbar_P)
         TK = T + 273.15; % convert to Kelvin
         IonS = ions(S);
         IonS_S = ions_S(S);
@@ -349,7 +382,9 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                    f(TK,a5) * IonS_S * 2.0 * IonS ) / ...
                     LOG10 - 0.001005 * dpdx(1 - 0.001005 * S );
         
-            epKs = 0.021/LOG10; % 0.021 on lnKs, LOG10 converts to epK
+            elnKs = 0.021; % given in CO2SYS from Dickson 1990a
+            my_abs = @(x) sqrt(x*x);
+            epKs = my_abs( -elnKs/LOG10 ); % 0.021 on lnKs, -lnK/LOG10 converts to epK
         elseif opt.KSO4 == 2
             % calculate Ks (Khoo et al 1977)-------------------------------
             a1 = [   647.59;  -6.3451;  0.0 ]; 
@@ -367,7 +402,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pKs_S = ( a2(2) * IonS_S * 0.5 / sqrt(IonS) ) - ...
                    0.001005 * dpdx(1 - 0.001005 * S );
 
-            epKs = 0.0021; % this one is listed in CO2SYS
+            epKs = 0.0021; % given in CO2SYS from Khoo et al 1977
         elseif opt.KSO4 == 3
             % calculate Ks (Waters and Millero, 2013) ---------------------
             % log(K^(.)_HSO4) = logKS0
@@ -408,13 +443,15 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pKs_T = (-logKS0_T - logKSK0_T) ;
             pKs_S = (-logKSK0_S) - 0.001005 * dpdx(1-0.001005*S);
 
-            epKs = 0.007/LOG10; % 0.007 on lnKs, LOG10 converts to epK
+            elnKs = 0.007; % 0.007 on lnKs from Waters and Millero 2013
+            my_abs = @(x) sqrt(x*x);
+            epKs = my_abs( -elnKs/LOG10 ); % -/LOG10 converts to epK
         end
         pKs_P = 0.0;
         gpKs = [pKs_T, pKs_S, pKs_P];
     end
     
-    function [pKf,gpKf,epKf] = calc_pKf(opt,T,S,Pbar)
+    function [pKf,gpKf,epKf] = calc_pKf(opt,T,S,Pbar,Pbar_P)
         TK = T + 273.15; % convert to Kelvin
         IonS = ions(S);
         IonS_S = ions_S(S);
@@ -426,9 +463,11 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         % calculate Kf (Dickson and Riley 1979)----------------------------   
             a = 1590.2; b = -12.641; c = 1.525;
 
-            pKf = -( a/TK + b + c * sqrt(IonS) ) ./LOG10 + p(1 - 0.001005 * S) ; % free pH scale
+            pKf = -( a/TK + b + c * sqrt(IonS) ) ./LOG10 ...
+                + p(1 - 0.001005 * S) ; % free pH scale
             pKf_T = -(-a/(TK.^2) ) / LOG10; 
-            pKf_S =  -c * sqrtIonS_S / LOG10 + dpdx(1 - 0.001005  *S) * (-0.001005) ;  
+            pKf_S =  -c * sqrtIonS_S / LOG10 + dpdx(1 - 0.001005 * S)...
+                * (-0.001005) ;  
         elseif opt.KF == 2
         % calculate Perez and Fraga (1987)---------------------------------
         % (to be used for S: 10-40, T: 9-33) (from Sharp's code)
@@ -436,16 +475,19 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pKf = -( a/TK + b + c * sqrt(S) ) ./LOG10 ; % free pH scale
             pKf_T = -(-a/(TK.^2) ) / LOG10; 
-            pKf_S =  -c * (-0.5/sqrt(S)) / LOG10 ;  
+            pKf_S = ( -c * (0.5/sqrt(S)) )/ LOG10 ;  
         end
-        epKf = 0.05/LOG10; % 0.05 on lnKf, LOG10 converts to epK 
-        % none given in Dickson's, so take Perez and Fraga's
         pKf_P = 0.0;
         gpKf = [pKf_T, pKf_S, pKf_P];
+
+        elnKf = 0.05; % 0.05 on lnKf
+        my_abs = @(x) sqrt(x*x);
+        epKf = my_abs( -elnKf/ LOG10 ) ; %  -/LOG10 converts to epK 
+        % none found in Dickson's, so take Perez and Fraga's
     end
     
         
-    function [pKb,gpKb,epKb] = calc_pKb(opt,T,S,Pbar,pSWS2tot,gpSWS2tot,phf,gphf)   
+    function [pKb,gpKb,epKb] = calc_pKb(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot,pfH,gpfH)   
         TK = T + 273.15; % convert to Kelvin
 
         if opt.K1K2 == 6 || opt.K1K2 == 7
@@ -456,11 +498,12 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pKb = -( -9.26 + 0.00886 * S + 0.01*T) ; % our 'p' is -log10
             pKb_T = -0.01;
             pKb_S = -0.00886;
+            pKb_P = 0;
 
         % convert pKb from NBS scale to SWS scale
-            pKb = pKb - phf ;
-            pKb_T = pKb_T - gphf(1);
-            pKb_S = pKb_S - gphf(2);
+            pKb = pKb - pfH ;
+            pKb_T = pKb_T - gpfH(1);
+            pKb_S = pKb_S - gpfH(2);
 
         else
         % calculate Kb (Dickson 1990b)--------------------------------------
@@ -469,23 +512,33 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             a3 = [ -24.4344;  -25.085; -0.2474;  0.0 ;    0.0  ];
             a4 = [   0.0   ; 0.053105;   0.0  ;  0.0 ;    0.0  ];
 
-            f  = @(S,a) a(1) + (a(2) .* sqrt(S)) + (a(3) .* S) + (a(4) .* S.^(1.5)) + (a(5) .* (S.^2));
-            df = @(S,a)  0.5 .* a(2) .* S^(-0.5) + a(3) + 1.5 .* a(4) .* sqrt(S) + 2 .* a(5) .* S;
+            f  = @(S,a) a(1) + (a(2) .* sqrt(S)) + (a(3) .* S) + ...
+                (a(4) .* S.^(1.5)) + (a(5) .* (S.^2));
+            df = @(S,a)  0.5 .* a(2) .* S^(-0.5) + a(3) + ...
+                1.5 .* a(4) .* sqrt(S) + 2 .* a(5) .* S;
 
-            pKb   = -(  (f(S,a1) ./ TK) + f(S,a2) + (f(S,a3) .* log(TK)) + (f(S,a4) .* TK) ) ./ LOG10;
+            pKb   = -(  (f(S,a1) ./ TK) + ...
+                f(S,a2) + (f(S,a3) .* log(TK)) + ...
+                (f(S,a4) .* TK) ) ./ LOG10;
             pKb   = pKb - pSWS2tot; % convert from total to SWS pH scale
-            pKb_T = -( (-f(S,a1) ./ (TK.^2) ) + ( f(S,a3) ./ TK ) +  f(S,a4) ) ./ LOG10;
+            pKb_T = -( (-f(S,a1) ./ (TK.^2) ) + ...
+                ( f(S,a3) ./ TK ) +  f(S,a4) ) ./ LOG10;
             pKb_T = pKb_T - gpSWS2tot(1);
-            pKb_S = -( ( df(S,a1) ./ TK ) + df(S,a2) + (df(S,a3) .* log(TK)) + (df(S,a4) .* TK) ) ./ LOG10;
+            pKb_S = -( ( df(S,a1) ./ TK ) + df(S,a2) + ...
+                (df(S,a3) .* log(TK)) + (df(S,a4) .* TK) ) ./ LOG10;
             pKb_S = pKb_S - gpSWS2tot(2);
+            pKb_P = 0;
         end
-        epKb = 0.004/LOG10; % 0.004 from Dickson (1990b), convert from lnKb to pKb with LOG10
+        gpKb = [pKb_T, pKb_S, pKb_P];
+
+        elnKb = 0.004; % pg 764 Dickson (1990b)
+        my_abs = @(x) sqrt(x*x);
+        epKb = my_abs( -elnKb/LOG10 ) ; % convert from lnKb to pKb with -/LOG10
         % none found in Li et al's paper
-        gpKb = [pKb_T, pKb_S];
     end
     
-    function [pKw,gpKw,epKw] = calc_pKw(opt,T,S,Pbar)
-    TK = T + 273.15; % convert to Kelvin
+    function [pKw,gpKw,epKw] = calc_pKw(opt,T,S,Pbar,Pbar_P)
+        TK = T + 273.15; % convert to Kelvin
 
         if opt.K1K2 == 7
         % calculate Kw (Millero, 1979)-------------------------------------
@@ -500,8 +553,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pKw   = -(  f(TK,a1) +  f(TK,a2) * sqrt(S)       +  f(TK,a3) * S ) / LOG10;
             pKw_T = -( df(TK,a1) + df(TK,a2) * sqrt(S)       + df(TK,a3) * S ) / LOG10;
             pKw_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
-            
-            epKw = 0.034/LOG10; % lnKw, convert to epK with LOG10
+            pKw_P = 0;
+            elnKw = 0.034;
+            my_abs = @(x) sqrt(x*x);
+            epKw = my_abs( -elnKw/LOG10 ) ; % convert to epK with -/LOG10
         elseif opt.K1K2 == 8
         % calculate Kw (Millero 1979)--------------------------------------
         % refit data of Harned and Owen, 1958
@@ -513,37 +568,50 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pKw   = -(  f(TK,a1) ) / LOG10;
             pKw_T = -( df(TK,a1) ) / LOG10;
             pKw_S = -(   0   ) / LOG10;
-
-            epKw = 0.0014/LOG10; % lnKw, convert to epK with LOG10            
+            pKw_P = 0;
+            elnKw = 0.0014;
+            my_abs = @(x) sqrt(x*x);
+            epKw = my_abs( -elnKw/LOG10 ) ; % convert to epK with -/LOG10            
         else
         % calculate Kw (Millero, 1995)-------------------------------------
             a1 = [ 148.9802; -13847.26; -23.6521 ];
-            a2 = [  -5.977;     118.67;   1.0495 ];
-            a3 = [  -0.01615;     0.0;    0.0    ];
+            a2 = [   -5.977;    118.67;   1.0495 ];
+            a3 = [ -0.01615;     0.0  ;     0.0  ];
 
             f  = @(T,a)   a(1) + a(2) / T    + a(3) * log(T);
             df = @(T,a)        - a(2) / T^2  + a(3) / T;
 
-            pKw   = -(  f(TK,a1) +  f(TK,a2) * sqrt(S)       +  f(TK,a3) * S ) / LOG10;
-            pKw_T = -( df(TK,a1) + df(TK,a2) * sqrt(S)       + df(TK,a3) * S ) / LOG10;
-            pKw_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
-
-            epKw = 0.01/LOG10; % lnKw, convert to epK with LOG10
+            pKw   = -( f(TK,a1) + ...
+                       f(TK,a2) * sqrt(S) + ...
+                       f(TK,a3) * S ) / LOG10;
+            % pKw   =  f(TK,a2) * (S)  ;
+            pKw_T = -( df(TK,a1) + ...
+                       df(TK,a2) * sqrt(S) + ...
+                       df(TK,a3) * S ) / LOG10;
+            pKw_S = -( ( f(TK,a2) .* ( 0.5 ./ sqrt(S) ) ) + ...
+                       f(TK,a3) ) ./ LOG10;
+            % pKw_S = (  f(TK,a2)  );
+            pKw_P = 0;
+            elnKw = 0.01; % pg 670 Millero, 1995
+            my_abs = @(x) sqrt(x*x);
+            epKw = my_abs( -elnKw/LOG10 ) ; % convert to epK with -/LOG10
         end 
 
-        gpKw = [pKw_T,pKw_S];
+        gpKw = [pKw_T,pKw_S,pKw_P];
     end
     
-    function [pK1p,gpK1p,epK1p] = calc_pK1p(opt,T,S,Pbar,phf,gphf)
-    TK = T + 273.15; % convert to Kelvin
+    function [pK1p,gpK1p,epK1p] = calc_pK1p(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
+        TK = T + 273.15; % convert to Kelvin
+
         if opt.K1K2 == 7
         % calculate K1p----------------------------------------------------
         % Peng et al don't include the contribution from this term,
         % but it is so small it doesn't contribute. It needs to be kept
         % so that the routines work ok. (From Orr's code)
-            pK1p = p(0.02) - phf; % K1p = 0.02, convert NBS to SWS pH scale
-            pK1p_T = 0 - gphf(1); 
-            pK1p_S = 0 - gphf(2);        
+            pK1p = p(0.02) - pfH; % K1p = 0.02, convert NBS to SWS pH scale
+            pK1p_T = 0 - gpfH(1); 
+            pK1p_S = 0 - gpfH(2);        
+            pK1p_P = 0;
         else
         % calculate K1p (Yao and Millero 1995)-----------------------------       
             a1 = [ -4576.752;    115.54;  -18.453 ];
@@ -556,25 +624,26 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1p   = -(  f(TK,a1) +  f(TK,a2) * sqrt(S)       +  f(TK,a3) * S ) / LOG10;
             pK1p_T = -( df(TK,a1) + df(TK,a2) * sqrt(S)       + df(TK,a3) * S ) / LOG10;
             pK1p_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
+            pK1p_P = 0;
         end
+        gpK1p = [pK1p_T,pK1p_S,pK1p_P];
 
-        epK1p = 0.09/LOG10; % convert lnK to epK with LOG10
-        % from Yao and Millero, 1995
-        gpK1p = [pK1p_T,pK1p_S];
+        elnK1p = 0.09; % pg 84 Yao and Millero, 1995
+        my_abs = @(x) sqrt(x*x);
+        epK1p = my_abs( -elnK1p/LOG10 ) ; % convert to epK with -/LOG10
     end
     
-    function [pK2p,gpK2p,epK2p] = calc_pK2p(opt,T,S,Pbar,phf,gphf)
+    function [pK2p,gpK2p,epK2p] = calc_pK2p(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
         TK = T + 273.15; % convert to Kelvin
-
         if opt.K1K2 == 7
+
         % calculate K2p (Kester and Pytkowicz, 1967)-----------------------
             pK2p = -(-9.039 - 1450/TK) / LOG10  ; 
-            pK2p = pK2p - phf ; % convert from NBS to SWS pH scale
+            pK2p = pK2p - pfH ; % convert from NBS to SWS pH scale
 
-            pK2p_T = -( 1450 / TK^2 ) / LOG10 - gphf(1) ;
-            pK2p_S = -gphf(2) ;
-            pK2p_P = -gphf(3) ;
-
+            pK2p_T = -( 1450 / TK^2 ) / LOG10 - gpfH(1) ;
+            pK2p_S = -gpfH(2) ;
+            pK2p_P = -gpfH(3) ;
         else
         % calculate K2p (Yao and Millero 1995)-----------------------------
             a1 = [ -8814.715;  172.1033; -27.927 ]; 
@@ -589,23 +658,24 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2p_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
             pK2p_P = 0 ;
         end
+        gpK2p = [pK2p_T, pK2p_S,pK2p_P];
 
-        epK2p = 0.03/LOG10; % convert lnK to epK with LOG10 
-        % from Yao and Millero, 1995
-        gpK2p = [pK2p_T, pK2p_S];
+        elnK2p = 0.03; % pg 84 Yao and Millero, 1995
+        my_abs = @(x) sqrt(x*x);
+        epK2p = my_abs( -elnK2p/LOG10 ) ; % convert to epK with -/LOG10 
     end
     
-    function [pK3p,gpK3p,epK3p] = calc_pK3p(opt,T,S,Pbar,phf,gphf)
+    function [pK3p,gpK3p,epK3p] = calc_pK3p(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
         TK = T + 273.15; % convert to Kelvin
 
         if opt.K1K2 == 7
         % calculate K3p (Kester and Pytkowicz, 1967)-----------------------
             pK3p = -(4.466 - 7276/TK) / LOG10;
-            pK3p = pK3p - phf ; % convert from NBS to SWS pH scale
+            pK3p = pK3p - pfH ; % convert from NBS to SWS pH scale
 
-            pK3p_T = -( 7276 / TK^2 ) / LOG10 - gphf(1) ;
-            pK3p_S = -gphf(2) ;
-            pK3p_P = -gphf(3) ;    
+            pK3p_T = -( 7276 / TK^2 ) / LOG10 - gpfH(1) ;
+            pK3p_S = -gpfH(2) ;
+            pK3p_P = -gpfH(3) ;    
         else
         % calculate K3p (Yao and Millero 1995)-----------------------------
             a1 = [    -3070.75; -18.126  ];
@@ -618,36 +688,35 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK3p   = -(  f(TK,a1) +  f(TK,a2) * sqrt(S) +  f(TK,a3) * S ) / LOG10;
             pK3p_T = -( df(TK,a1) + df(TK,a2) * sqrt(S) + df(TK,a3) * S ) / LOG10;
             pK3p_S = -(              f(TK,a2) * 0.5 / sqrt(S) + f(TK,a3) ) / LOG10;
-            pK3p_P = 0 ;
-          
+            pK3p_P = 0 ;   
         end
+        gpK3p = [pK3p_T, pK3p_S, pK3p_P]; 
 
-        epK3p = 0.02/LOG10; % convert lnK to epK with LOG10 
-        % from Yao and Millero, 1995
-        gpK3p = [pK3p_T, pK3p_S]; 
+        elnK3p = 0.02; % pg 84 Yao and Millero, 1995
+        my_abs = @(x) sqrt(x*x);
+        epK3p = my_abs( -elnK3p/LOG10 ); % convert to epK with -/LOG10 
     end
 
     
-    function [pKsi,gpKsi,epKsi] = calc_pKsi(opt,T,S,Pbar,phf,gphf)
-    TK = T + 273.15; % convert to Kelvin
-    IonS = ions(S);
-    IonS_S = ions_S(S);
-    sqrtIonS_S = 0.5 * IonS_S / sqrt(IonS);
-    
+    function [pKsi,gpKsi,epKsi] = calc_pKsi(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
+        TK = T + 273.15; % convert to Kelvin
+        IonS = ions(S);
+        IonS_S = ions_S(S);
+        sqrtIonS_S = 0.5 * IonS_S / sqrt(IonS);
+
         if opt.K1K2 == 7
         % calculate Ksi (Sillen, Martell, and Bjerrum, 1964)---------------
             % Ksi = 4e-10; from CO2SYS
-            pKsi = p(4e-10) - phf ; % also convert NBS scale to SWS pH scale
-            pKsi_T = -gphf(1);
-            pKsi_S = -gphf(2);
-
+            pKsi = p(4e-10) - pfH ; % also convert NBS scale to SWS pH scale
+            pKsi_T = -gpfH(1);
+            pKsi_S = -gpfH(2);
+            pKsi_P = 0;
         else
         % calculate Ksi (Yao and Millero 1995)-----------------------------         
             a1 = [  -8904.2;    117.4; -19.334 ];
             a2 = [  -458.79;   3.5913;   0.0   ]; 
             a3 = [   188.74;  -1.5998;   0.0   ];
-            a4 = [ -12.1652;  0.07871;   0.0   ];
-                        
+            a4 = [ -12.1652;  0.07871;   0.0   ];                       
             f  = @(T,a)   a(1) / T   + a(2) + a(3) * log(T);
             df = @(T,a) - a(1) / T^2        + a(3) / T;
         
@@ -655,23 +724,24 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                   f(TK,a2) * sqrt(IonS) + ...
                   f(TK,a3) * IonS + ...
                   f(TK,a4) * IonS^2  ) / LOG10 + p(1 - 0.001005 * S);
-
             pKsi_T = -( df(TK,a1) + ...
                     df(TK,a2) * sqrt(IonS) + ...
                     df(TK,a3) * IonS + ...
                     df(TK,a4) * IonS^2 ) / LOG10;
-        
             pKsi_S = -( f(TK,a2) * sqrtIonS_S + ...
                     f(TK,a3) * IonS_S + ...
                     f(TK,a4) * 2 * IonS_S * IonS) / LOG10 ...
                     -0.001005 * dpdx(1 - 0.001005 * S);
+            pKsi_P = 0;
         end
+        gpKsi = [pKsi_T, pKsi_S, pKsi_P];
 
-        epKsi = 0.02/LOG10; % convert lnK to epK with LOG10
-        gpKsi = [pKsi_T, pKsi_S]; 
+        elnKsi = 0.02; % pg 84 Yao and Millero, 1995
+        my_abs = @(x) sqrt(x*x);
+        epKsi = my_abs( -elnKsi/LOG10 ) ; % convert to epK with -/LOG10 
     end
     
-    function [pK1,gpK1,epK1] = calc_pK1(opt,T,S,Pbar,phf,gphf,pSWS2tot,gpSWS2tot)
+    function [pK1,gpK1,epK1] = calc_pK1(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot)
         % calculate pK1 based on user choice input with opt.cK1K2
         TK = T + 273.15; % convert to Kelvin
 
@@ -702,17 +772,20 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                 f(TK,a3) .* S +  f(TK,a4) .* (S.^(3/2)) )  ... % total scale
                 / LOG10 + p(1 - 0.001005 * S) ; % convert to mol/kg-SW
             pK1 = pK1 - pSWS2tot; % convert from pH total to SWS scale
-
             pK1_T = -( df(TK,a1) + df(TK,a2) .* sqrt(S) + ...
                 df(TK,a3) .* S + df(TK,a4) .* (S.^(3/2)) ) / LOG10;
+            pK1_T
             pK1_T = pK1_T - gpSWS2tot(1); % convert tot to SWS scale
             pK1_S = -(  f(TK,a2) .* 0.5 ./ sqrt(S) +  f(TK,a3) + ...
                 (3/2) .* f(TK,a4) .* sqrt(S) ) / LOG10 ...
                 -0.001005 * dpdx(1 - 0.001005 * S) ;
             pK1_S = pK1_S - gpSWS2tot(2); % convert tot to SWS scale
+            pK1_P = 0;
             % pass all pK1 out of this function as SWS scale
 
-            epK1 = 0.004/LOG10; % convert lnK to epK with LOG10
+            elnK1 = 0.004;
+            my_abs = @(x) sqrt(x*x);
+            epK1 = my_abs( -elnK1/LOG10 ) ; % convert lnK to epK with -/LOG10
 
         elseif opt.K1K2 == 2 
         % Goyet and Poisson, Deep-Sea Research, 36(11):1635-1654, 1989 ----
@@ -721,9 +794,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % This is in Table 5 on p. 1652 and what they use in the abstract:
             a = 812.27; b = 3.356; c = -0.00171; d = 0.000091;
             pK1 = a ./ TK + b + c .* S .* log(TK) + d .* (S.^2) ; % SWS scale
+            pK1_T
             pK1_T = - a ./ (TK.^2) + c .* S ./ TK ;
             pK1_S = c .* log(TK) + 2 .* d .* S ;
-
+            pK1_P = 0;
             epK1 = 0.011;
 
         elseif opt.K1K2 == 3
@@ -743,9 +817,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % This is from Table 4 on p. 1739.
             a = 851.4; b = 3.237; c = -0.0106; d = 0.000105;
             pK1 = a ./ TK + b + c .* S + d .* (S.^2) ; % SWS scale
+            pK1_T
             pK1_T = - a ./ (TK.^2) ;
             pK1_S = c + 2 .* d .* S ;
-
+            pK1_P = 0;
             epK1 = 0.013;
 
         elseif opt.K1K2 == 4
@@ -761,9 +836,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % This is in Table 4 on p. 1739.
             a = 3670.7; b = -62.008; c = 9.7944; d = -0.0118; g = 0.000116;
             pK1   =  a ./ TK   + b + c .* log(TK) + d .* S + g .* S^2;
+            pK1_T
             pK1_T = -a ./ TK^2     + c ./ TK;
             pK1_S = d + 2.*g.*S;
-
+            pK1_P = 0;
             epK1 = 0.11;
 
         elseif opt.K1K2 == 5
@@ -782,11 +858,12 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % This is in Table 5 on p. 1740.    
             a = 845; b = 3.248; c = -0.0098; d = 0.000087;
             pK1   = a ./ TK + b + c .* S + d .* (S.^2) ;
+            pK1_T
             pK1_T = -a ./ (TK.^2) ;
             pK1_S = c + 2 .* d .* S ;
-
+            pK1_P = 0;
             epK1 = 0.017;
-        
+
         elseif opt.K1K2 == 6 || opt.K1K2 == 7
         % GEOSECS and Peng et al use K1, K2 from Mehrbach et al, ----------
             % Limnology and Oceanography, 18(6):897-907, 1973.
@@ -798,11 +875,11 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             d = 1.3e-5; g = -0.1032;
 
             pK1 = a + b .* TK + c ./ TK + d .* S .* TK + g .* sqrt(S) ; % NBS scale
-            pK1 = pK1 - phf ; % convert from NBS to SWS pH scale
-
-            pK1_T = ( b - c ./ (TK.^2) + d .* S ) - gphf(1) ; % SWS scale
-            pK1_S = ( d .* TK + 0.5 .* g ./ sqrt(S) ) - gphf(2) ; % SWS scale
-
+            pK1 = pK1 - pfH ; % convert from NBS to SWS pH scale
+            pK1_T
+            pK1_T = ( b - c ./ (TK.^2) + d .* S ) - gpfH(1) ; % SWS scale
+            pK1_S = ( d .* TK + 0.5 .* g ./ sqrt(S) ) - gpfH(2) ; % SWS scale
+            pK1_P = 0;
             epK1 = 0.005;
 
         elseif opt.K1K2 == 8
@@ -816,10 +893,13 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % (note the absence of S in the below formulations)
             a = 290.9097; b = -14554.21; c = -45.0575;
             pK1 = - (a + b ./ TK + c .* log(TK) ) / LOG10;
+            pK1_T
             pK1_T = - ( -b ./ (TK.^2) + c ./ TK ) / LOG10;
             pK1_S = 0;
-
-            epK1 = 0.0024/LOG10; % convert lnK to epK with LOG10
+            pK1_P = 0;
+            elnK1 = 0.0024;
+            my_abs = @(x) sqrt(x*x);
+            epK1 = my_abs( -elnK1/LOG10 ) ; % convert lnK to epK with -/LOG10
 
         elseif opt.K1K2 == 9
         % Cai and Wang 1998, for estuarine use ----------------------------
@@ -835,12 +915,12 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             f1 = h ./ TK + l;
 
             pK1 = a ./ TK + b .* TK + c + d .* f1 .* sqrt(S) + g .* S ;
-            pK1 = pK1 - phf; % convert from NBS scale to SWS scale
-
+            pK1 = pK1 - pfH; % convert from NBS scale to SWS scale
+            pK1_T
             pK1_T = ( -a ./ (TK.^2) + b + d .* sqrt(S) .* (-h ./ (TK.^2)) )...
-                - gphf(1) ; % Temp derivative convert to sws scale
-            pK1_S = ( 0.5 .* d .* f1 ./ sqrt(S) + g ) - gphf(2) ;
-
+                - gpfH(1) ; % Temp derivative convert to sws scale
+            pK1_S = ( 0.5 .* d .* f1 ./ sqrt(S) + g ) - gpfH(2) ;
+            pK1_P = 0;
             epK1 = 0.015;
 
         elseif opt.K1K2 == 10
@@ -853,10 +933,9 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pK1 = a ./ TK + b + c .* log(TK) + d .* S + g .* (S.^2);
             pK1 = pK1 - pSWS2tot; % convert from total scale to SWS scale
-
             pK1_T = ( -a ./ (TK.^2) + c ./ TK ) - gpSWS2tot(1);
             pK1_S = ( d + 2 .* g .* S ) - gpSWS2tot(2);
-
+            pK1_P = 0;
             epK1 = 0.0055;
 
         elseif opt.K1K2 == 11
@@ -869,10 +948,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             d = 2885.378; g = 7.045159;
 
             pK1 = a + b .* S + c .* (S.^2) + d ./ TK + g .* log(TK) ;
-
+            pK1_T
             pK1_T = -d ./ (TK.^2) + g ./ TK ;
             pK1_S = b + 2 .* c .* S ;
-
+            pK1_P = 0;
             epK1 = 0.056;
 
         elseif opt.K1K2 == 12
@@ -884,9 +963,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 	        % This is from page 1715
             a = 6.359; b = -0.00664; c = -0.01322; d = 4.989e-5;
             pK1 = a + b .* S + c .* T + d .* (T.^2) ; % tempC
+            pK1_T
             pK1_T = c + 2 .* d .* T ;
             pK1_S = b ;
-
+            pK1_P = 0;
             epK1 = 0.005;
 
         elseif opt.K1K2 == 13
@@ -903,9 +983,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             df = @(S,a)  0.5 .* a(2)./ sqrt(S) + a(3) + 2 .* a(4) .* S ;
 
             pK1 = f(S,a1)  + f(S,a2) ./ TK + f(S,a3) .* log(TK) ;
+            pK1_T
             pK1_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK1_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
-
+            pK1_P = 0;
             epK1 = 0.0054; % from abstract
 
         elseif opt.K1K2 == 14
@@ -923,9 +1004,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             df = @(S,a)  0.5 .* a(2)./ sqrt(S) + a(3) + 2 .* a(4) .* S ;
 
             pK1 = f(S,a1)  + f(S,a2) ./ TK + f(S,a3) .* log(TK) ;
+            pK1_T
             pK1_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK1_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
-
+            pK1_P = 0;
             epK1 = 0.005; % pg 141
 
         elseif opt.K1K2 == 15
@@ -941,9 +1023,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             df = @(S,a)  0.5 .* a(2)./ sqrt(S) + a(3) + 2 .* a(4) .* S ;
 
             pK1 = f(S,a1)  + f(S,a2) ./ TK + f(S,a3) .* log(TK) ;
+            pK1_T
             pK1_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK1_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
-
+            pK1_P = 0;
             epK1 = 0.005;
 
         elseif opt.K1K2 == 16
@@ -956,11 +1039,15 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pK1 = a ./ TK + b + c .* log(TK) + d .* S + g .* (S.^2) ;
             pK1 = pK1 - pSWS2tot; % convert from tot to SWS scale
-
+            pK1_T
             pK1_T = ( -a ./ (TK.^2) + c ./ TK ) - gpSWS2tot(1);
             pK1_S = ( d + 2 .* g .* S ) - gpSWS2tot(2);
-            
-            epK1 = p(0.025* q(pK1)); % ~2.5 % uncertainty on K, pg 854
+            pK1_P = 0;
+            K1 = q(pK1);
+            eK1 = 0.025 * K1; % ~2.5 % uncertainty on K, pg 854
+            my_abs = @(x) sqrt(x*x);
+            epK1 = my_abs( p(K1 + eK1) - pK1 ); 
+
         elseif opt.K1K2 == 17
         % Schockman and Byrne, 2021 ---------------------------------------
             % Geochimica et Cosmochimica Acta, in press
@@ -974,22 +1061,22 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                         
             f  = @(S,a) a(1) + a(2) .* sqrt(S) + a(3) .* S + a(4) .* (S.^2);
             df = @(S,a)  0.5 .* a(2)./ sqrt(S) + a(3) + 2 .* a(4) .* S ;
-
+            pK1_T
             pK1 = f(S,a1)  + f(S,a2) ./ TK + f(S,a3) .* log(TK) ;
             pK1 = pK1 - pSWS2tot ; % convert from pHtot to SWS
             pK1_T = ( -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ) ...
                 - gpSWS2tot(1) ;
             pK1_S = ( df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK) ) ...
                 - gpSWS2tot(2);
-
+            pK1_P = 0;
             epK1 = 0.005; % same as Waters and Millero formulation
-            
+
         end
 
-        gpK1 = [pK1_T, pK1_S];     
+        gpK1 = [pK1_T, pK1_S, pK1_P];     
     end
     
-    function [pK2,gpK2,epK2] = calc_pK2(opt,T,S,Pbar,phf,gphf,pSWS2tot,gpSWS2tot)
+    function [pK2,gpK2,epK2] = calc_pK2(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot)
     % calculate pK2 based on user choice input with opt.cK1K2
         TK = T + 273.15; % convert to Kelvin
 
@@ -1028,9 +1115,12 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                 (3/2) .* f(TK,a4) .* sqrt(S) ) / LOG10 ...
                 -0.001005 * dpdx(1 - 0.001005 * S) ;
             pK2_S = pK2_S - gpSWS2tot(2); % convert tot to SWS scale
+            pK2_P = 0;
             % pass all pK2 out of this function as SWS scale
 
-            epK2 = 0.003/LOG10; % convert lnK to epK with LOG10
+            elnK2 = 0.003;
+            my_abs = @(x) sqrt(x*x);
+            epK2 = my_abs( -elnK2/LOG10 ) ; % convert lnK to epK with -/LOG10
 
         elseif opt.K1K2 == 2 
         % Goyet and Poisson, Deep-Sea Research, 36(11):1635-1654, 1989 ----
@@ -1041,7 +1131,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2 = a ./ TK + b + c .* S .* log(TK) + d .* (S.^2) ; % SWS scale
             pK2_T = - a ./ (TK.^2) + c .* S ./ TK ;
             pK2_S = c .* log(TK) + 2 .* d .* S ;
-
+            pK2_P = 0;
             epK2 = 0.02;
 
         elseif opt.K1K2 == 3
@@ -1066,7 +1156,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pK2_T = - a ./ (TK.^2) + c ./ TK ;
             pK2_S = d + 2 .* g .* S ;
-
+            pK2_P = 0;
             epK2 = 0.017;
 
         elseif opt.K1K2 == 4
@@ -1084,7 +1174,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2 = a ./ TK + b + c .* S + d .* (S.^2);
             pK2_T = -a ./ (TK.^2);
             pK2_S = c + 2 .* d .* S;
-
+            pK2_P = 0;
             epK2 = 0.020;
 
         elseif opt.K1K2 == 5
@@ -1105,7 +1195,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2   = a ./ TK + b + c .* S + d .* (S.^2) ;
             pK2_T = -a ./ (TK.^2) ;
             pK2_S = c + 2 .* d .* S ;
-
+            pK2_P = 0;
             epK2 = 0.026;
         
         elseif opt.K1K2 == 6 || opt.K1K2 == 7
@@ -1123,12 +1213,12 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             df = @(T,a)    - a(2) ./ (T.^2) + a(3) ./ T ;
             
             pK2 = ( f(TK,a1) + f(TK,a2) .* S + f(TK,a3) .* log10(S) + ...
-                b .* log10(TK) ) - phf ; % convert from NBS to SWS scale
+                b .* log10(TK) ) - pfH ; % convert from NBS to SWS scale
 
             pK2_T = ( df(TK,a1) + df(TK,a2) .* S + df(TK,a3) .* log10(S) + ...
-                b ./ (TK .* LOG10) ) - gphf(1) ;
-            pK2_S = ( f(TK,a2) + f(TK,a3) ./ (S .* LOG10) ) - gphf(2) ;
-
+                b ./ (TK .* LOG10) ) - gpfH(1) ;
+            pK2_S = ( f(TK,a2) + f(TK,a3) ./ (S .* LOG10) ) - gpfH(2) ;
+            pK2_P = 0;
             epK2 = 0.008;
 
         elseif opt.K1K2 == 8
@@ -1144,8 +1234,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2 = - (a + b ./ TK + c .* log(TK) ) / LOG10;
             pK2_T = - ( -b ./ (TK.^2) + c ./ TK ) / LOG10;
             pK2_S = 0;
-
-            epK2 = 0.0033/LOG10; % convert lnK to epK with LOG10
+            pK2_P = 0;
+            elnK2 = 0.0033;
+            my_abs = @(x) sqrt(x*x);
+            epK2 = my_abs( -elnK2/LOG10 ) ; % convert lnK to epK with -/LOG10
 
         elseif opt.K1K2 == 9
         % Cai and Wang 1998, for estuarine use ----------------------------
@@ -1161,12 +1253,12 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             f1 = h ./ TK + l;
 
             pK2 = a ./ TK + b .* TK + c + d .* f1 .* sqrt(S) + g .* S ;
-            pK2 = pK2 - phf; % convert from NBS scale to SWS scale
+            pK2 = pK2 - pfH; % convert from NBS scale to SWS scale
 
             pK2_T = ( -a ./ (TK.^2) + b + d .* sqrt(S) .* (-h ./ (TK.^2)) )...
-                - gphf(1) ; % Temp derivative convert to sws scale
-            pK2_S = ( 0.5 .* d .* f1 ./ sqrt(S) + g ) - gphf(2) ;
-
+                - gpfH(1) ; % Temp derivative convert to sws scale
+            pK2_S = ( 0.5 .* d .* f1 ./ sqrt(S) + g ) - gpfH(2) ;
+            pK2_P = 0;
             epK2 = 0.040;
 
         elseif opt.K1K2 == 10
@@ -1182,7 +1274,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pK2_T = ( -a ./ (TK.^2) + c ./ TK ) - gpSWS2tot(1);
             pK2_S = ( d + 2 .* g .* S ) - gpSWS2tot(2);
-
+            pK2_P = 0;
             epK2 = 0.0100;
 
         elseif opt.K1K2 == 11
@@ -1202,7 +1294,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pK2_T = df(TK,a1) + df(TK,a2) .* S + df(TK,a3) .* (S.^2) ;
             pK2_S = f(TK,a2) + 2 .* f(TK,a3) .* S ;
-
+            pK2_P = 0;
             epK2 = 0.010;
 
         elseif opt.K1K2 == 12
@@ -1216,7 +1308,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2 = a + b .* S + c .* T + d .* (T.^2) ; % tempC
             pK2_T = c + 2 .* d .* T ;
             pK2_S = b ;
-
+            pK2_P = 0;
             epK2 = 0.008;
 
         elseif opt.K1K2 == 13
@@ -1236,7 +1328,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pK2_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK2_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
-
+            pK2_P = 0;
             epK2 = 0.011; % from abstract
 
         elseif opt.K1K2 == 14
@@ -1256,7 +1348,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2 = f(S,a1)  + f(S,a2) ./ TK + f(S,a3) .* log(TK) ;
             pK2_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK2_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
-
+            pK2_P = 0;
             epK2 = 0.010; % pg 141
 
         elseif opt.K1K2 == 15
@@ -1274,7 +1366,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2 = f(S,a1)  + f(S,a2) ./ TK + f(S,a3) .* log(TK) ;
             pK2_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK2_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
-
+            pK2_P = 0;
             epK2 = 0.010;
 
         elseif opt.K1K2 == 16
@@ -1290,8 +1382,12 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pK2_T = ( -a ./ (TK.^2) + c ./ TK ) - gpSWS2tot(1);
             pK2_S = ( d + 2 .* g .* S ) - gpSWS2tot(2);
-
-            epK2 = p( 0.025* q(pK2) ); % ~2.5 % uncertainty in K, pg 854
+            pK2_P = 0;
+            K2 = q(pK2);
+            eK2 = 0.025 * K2; % ~2.5 % uncertainty in K, pg 854
+            my_abs = @(x) sqrt(x*x);
+            epK2 = my_abs( p(K2 + eK2) - pK2 ); 
+            
         elseif opt.K1K2 == 17
         % Schockman and Byrne, 2021 ---------------------------------------
             % Geochimica et Cosmochimica Acta, in press
@@ -1310,20 +1406,21 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                 - gpSWS2tot(1) ;
             pK2_S = ( d + 0.5 .* g ./ sqrt(S) + 2 .* h .* S + l ./ TK ) ...
                 - gpSWS2tot(2);
-
+            pK2_P = 0;
             epK2 = 0.010; % in abstract
 
         end
         
-        gpK2 = [pK2_T, pK2_S]; 
+        gpK2 = [pK2_T, pK2_S, pK2_P]; 
     end
     
-    function [pKnh4, gpKnh4,epKnh4] = calc_pKnh4(opt,T,S,Pbar,pSWS2tot,gpSWS2tot)
+    function [pKnh4, gpKnh4,epKnh4] = calc_pKnh4(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot)
     % calcaulate pKnh4
     TK = T + 273.15; % convert to Kelvin
         if (opt.K1K2 == 6 || opt.K1K2 == 7 || opt.K1K2 == 8)
             % Knh4 = 0;
             % how to put in log space?
+            % invalid K1K2 options for now
 
         else
         % Ammonia, added by Sharp et al 2021, from Clegg and Whitfield (1995)
@@ -1359,12 +1456,14 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                   f(TK,a4) * 2.5 * S^1.5 - ...
                   0.001005 * dpdx(1 - 0.001005 * S) ...
                   - gpSWS2tot(2); % convert from total scale to SWS pH scale 
+        pKnh4_P = 0;
         end
+        gpKnh4 = [pKnh4_T, pKnh4_S, pKnh4_P];
+
         epKnh4 = 0.00017; % pg 2416 of Clegg and Whitefield (1995)
-        gpKnh4 = [pKnh4_T, pKnh4_S];
     end
     
-    function [pKh2s,gpKh2s,epKh2s] = calc_pKh2s(opt,T,S,Pbar,pSWS2tot,gpSWS2tot)
+    function [pKh2s,gpKh2s,epKh2s] = calc_pKh2s(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot)
     % calculate pKh2s
     TK = T + 273.15; % convert to Kelvin
         if (opt.K1K2 == 6 || opt.K1K2 == 7 || opt.K1K2 == 8)
@@ -1381,13 +1480,15 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pKh2s_T = (- (-b./(TK.^2) + c./TK ) ./ LOG10 ) ...
                    - gpSWS2tot(1); % convert from total scale to SWS pH scale
             pKh2s_S = (- (0.5.*d./sqrt(S) + h) ./ LOG10 ) ...
-                   - gpSWS2tot(2); % convert from total scale to SWS pH scale
+                      - gpSWS2tot(2); % convert from total scale to SWS pH scale
+            pKh2s_P = 0;
         end
+        gpKh2s = [pKh2s_T, pKh2s_S, pKh2s_P];
+
         epKh2s = 0.033; % from Millero et al (1988), in abstract
-        gpKh2s = [pKh2s_T, pKh2s_S];
     end
     
-    function [pKar, gpKar,epKar] = calc_pKar(opt,T,S,Pbar,phf,gphf)
+    function [pKar, gpKar,epKar] = calc_pKar(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
     % Aragonite solubility
         TK = T + 273.15;
         Rgas = 83.14462618; % RgasConstant, ml bar-1 K-1 mol-1, DOEv2
@@ -1409,15 +1510,15 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             Kar_S = 1.45 .* a .* ( (1/3) .* c .* S ^ (-2/3) + ...
                     d ./ (S .* LOG10) ) ;
 
-            pKar = p(Kar); % - phf ; % 'p' it and convert to SWS pH scale            
-            pKar_T = dpdx(Kar) .* Kar_T ; %- gphf(1) ; 
-            pKar_S = dpdx(Kar) .* Kar_S ; %- gphf(2) ;
+            pKar = p(Kar); % - pfH ; % 'p' it and convert to SWS pH scale            
+            pKar_T = dpdx(Kar) .* Kar_T ; %- gpfH(1) ; 
+            pKar_S = dpdx(Kar) .* Kar_S ; %- gpfH(2) ;
 
             % pressure correction
             pKar = pKar - ((33.3 - 0.22 .* T) .* Pbar ./ RT ) ./ LOG10 ; % T = tempC
             pKar_T = pKar_T - (Pbar .* Rgas .* ...
                     (59.8730 .* T - 9155.988) ./ (RT)^2 ) ./ LOG10;
-            pKar_P = - ((33.3 - 0.22 .* T) ./ RT ) ./ LOG10;
+            pKar_P = - ((33.3 - 0.22 .* T) * Pbar_P ./ RT ) ./ LOG10;
 
         else
         % calculate Kar-Aragonite (Mucci, 1983) ---------------------------
@@ -1431,11 +1532,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             log10Kar = f(TK,a1) + f(TK,a2) .* sqrt(S) + ...
                         b .* S + c .* S ^(3/2) ;
             pKar = -log10Kar ; % pK = -log10(K);
-            %pKar = pKar - phf ; % convert from NBS to SWS pH scale
 
-            pKar_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) ) ;%- gphf(1);
+            pKar_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) ) ;
             pKar_S = - ( 0.5 .* f(TK,a2) ./ sqrt(S) + ...
-                        b + (3/2) .* c .* sqrt(S) ) ;%- gphf(2);
+                        b + (3/2) .* c .* sqrt(S) ) ;
 
             % pressure correction
             d1 = [(-48.76 + 2.8); 0.5304; 0.0 ] ;
@@ -1443,16 +1543,17 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pKar = pKar + ppfac(T,Pbar,d1,d2);
             pKar_T = pKar_T + ppfac_T(T,Pbar,d1,d2);
-            pKar_P = ppfac_P(T,Pbar,d1,d2);
+            pKar_P = ppfac_P(T,Pbar,Pbar_P,d1,d2);
 
             % pKa std = 0.03 (Mucci 1983)
             % std for Sal part = 0.009 (as given in CO2SYSv3)
         end
-        epKar = 0.039; % from Mucci bc can't find one from Berner
         gpKar = [pKar_T, pKar_S, pKar_P];
+
+        epKar = 0.039; % from Mucci bc can't find one from Berner
     end
 
-    function [pKca, gpKca,epKca] = calc_pKca(opt,T,S,Pbar,phf,gphf)
+    function [pKca, gpKca,epKca] = calc_pKca(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
     % Calcite solubility
         TK = T + 273.15;
         Rgas = 83.14462618; % RgasConstant, ml bar-1 K-1 mol-1, DOEv2
@@ -1470,15 +1571,15 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             Kca_S = a .* ( (1/3) .* c .* S ^ (-2/3) + ...
                     d ./ (S .* LOG10) ) ;
 
-            pKca = p(Kca) ;%- phf ; % 'p' it and convert to SWS pH scale            
-            pKca_T = dpdx(Kca) .* Kca_T ;% - gphf(1) ; 
-            pKca_S = dpdx(Kca) .* Kca_S ; %- gphf(2) ;
+            pKca = p(Kca) ;            
+            pKca_T = dpdx(Kca) .* Kca_T ; 
+            pKca_S = dpdx(Kca) .* Kca_S ; 
 
             % pressure correction
             pKca = pKca - ((36 - 0.2 .* T) .* Pbar ./ RT ) ./ LOG10 ; % T = tempC
             pKca_T = pKca_T - (Pbar .* Rgas .* ...
                     (54.43 .* T - 9888.03) ./ (RT)^2 ) ./ LOG10;
-            pKca_P = - ((36 - 0.2 .* T) ./ RT ) ./ LOG10;
+            pKca_P = - ((36 - 0.2 .* T) *Pbar_P ./ RT ) ./ LOG10;
 
         else
         % calculate Kca-Calcite (Mucci, 1983) -----------------------------
@@ -1492,11 +1593,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             log10Kca = f(TK,a1) + f(TK,a2) .* sqrt(S) + ...
                         b .* S + c .* S ^(3/2) ;
             pKca = -log10Kca ; % pK = -log10(K);
-            %pKca = pKca - phf ; % convert from NBS to SWS pH scale
 
-            pKca_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) );% - gphf(1);
+            pKca_T = - ( df(TK,a1) + df(TK,a2) .* sqrt(S) );
             pKca_S = - ( 0.5 .* f(TK,a2) ./ sqrt(S) + ...
-                        b + (3/2) .* c .* sqrt(S) ) ;%- gphf(2);
+                        b + (3/2) .* c .* sqrt(S) ) ;
 
             % pressure correction
             d1 = [-48.76; 0.5304; 0.0 ] ;
@@ -1504,27 +1604,28 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 
             pKca = pKca + ppfac(T,Pbar,d1,d2);
             pKca_T = pKca_T + ppfac_T(T,Pbar,d1,d2);
-            pKca_P = ppfac_P(T,Pbar,d1,d2);
+            pKca_P = ppfac_P(T,Pbar,Pbar_P,d1,d2);
             
             % pKca std = 0.03 (Mucci 1983)
             % std for Sal part = 0.01 (as given in CO2SYSv3)
         end
-        epKca = 0.04; % from Mucci bc can't find one from Berner
         gpKca = [pKca_T, pKca_S, pKca_P];
+
+        epKca = 0.04; % from Mucci bc can't find one from Berner
     end
     
-    function [pSWS2tot,gpSWS2tot,pFREE2tot,gpFREE2tot] = calc_pSWS2tot(S,pKs,gpKs,pKf,gpKf)
+    function [pSWS2tot,gpSWS2tot,pFREE2tot,gpFREE2tot] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf)
     % pH scale conversion factors (not pressure corrected)----------- 
 
     % calculate TF (Riley 1965)--------------------------------------------
         TF = (0.000067./18.998).*(S./1.80655); % mol/kg-SW
-        TF_S = 1.95217e-6; % derivative wrt S
+        TF_S = (0.000067/18.998)*(1/1.80655); % derivative wrt S
         pTF = p(TF);
         pTF_S = dpdx(TF).*TF_S;
         
     % calculate TS (Morris & Riley 1966)-----------------------------------
         TS = (0.14./96.062).*(S./1.80655); % mol/kg-SW
-        TS_S = 0.000806727; % derivative wrt S
+        TS_S = (0.14/96.062)*(1/1.80655); % derivative wrt S
         pTS = p(TS);
         pTS_S = dpdx(TS).*TS_S;
         
@@ -1535,7 +1636,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         bot = top + q(pTF - pKf) ;
         bot_T = top_T + dqdx(pTF - pKf) * (-gpKf(1)) ;
         bot_S = top_S + dqdx(pTF - pKf) * (pTF_S - gpKf(2));
-        bot_P = top_P + dqdx(pTF - pKf) * ( -gpKf(3));
+        bot_P = top_P + dqdx(pTF - pKf) * ( -gpKf(3) );
         pSWS2tot = p(top./bot);
         pSWS2tot_T = (-top_T / (top*LOG10) ) + (bot_T / (bot*LOG10) );
         pSWS2tot_S = (-top_S / (top*LOG10) ) + (bot_S / (bot*LOG10) );
@@ -1550,7 +1651,8 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         gpFREE2tot = [pFREE2tot_T, pFREE2tot_S, pFREE2tot_P];
     end
 
-    function [phf,gphf] = calc_phf(opt,T,S)
+    function [pfH,gpfH,epfH] = calc_pfH(opt,T,S)
+        % fH = [H]/(1 + TS/Ks)
         TK = T + 273.15; % convert to Kelvin
         if opt.K1K2 == 8
             %fH = 1; % shouldn't occur
@@ -1561,25 +1663,26 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % doesn't agree with the check value they give on p. 456.
             fH   = ( 1.29 - 0.00204.*(TK) + ...
                 (0.00046 - (0.00000148 * (TK))) * (S).^2 ) ;
-            phf = p(fH);
-            gphf_T = dpdx(phf) - 0.00204 - 0.00000148 * (S.^2)  ;
-            gphf_S = dpdx(phf) * 2 * (0.00046 - (0.00000148 * (TK))) * S ;
+            pfH = p(fH);
+            gpfH_T = dpdx(pfH) - 0.00204 - 0.00000148 * (S.^2)  ;
+            gpfH_S = dpdx(pfH) * 2 * (0.00046 - (0.00000148 * (TK))) * S ;
         else
         % fH def'n: Takahashi et al, Ch 3 in GEOSECS v.3, 1982 ------------
-            fH = 1.2948 - 0.002036*(TK) + ...
-                (0.0004607 - (0.000001475 * (TK))) * (S).^2 ;
-            phf = p(fH);
-            gphf_T = dpdx(phf) - 0.002036 - 0.000001475 * (S.^2) ;
-            gphf_S = dpdx(phf) * 2 * (0.0004607 - (0.000001475 * (TK))) * S ;
+            fH = 1.2948 - 0.002036*TK + ...
+                ( 0.0004607 - 0.000001475 * (TK) ) .* (S).^2 ;
+            fH_T = -0.002036 + ( -0.000001475 ) .* (S).^2  ;
+            fH_S = 2 * ( 0.0004607 - ( 0.000001475 .* (TK) ) ) .* (S) ;
+            pfH = p(fH);
+            gpfH_T = dpdx(fH) * fH_T;
+            gpfH_S = dpdx(fH) * fH_S;
         end
-        gphf = [gphf_T, gphf_S, 0];
+        gpfH = [gpfH_T, gpfH_S, 0];
         % assumed independent of pressure
-    end  
-%     LOG10 = log(10);
-%     p = @(x) -log10(x);
-%     q = @(x) 10.^(-x);  % inverse p, i.e., a backward p
-%     dpdx = @(x) -1 / (x * LOG10);     % p'
-%     dqdx = @(x) -LOG10 * 10.^( -x );  % q'
+        
+        efH = 0.005; % ± 0.005 on fH from Culberson, Pytkowicz, ...
+        my_abs = @(x) sqrt(x*x);
+        epfH = my_abs( p(fH + efH) - pfH ) ; %  and Hawley 1970 Journal of Marine Research
+    end 
     
 end
 
