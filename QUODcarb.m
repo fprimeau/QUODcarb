@@ -104,19 +104,22 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 
     % populate obs, yobs, wobs at each datapoint
     [obs,yobs,wobs] = parse_input(obs,sys,opt,nD);
-    for i = 1:nD
+
+    for i = 1:nD % loop over the full data set
 
         z0 = init(yobs(i,:),sys,opt);           % initialize
         tol = 1e-9;
+        % negative of the log of the posterior aka the log improbability (limp for short)
         fun = @(z) limp(z,yobs(i,:),wobs(i,:),obs(i),sys,opt);
 
+        % find the maximum of the posterior probability 
         [zhat,J,iflag(i)] = newtn(z0,fun,tol);
 
         if (iflag(i) ~=0) && (opt.printmes ~= 0)
             fprintf('Newton''s method iflag = %i at i = %i \n',iflag(i),i);
         end
        
-        % calculate posterior uncertainty
+        % calculate the marginalized posterior uncertainty using Laplace's approximation
         warning('off');
         C = inv(J);
         warning('on');
@@ -128,39 +131,35 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         end
         [est(i)] = parse_output(zhat,sigx,opt,sys);    % populate est
 
+        
+        for j = 1:length(sys.tp(:))
+            ifree = sys.tp(j).ifree;
+            z = null( full( sys.tp(j).dcdx(zhat(ifree) ) ) );
+            est(i).tp(j).Revelle = z(1)/z(2);
+        end
+
 
         %
         % finite difference Revelle factor computation
         %
-        dpTC = 100*sqrt(eps);
-        yobs_pert_plus = yobs;
-        yobs_pert_plus(i,sys.ipTC) = yobs(i,sys.ipTC) + dpTC;
+        %dpTC = 100*sqrt(eps);
+        %yobs_pert_plus = yobs;
+        %yobs_pert_plus(i,sys.ipTC) = yobs(i,sys.ipTC) + dpTC;
 
-        yobs_pert_minus = yobs;
-        yobs_pert_minus(i,sys.ipTC) = yobs(i,sys.ipTC) - dpTC;
+        %yobs_pert_minus = yobs;
+        %yobs_pert_minus(i,sys.ipTC) = yobs(i,sys.ipTC) - dpTC;
 
-        fun_pert_plus = @(z) limp(z,yobs_pert_plus(i,:),wobs(i,:),obs(i),sys,opt);
-        fun_pert_minus = @(z) limp(z,yobs_pert_minus(i,:),wobs(i,:),obs(i),sys,opt);
-        Z0 = zhat; 
-        [z_pert_plus,dJ,iflag(i)] = newtn(Z0,fun_pert_plus,tol/100);
-        [z_pert_minus,dJ,iflag(i)] = newtn(Z0,fun_pert_minus,tol/100);
-        for j = 1:length(sys.tp(:))
-            dpfco2 = z_pert_plus(sys.tp(j).ipfco2)-z_pert_minus(sys.tp(j).ipfco2);
-            est(i).tp(j).Revelle = dpfco2./(2*dpTC);
-        end
-
-        %fixed = intersect(sys.fixed,union(sys.tp(1).mc,sys.tp(1).kc));
-        %free = setdiff(sys.tp(1).mc,fixed);
-
-        %ML = sys.M(sys.tp(1).mr,:);
-        %KL = sys.K(sys.tp(1).kr,:);
-        %MR = sys.M(sys.tp(1).mr,:);
-        %KR = sys.K(sys.tp(1).kr,:);
+        %fun_pert_plus = @(z) limp(z,yobs_pert_plus(i,:),wobs(i,:),obs(i),sys,opt);
+        %fun_pert_minus = @(z) limp(z,yobs_pert_minus(i,:),wobs(i,:),obs(i),sys,opt);
+        %z0 = zhat; 
+        %[z_pert_plus,dJ,iflag(i)] = newtn(z0,fun_pert_plus,tol/100);
+        %[z_pert_minus,dJ,iflag(i)] = newtn(z0,fun_pert_minus,tol/100);
+        %for j = 1:length(sys.tp(:))
+        %    dpfco2 = z_pert_plus(sys.tp(j).ipfco2)-z_pert_minus(sys.tp(j).ipfco2);
+        %    est(i).tp(j).Revelle = dpfco2./(2*dpTC);
+        %end
         
-        %ML = ML(:,free);
-        %KL = KL(:,free);
-        %MR = MR(:,fixed);
-        %KR = KR(:,fixed);
+        
 
         %Jac = [ML*diag(sys.dqdx(zhat(free)));...
         %       -KL];

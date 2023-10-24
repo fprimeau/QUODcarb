@@ -408,7 +408,8 @@ function sys = mksys(obs,phscale)
         M(row, [ tp(j).iph_tot, tp(j).iph_free, tp(j).iphso4 ] ) = [ 1 -1 -1 ];
         mc = union(mc,[tp(j).iph_tot, tp(j).iph_free, tp(j).iphso4]);
         tp(j).jph_tot = row;
-
+        mr = [mr,row];
+        
         % ph_sws and ph_free relationship
         row = row + 1;
         M(row,[ tp(j).iph_sws, tp(j).iph_free, tp(j).iphso4, tp(j).ipHF ]) = [ 1 -1 -1 -1 ];
@@ -418,16 +419,32 @@ function sys = mksys(obs,phscale)
         tp(j).mr = mr;
         tp(j).mc = mc.';
     end
-    fixed = [ ipTA, ipTB, ipTS, ipTF, ipTP, ipTSi, ipTNH3, ipTH2S, ipTCa, isal ];
     for j = 1:nTP
-        fixed = [fixed, tp(j).ipK0,  tp(j).ipK1,  tp(j).ipK2,  tp(j).ipKb,  tp(j).ipKw,   tp(j).ipKs,  tp(j).ipKf, ...
-        tp(j).ipK1p, tp(j).ipK2p, tp(j).ipK3p, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
-        tp(j).ipp2f, tp(j).ipKar, tp(j).ipKca, tp(j).ipfh,  tp(j).iP,     tp(j).iT];
+        ifixed = [ ipTA, ipTB, ipTS, ipTF, ipTP, ipTSi, ipTNH3, ipTH2S, ipTCa, isal ];
+        ifixed = [ifixed, tp(j).ipK0,  tp(j).ipK1,  tp(j).ipK2,  tp(j).ipKb,  tp(j).ipKw, tp(j).ipKs,  tp(j).ipKf, ...
+                 tp(j).ipK1p, tp(j).ipK2p, tp(j).ipK3p, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
+                 tp(j).ipp2f, tp(j).ipKar, tp(j).ipKca, tp(j).ipfh,  tp(j).iP, tp(j).iT];
+        tp(j).ifixed = ifixed;
+        tp(j).ifree = setdiff(union(tp(j).mc,tp(j).kc),ifixed);
+
+        ML = M(tp(j).mr,:); KL = K(tp(j).kr,:);
+        ML = ML(:,tp(j).ifree); KL = KL(:,tp(j).ifree);
+
+        %MR = M(tp(j).mr,:); KR = K(tp(j).kr,:);
+        %MR = MR(:,tp(j).ifixed); KR = KR(:,tp(j).ifixed);
+
+        %tp(j).ML = ML;
+        %tp(j).KL = KL;
+        %tp(j).MR = MR;
+        %tp(j).KR = KR;
+        
+        %tp(j).c = @(xfree,zhat) [ML*q(xfree); KL*xfree] + [MR*q(zhat(ifixed)); KR*zhat(ifixed)];
+        tp(j).dcdx = @(xfree) [ML*diag(dqdx(xfree));KL];
+                
     end
     sys.M  = M;
     sys.K  = K;
     sys.tp = tp;
-    sys.fixed = fixed;
 end
 
     
