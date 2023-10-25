@@ -415,6 +415,7 @@ function sys = mksys(obs,phscale)
         tp(j).mc = mc.';
     end
     for j = 1:nTP
+        % STUFF needed to compute the Revelle buffer factor
         ifixed = [ ipTA, ipTB, ipTS, ipTF, ipTP, ipTSi, ipTNH3, ipTH2S, ipTCa, isal ];
         ifixed = [ifixed, tp(j).ipK0,  tp(j).ipK1,  tp(j).ipK2,  tp(j).ipKb,  tp(j).ipKw, tp(j).ipKs,  tp(j).ipKf, ...
                  tp(j).ipK1p, tp(j).ipK2p, tp(j).ipK3p, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
@@ -434,8 +435,22 @@ function sys = mksys(obs,phscale)
         %tp(j).KR = KR;
         
         %tp(j).c = @(xfree,zhat) [ML*q(xfree); KL*xfree] + [MR*q(zhat(ifixed)); KR*zhat(ifixed)];
-        tp(j).dcdx = @(xfree) [ML*diag(dqdx(xfree));KL];
+        tp(j).dcdx_pTAfixed = @(xfree) [ML*diag(dqdx(xfree));KL];
                 
+
+        % STUFF needed to compute a dpfco2/dpTA holding pTC fixed 
+        jfixed = [ ipTC, ipTB, ipTS, ipTF, ipTP, ipTSi, ipTNH3, ipTH2S, ipTCa, isal ];
+        jfixed = [jfixed, tp(j).ipK0,  tp(j).ipK1,  tp(j).ipK2,  tp(j).ipKb,  tp(j).ipKw, tp(j).ipKs,  tp(j).ipKf, ...
+                 tp(j).ipK1p, tp(j).ipK2p, tp(j).ipK3p, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
+                 tp(j).ipp2f, tp(j).ipKar, tp(j).ipKca, tp(j).ipfh,  tp(j).iP, tp(j).iT];
+        tp(j).jfixed = jfixed;
+        tp(j).jfree = setdiff(union(tp(j).mc,tp(j).kc),jfixed);
+
+        ML = M(tp(j).mr,:); KL = K(tp(j).kr,:);
+        ML = ML(:,tp(j).jfree); KL = KL(:,tp(j).jfree);
+        tp(j).dcdx_pTCfixed = @(xfree) [ML*diag(dqdx(xfree));KL];
+        
+
     end
     sys.M  = M;
     sys.K  = K;
