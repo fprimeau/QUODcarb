@@ -91,7 +91,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 %--------------------------------------------------------------------------
 %
 % Changes? -> the only things you may want to change are: 
-%               1. tolerance level of Newton solver -> line 120
+%               1. tolerance level of Newton solver -> line 111
 %               2. Max Iteration number -> MAXIT in newtn.m
 %
 %--------------------------------------------------------------------------
@@ -380,7 +380,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 % Uppstrom, L., Deep-Sea Research 21:161-162, 1974
                 % ( copied from Orr's code )
                 % TB = ( 0.000232/ 10.811) * (sal/1.80655)
-                obs(i).TB       = nan;  
+                obs(i).TB        = nan;  
                 yobs(i,sys.ipTB) = p(0.0004157 * obs(i).sal / 35);
             elseif opt.TB == 2
                 % Lee, Kim, Myrne, Millero, Feely, Yong-Ming Liu. 2010.
@@ -393,7 +393,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 % Culkin, F., in Chemical Oceanography,
                 % ed. Riley and Skirrow, 1965: GEOSECS references this
                 % (copied from Orr's code)
-                obs(i).TB       = nan 
+                obs(i).TB       = nan;
                 yobs(i,sys.ipTB) = p( 0.0004106 * obs(i).sal / 35 );
             end
         else
@@ -1745,7 +1745,7 @@ function z0 = init(yobs,sys,opt)
         y0(sys.tp(i).ippco2)  = p(pco2);
         
         Kar     = q(y0(sys.tp(i).ipKar));
-        TCa    = q(yobs(sys.ipTCa));
+        TCa     = q(yobs(sys.ipTCa));
         OmegaAr = co3 * TCa / Kar;
         Kca     = q(y0(sys.tp(i).ipKca));
         OmegaCa = co3 * TCa / Kca ;
@@ -1791,7 +1791,7 @@ function [est] = parse_output(z,sigx,opt,sys)
     est.sal     = z(sys.isal);
     est.esal    = sigx(sys.isal);
     
-    % TC
+    % TC (DIC)
     est.pTC     = z(sys.ipTC);               
     est.epTC    = sigx(sys.ipTC);    
     est.TC      = q(z(sys.ipTC))*1e6; % 1e6  converts mol/kg to µmol/kg
@@ -1799,7 +1799,7 @@ function [est] = parse_output(z,sigx,opt,sys)
     est.eTC_l   = ebar_l(sys.ipTC)*1e6;    
     est.eTC_u   = ebar_u(sys.ipTC)*1e6;
     
-    % TA
+    % TA Alkalinity
     est.pTA     = z(sys.ipTA);               
     est.epTA    = sigx(sys.ipTA);
     est.TA      = q(z(sys.ipTA))*1e6; % convt 
@@ -1831,7 +1831,7 @@ function [est] = parse_output(z,sigx,opt,sys)
     est.eTF_l   = ebar_l(sys.ipTF)*1e6;
     est.eTF_u   = ebar_u(sys.ipTF)*1e6;
 
-    % TP
+    % TP Phosphate
     est.pTP     = z(sys.ipTP);           
     est.epTP    = sigx(sys.ipTP);
     est.TP      = q(z(sys.ipTP))*1e6;   % convt mol/kg to µmol/kg   
@@ -1839,7 +1839,7 @@ function [est] = parse_output(z,sigx,opt,sys)
     est.eTP_l   = ebar_l(sys.ipTP)*1e6; 
     est.eTP_u   = ebar_u(sys.ipTP)*1e6;
 
-    % TSi
+    % TSi silicate
     est.pTSi    = z(sys.ipTSi);         
     est.epTSi   = sigx(sys.ipTSi);
     est.TSi     = q(z(sys.ipTSi))*1e6;  % convt mol/kg to µmol/kg 
@@ -1847,7 +1847,7 @@ function [est] = parse_output(z,sigx,opt,sys)
     est.eTSi_l  = ebar_l(sys.ipTSi)*1e6; 
     est.eTSi_u  = ebar_u(sys.ipTSi)*1e6;
     
-    % TNH3
+    % TNH3 nitrate
     est.pTNH3       = z(sys.ipTNH3);       
     est.epTNH3      = sigx(sys.ipTNH3);
     est.TNH3        = q(z(sys.ipTNH3))*1e6;   % convt mol/kg to µmol/kg
@@ -1855,7 +1855,7 @@ function [est] = parse_output(z,sigx,opt,sys)
     est.eTNH3_l     = ebar_l(sys.ipTNH3)*1e6; 
     est.eTNH3_u     = ebar_u(sys.ipTNH3)*1e6;
     
-    % TH2S
+    % TH2S sulfide
     est.pTH2S       = z(sys.ipTH2S);       
     est.epTH2S      = sigx(sys.ipTH2S);
     est.TH2S        = q(z(sys.ipTH2S))*1e6; % convt mol/kg to µmol/kg
@@ -1863,7 +1863,7 @@ function [est] = parse_output(z,sigx,opt,sys)
     est.eTH2S_l     = ebar_l(sys.ipTH2S)*1e6; 
     est.eTH2S_u     = ebar_u(sys.ipTH2S)*1e6;
 
-    % TCa
+    % TCa calcium
     est.pTCa       = z(sys.ipTCa);       
     est.epTCa      = sigx(sys.ipTCa);
     est.TCa        = q(z(sys.ipTCa)); % no conversion, mol/kg
@@ -1890,16 +1890,16 @@ function [est] = parse_output(z,sigx,opt,sys)
         est.tp(i).eph  = sigx(sys.tp(i).iph);
         est.tp(i).h    = q(z(sys.tp(i).iph)) * 1e6;
         est.tp(i).eh   = ebar(sys.tp(i).iph) * 1e6;
-        est.tp(i).eh  = ebar_l(sys.tp(i).iph) * 1e6;
-        est.tp(i).eh  = ebar_u(sys.tp(i).iph) * 1e6;
+        est.tp(i).eh_l   = ebar_l(sys.tp(i).iph) * 1e6;
+        est.tp(i).eh_u   = ebar_u(sys.tp(i).iph) * 1e6;
 
         % pH_free
         est.tp(i).ph_free    = z(sys.tp(i).iph_free);
         est.tp(i).eph_free   = sigx(sys.tp(i).iph_free);
-        est.tp(i).h_free    = q(z(sys.tp(i).iph_free)) * 1e6;
-        est.tp(i).eh_free   = ebar(sys.tp(i).iph_free) * 1e6;
-        est.tp(i).eh_freel  = ebar_l(sys.tp(i).iph_free) * 1e6;
-        est.tp(i).eh_freeu  = ebar_u(sys.tp(i).iph_free) * 1e6;
+        est.tp(i).h_free     = q(z(sys.tp(i).iph_free)) * 1e6;
+        est.tp(i).eh_free    = ebar(sys.tp(i).iph_free) * 1e6;
+        est.tp(i).eh_free_l  = ebar_l(sys.tp(i).iph_free) * 1e6;
+        est.tp(i).eh_free_u  = ebar_u(sys.tp(i).iph_free) * 1e6;
 
         % pH_tot
         est.tp(i).ph_tot    = z(sys.tp(i).iph_tot);
@@ -1936,6 +1936,8 @@ function [est] = parse_output(z,sigx,opt,sys)
         est.tp(i).epco2_u   = ebar_u(sys.tp(i).ippco2)*1e6;
         est.tp(i).ppco2     = z(sys.tp(i).ippco2);
         est.tp(i).eppco2    = sigx(sys.tp(i).ippco2);
+
+        % p2f
         est.tp(i).pp2f      = z(sys.tp(i).ipp2f);
         est.tp(i).epp2f     = sigx(sys.tp(i).ipp2f);
 

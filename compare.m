@@ -137,8 +137,7 @@ function [A] = compare(obs,est,opt,tpopt,pair,fname)
             epKar   = obs(i).tp(tpopt).epKar;
             epKca   = obs(i).tp(tpopt).epKca;
             epK     = [epK0, epK1, epK2, epKb, epKw, epKar, epKca]; 
-               %    = [ pK0, pK1, pK2, pKb, pKw, pKspa, pKspc]
-               % '' = [0.02,0.0075,0.015,0.01, 0.01, 0.02, 0.02];
+               %    = [0.02,0.0075,0.015,0.01, 0.01, 0.02, 0.02];
 
 
             % par1 = alk, par2 = dic, par3 = ph, par4 = pco2; par5 = co3
@@ -272,7 +271,7 @@ function [A] = compare(obs,est,opt,tpopt,pair,fname)
             out.eOmegaCa    = err(20);
             out.CAL         = OUT(100)*1e-6;
             out.Rev         = OUT(34);
-        
+        % keyboard
             % exit matrix at chosen tp temp
             A = [];
             fprintf(fid,'%s,',' ');
