@@ -132,17 +132,19 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         [est(i)] = parse_output(zhat,sigx,opt,sys);    % populate est
 
         % calculate the Revelle factor 
+        ifree = sys.tp(1).ifree;
+        I_TA = speye(length(ifree));
+        ei = ones(length(ifree),1);
+        jfree = sys.tp(1).jfree;
+        I_TC = speye(length(jfree));
+        ej = ones(length(jfree),1);
         for j = 1:length(sys.tp(:))
-            ifree = sys.tp(j).ifree;
-            jac = full( sys.tp(j).dcdx_pTAfixed(zhat(ifree)));
-            z = null( jac );
+            jac = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
+            z = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
             est(i).tp(j).Revelle = z(2)/z(1);
-
-            jfree = sys.tp(j).jfree;
-            jac = full( sys.tp(j).dcdx_pTCfixed(zhat(jfree)) );
-            z = null( jac );
+            jac = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
+            z = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
             est(i).tp(j).dpfco2dpTA = z(2)/z(1);
-
         end
     end
 end
@@ -205,7 +207,6 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
     dcdx = [ M * diag( sys.dqdx( x ) ); ...
              K  ];
-
     
     %iTSP = [[sys.tp(:).iT], sys.isal, [sys.tp(:).iP]];
     g    = [ e.'*W*ge+lam.'*dcdx,  c.' ];

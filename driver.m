@@ -6,7 +6,7 @@
 
 % g = GOMECC data
 
-format long
+%format long
 
 load datag.mat;
 [in] = datag;

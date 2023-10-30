@@ -339,7 +339,9 @@ function sys = mksys(obs,phscale)
         mc = union(mc,[ipTC, tp(j).ipco2st, tp(j).iphco3, tp(j).ipco3]);
         tp(j).jpTC = row;
         mr = [mr,row];
-
+        % rescale row
+        M(row,:) = M(row,:)*1e2;
+        
         % Total borate
         row = row + 1;
         M(row,[ ipTB, tp(j).ipboh3, tp(j).ipboh4 ])   =  [ 1, -1, -1 ];
@@ -348,6 +350,9 @@ function sys = mksys(obs,phscale)
         tp(j).jpTB = row;
         M(row_alk,tp(j).ipoh) = -1;        
         mr = [mr,row];
+        % rescale row
+        M(row,:) = M(row,:)*1e3;
+        
 
         % Total sulfate
         row = row + 1;
@@ -355,6 +360,8 @@ function sys = mksys(obs,phscale)
         mc = union(mc,[ipTS, tp(j).iphso4, tp(j).ipso4]);
         tp(j).jpTS = row;
         mr = [mr,row];
+        % rescale row
+        M(row,:) = M(row,:)*1e1;
         
         % Total fluoride
         row = row + 1;
@@ -363,6 +370,8 @@ function sys = mksys(obs,phscale)
         M(row_alk, tp(j).ipHF) =  1;
         tp(j).jpTF = row;
         mr = [mr,row];
+        % rescale row
+        M(row,:) = M(row,:)*1e3;
         
         % Total phosphate
         row = row + 1;
@@ -371,7 +380,9 @@ function sys = mksys(obs,phscale)
         M(row_alk, [ tp(j).iphpo4, tp(j).ippo4, tp(j).iph3po4 ]) = [ -1, -2, 1 ]; 
         tp(j).jpTP = row;
         mr = [mr,row];
-
+        % rescale row
+        M(row,:) = M(row,:)*1e7;
+        
         % Total silicate
         row = row + 1;
         M(row, [ ipTSi, tp(j).ipsioh4, tp(j).ipsiooh3]) = [ 1, -1, -1 ];
@@ -379,7 +390,9 @@ function sys = mksys(obs,phscale)
         M(row_alk, tp(j).ipsiooh3) = -1; 
         tp(j).jpTSi = row;
         mr = [mr,row];
-
+        % rescale row
+        M(row,:) = M(row,:)*1e6;
+        
         % Total amonia
         row = row+1;
         M(row, [ ipTNH3, tp(j).ipnh4, tp(j).ipnh3 ]) = [ 1, -1, -1 ];
@@ -387,7 +400,9 @@ function sys = mksys(obs,phscale)
         M(row_alk,tp(j).ipnh3) = -1; 
         tp(j).jpTNH3 = row;
         mr = [mr,row];
-
+        % rescale row
+        M(row,:) = M(row,:)*1e8;
+        
         % Total sulfide
         row = row+1;
         M(row,[ ipTH2S, tp(j).ipH2S, tp(j).ipHS ]) = [ 1, -1, -1 ];
@@ -395,21 +410,30 @@ function sys = mksys(obs,phscale)
         M(row_alk,tp(j).ipHS) = -1; 
         tp(j).jTH2S = row;            
         mr = [mr,row];
+        % rescale row
+        M(row,:) = M(row,:)*1e8;
+        M(row_alk,:) = M(row_alk,:)*1e2;
 
+
+
+        
         % total Ca
         row = row + 1;
         M(row, [ ipTCa, tp(j).ipca]) = [ 1, -1 ];
         mc = union(mc,[ipTCa, tp(j).ipca]);
         tp(j).jpTCa = row;
         mr = [mr,row];
-
+        M(row,:) = M(row,:)*1e2;
+        
         % ph_tot and ph_free relationship
         row = row + 1;
         M(row, [ tp(j).iph_tot, tp(j).iph_free, tp(j).iphso4 ] ) = [ 1 -1 -1 ];
         mc = union(mc,[tp(j).iph_tot, tp(j).iph_free, tp(j).iphso4]);
         tp(j).jph_tot = row;
         mr = [mr,row];
-        
+        % rescale row
+        M(row,:) = M(row,:)*1e8;
+
         % ph_sws and ph_free relationship
         row = row + 1;
         M(row,[ tp(j).iph_sws, tp(j).iph_free, tp(j).iphso4, tp(j).ipHF ]) = [ 1 -1 -1 -1 ];
@@ -418,6 +442,9 @@ function sys = mksys(obs,phscale)
         mr = [mr,row];
         tp(j).mr = mr;
         tp(j).mc = mc.';
+        % rescale row
+        M(row,:) = M(row,:)*1e8;
+
     end
     for j = 1:nTP
         % STUFF needed to compute the Revelle buffer factor
