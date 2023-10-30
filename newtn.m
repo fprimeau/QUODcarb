@@ -31,16 +31,9 @@ function [x,J,iflag] = newtn(x0, F, tol)
             x = x + dx;
             [F0, iJ] = F(x);
         else
-            %[P,R,C] = equilibrate(J);
-            %B = R*P*J*C;
-            %dx = -C*(B\(R*P*F0));
-            %x = x+dx;            
-            % warning('off');
             dx = -J\F0;
             x = x + dx;
-            %warning('on');
             [F0, J] = F(x);
-            % keyboard
         end
         itno = itno+1;
         if (iprint)

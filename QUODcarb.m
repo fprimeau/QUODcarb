@@ -121,9 +121,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         end
        
         % calculate the marginalized posterior uncertainty using Laplace's approximation
-        warning('off');
         C = inv(J);
-        warning('on');
         C = C(1:nv,1:nv);
         %y = zhat(1:nv);
         sigx = sqrt(full(diag(C)));
