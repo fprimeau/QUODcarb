@@ -41,7 +41,6 @@ function sys = mksys(obs,phscale)
     % borate: Kb = [h][boh4]/[boh3]
     i = i + 1;
     ipTB = i;  sys.ipTB = ipTB; % p(total borate)
-    
         
     % sulfate: Ks = [hf][so4]/[hso4]
     i = i + 1;
@@ -51,12 +50,11 @@ function sys = mksys(obs,phscale)
     i = i + 1;
     ipTF = i;  sys.ipTF = ipTF; % p(total fluoride)
     
-    % K1p = [h][h2po4]/[h3po4]
-    % K2p = [h][hpo4]/[h2po4]
-    % K3p = [h][po4]/[hpo4]
+    % phosphate: K1p = [h][h2po4]/[h3po4], K2p = [h][hpo4]/[h2po4], K3p = [h][po4]/[hpo4]
     i = i+1;
     ipTP = i; sys.ipTP = ipTP; % p(total phosphate)
-                               % KSi = [h][siooh3]/[sioh4]
+
+    % KSi = [h][siooh3]/[sioh4]
     i = i+1;
     ipTSi = i; sys.ipTSi = ipTSi; % p(total silicate)
     
@@ -91,7 +89,6 @@ function sys = mksys(obs,phscale)
         tp(j).ipco3     = i;  i = i + 1;
         tp(j).iph       = i; 
         
-
         % Kb = [h][boh4]/[boh3]
         nrk = nrk + 1;        i = i + 1;
         tp(j).ipKb   = i;     i = i + 1;
@@ -102,8 +99,7 @@ function sys = mksys(obs,phscale)
         nrk = nrk + 1;       i = i + 1;
         tp(j).ipKw = i;      i = i + 1;
         tp(j).ipoh = i;      
-
-        
+     
         % Ks  = [hf][so4]/[hso4]
         nrk = nrk + 1;        i = i + 1;
         tp(j).ipKs     = i;   i = i + 1;
@@ -149,7 +145,6 @@ function sys = mksys(obs,phscale)
         nrk = nrk + 1;        i = i + 1;
         tp(j).ipp2f     = i;  i = i + 1;
         tp(j).ippco2    = i;  
-
         
         % Kar = [co3][ca]/OmegaAr
         % Kca = [co3][ca]/OmegaCa
@@ -163,11 +158,11 @@ function sys = mksys(obs,phscale)
         tp(j).ipfh      = i; i = i + 1;
         
         %  ph scales 
-        tp(j).iph_tot = i;    i = i + 1;
+        tp(j).iph_tot  = i;   i = i + 1;
         tp(j).iph_free = i;   i = i + 1;
-        tp(j).iph_sws = i;    i = i + 1;
-        tp(j).iph_nbs = i;
-        end
+        tp(j).iph_sws  = i;   i = i + 1;
+        tp(j).iph_nbs  = i;
+    end
     nv = i;
     K = sparse(nTP*(nrk+2),nv);
     row = 0;
@@ -178,119 +173,100 @@ function sys = mksys(obs,phscale)
         row = row + 1;
         K(row,[ tp(j).ipK0, tp(j).ipco2st, tp(j).ipfco2]) = [ -1, 1, -1 ];
         kc = union(kc,[tp(j).ipK0,tp(j).ipco2st, tp(j).ipfco2]);
-        tp(j).kpK0 = row;
         kr = [kr, row];
         
         % K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pco2st = 0
         row = row + 1;
         K(row,[ tp(j).ipK1, tp(j).iph, tp(j).iphco3, tp(j).ipco2st]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[tp(j).ipK1, tp(j).iph, tp(j).iphco3, tp(j).ipco2st]);
-        tp(j).kpK1 = row;
         kr = [kr, row];
         
         % K2 = [CO3][H]/[HCO3]
         row = row + 1;
         K(row,[ tp(j).ipK2, tp(j).iph, tp(j).ipco3, tp(j).iphco3 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[tp(j).ipK2, tp(j).iph, tp(j).ipco3, tp(j).iphco3]);
-        tp(j).kpK2 = row;
         kr = [kr, row];
         
         % Kb = [H][BOH4]/[BOH3]
         row = row+1;
         K(row,[ tp(j).ipKb, tp(j).iph, tp(j).ipboh4, tp(j).ipboh3 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[tp(j).ipKb, tp(j).iph, tp(j).ipboh4, tp(j).ipboh3]);
-        tp(j).kpKb = row;
         kr = [kr, row];
 
         % Kw = [OH][H]
         row = row + 1;
         K(row,[ tp(j).ipKw, tp(j).iph, tp(j).ipoh ]) = [ -1, 1, 1 ];
         kc = union(kc,[tp(j).ipKw, tp(j).iph, tp(j).ipoh]);
-        tp(j).kpKw = row;
         kr = [kr, row];
 
-        % KS  = [H]free[SO4]/[HSO4] 
+        % Ks  = [H]free[SO4]/[HSO4] 
         row = row+1;
         K(row,[ tp(j).ipKs, tp(j).iph_free, tp(j).ipso4, tp(j).iphso4 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc, [tp(j).ipKs, tp(j).iph_free, tp(j).ipso4, tp(j).iphso4]);
-        tp(j).kpKs = row;
         kr = [kr, row];
         
         % Kf = [H]free[F]/[HF]     
         row = row+1;
         K(row,[ tp(j).ipKf, tp(j).iph_free, tp(j).ipF, tp(j).ipHF ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKf, tp(j).iph_free, tp(j).ipF, tp(j).ipHF]);
-        tp(j).kpKf = row;
         kr = [kr, row];
         
         % K1p = [H][H2PO4]/[H3PO4]
         row = row+1;
         K(row,[ tp(j).ipK1p, tp(j).iph, tp(j).iph2po4, tp(j).iph3po4]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipK1p, tp(j).iph, tp(j).iph2po4, tp(j).iph3po4]);
-        tp(j).kK1p = row;
         kr = [kr, row];
         
         % K2p = [H][HPO4]/[H2PO4]
         row = row + 1;
         K(row,[ tp(j).ipK2p, tp(j).iph, tp(j).iphpo4, tp(j).iph2po4 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipK2p, tp(j).iph, tp(j).iphpo4, tp(j).iph2po4] );
-        tp(j).kpK2p = row;
         kr = [kr, row];
         
         % K3p = [H][PO4]/[HPO4]        
         row = row + 1;
         K(row,[ tp(j).ipK3p, tp(j).iph, tp(j).ippo4,tp(j).iphpo4 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipK3p, tp(j).iph, tp(j).ippo4, tp(j).iphpo4]);
-        tp(j).kpK3p = row;
-        kr = [kr, row];
-        
+        kr = [kr, row];       
             
         % KSi = [H][SiO(OH)3]/[Si(OH)4]
         row = row + 1;
         K(row,[ tp(j).ipKsi, tp(j).iph, tp(j).ipsiooh3, tp(j).ipsioh4 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKsi, tp(j).iph, tp(j).ipsiooh3, tp(j).ipsioh4]);
-        tp(j).kKsi = row;
         kr = [kr, row];
         
         % Knh4 = [H][NH3]/[NH4+]
         row = row + 1;
         K(row,[ tp(j).ipKnh4, tp(j).iph, tp(j).ipnh3, tp(j).ipnh4]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKnh4, tp(j).iph, tp(j).ipnh3, tp(j).ipnh4]);
-        %row = row + 1;
-        tp(j).kpKnh4 = row;
         kr = [kr, row];
         
         % Kh2s = [H][HS]/[H2S]
         row = row + 1;
         K(row,[ tp(j).ipKh2s, tp(j).iph, tp(j).ipHS, tp(j).ipH2S]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKh2s, tp(j).iph, tp(j).ipHS, tp(j).ipH2S]);
-        tp(j).kKh2s = row;
         kr = [kr, row];
             
         % fco2 = pco2 * p2f;
         row = row + 1;
         K(row,[ tp(j).ipfco2, tp(j).ippco2, tp(j).ipp2f ]) = [ -1 1 1 ];
         kc = union(kc,[ tp(j).ipfco2, tp(j).ippco2, tp(j).ipp2f]);
-        tp(j).kpp2f = row;
         kr = [kr, row];
-            
-        
+          
         % Kar = [co3][ca]/OmegaAr ==> -pKar + pco3 + pca - pOmegaAr = 0
         row = row + 1;
         K(row,[ tp(j).ipKar, tp(j).ipco3, tp(j).ipca, tp(j).ipOmegaAr]) = [ -1, 1, 1, -1 ];
         kc = union(kc, [ tp(j).ipKar, tp(j).ipco3, tp(j).ipca, tp(j).ipOmegaAr]);
-        tp(j).kpKar = row;
         kr = [kr, row];
         
         % Kca = [co3][ca]/OmegaCa ==> -pKca + pco3 + pca - pOmegaCa = 0
         row = row + 1;
         K(row, [ tp(j).ipKca, tp(j).ipco3, tp(j).ipca, tp(j).ipOmegaCa]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKca, tp(j).ipco3, tp(j).ipca, tp(j).ipOmegaCa]);
-        tp(j).kpKca = row;
         kr = [kr, row];
         
         row = row + 1;
-        switch phscale
+        switch phscale % working ph to phscale
           case 1
             K(row,[ tp(j).iph  tp(j).iph_tot]) = [ -1 1 ];
             kc = union(kc,[ tp(j).iph, tp(j).iphtot]);
@@ -307,10 +283,10 @@ function sys = mksys(obs,phscale)
         tp(j).kphscale = row;
         kr = [kr, row];
 
+        % def'n for nbs
         row = row + 1;
         K(row,[ tp(j).iph_nbs, tp(j).iph_sws, tp(j).ipfh ]) = [ 1 -1 -1 ];
-        kc = union(kc, [ tp(j).iph_nbs, tp(j).iph_sws, tp(j).ipfh]);
-        tp(j).kph_nbs = row;            
+        kc = union(kc, [ tp(j).iph_nbs, tp(j).iph_sws, tp(j).ipfh]);            
         kr = [kr, row];
         tp(j).kr = kr;
         tp(j).kc = kc;
@@ -327,8 +303,8 @@ function sys = mksys(obs,phscale)
         % Total alkalinity: TA - [HCO3] - 2[CO3] ( - [OH] )...
         row = row + 1;
         row_alk = row;
-        tp(j).jpTA = row_alk;
         mr = [mr, row];
+
         % carbonate 
         M(row_alk,[ ipTA, tp(j).iphco3, tp(j).ipco3]) = [ 1, -1, -2 ];
         mc = union(mc,[ipTA, tp(j).iphco3, tp(j).ipco3]);
@@ -337,7 +313,6 @@ function sys = mksys(obs,phscale)
         row = row + 1;
         M(row, [ ipTC, tp(j).ipco2st, tp(j).iphco3, tp(j).ipco3 ]) = [ 1, -1, -1, -1 ];
         mc = union(mc,[ipTC, tp(j).ipco2st, tp(j).iphco3, tp(j).ipco3]);
-        tp(j).jpTC = row;
         mr = [mr,row];
 
         % Total borate
@@ -345,15 +320,14 @@ function sys = mksys(obs,phscale)
         M(row,[ ipTB, tp(j).ipboh3, tp(j).ipboh4 ])   =  [ 1, -1, -1 ];
         mc = union(mc,[ipTB, tp(j).ipboh3, tp(j).ipboh4]);
         M(row_alk, tp(j).ipboh4) = -1;
-        tp(j).jpTB = row;
-        M(row_alk,tp(j).ipoh) = -1;        
+        M(row_alk, tp(j).ipoh) = -1;        
         mr = [mr,row];
 
         % Total sulfate
         row = row + 1;
         M(row, [ ipTS, tp(j).iphso4, tp(j).ipso4 ])   =  [ 1, -1, -1 ];
+        M(row_alk,[ tp(j).iph_free, tp(j).iphso4 ])   =  [1, 1]; 
         mc = union(mc,[ipTS, tp(j).iphso4, tp(j).ipso4]);
-        tp(j).jpTS = row;
         mr = [mr,row];
         
         % Total fluoride
@@ -361,7 +335,6 @@ function sys = mksys(obs,phscale)
         M(row, [ ipTF, tp(j).ipHF, tp(j).ipF ]) =  [ 1, -1, -1 ];
         mc = union(mc,[ipTF, tp(j).ipHF, tp(j).ipF]);
         M(row_alk, tp(j).ipHF) =  1;
-        tp(j).jpTF = row;
         mr = [mr,row];
         
         % Total phosphate
@@ -369,7 +342,6 @@ function sys = mksys(obs,phscale)
         M(row, [ ipTP, tp(j).iph3po4, tp(j).iph2po4, tp(j).iphpo4, tp(j).ippo4 ]) = [ 1, -1, -1, -1, -1 ];
         mc = union(mc,[ipTP, tp(j).iph3po4, tp(j).iph2po4, tp(j).iphpo4, tp(j).ippo4]);
         M(row_alk, [ tp(j).iphpo4, tp(j).ippo4, tp(j).iph3po4 ]) = [ -1, -2, 1 ]; 
-        tp(j).jpTP = row;
         mr = [mr,row];
 
         % Total silicate
@@ -377,7 +349,6 @@ function sys = mksys(obs,phscale)
         M(row, [ ipTSi, tp(j).ipsioh4, tp(j).ipsiooh3]) = [ 1, -1, -1 ];
         mc = union(mc,[ipTSi, tp(j).ipsioh4, tp(j).ipsiooh3]);
         M(row_alk, tp(j).ipsiooh3) = -1; 
-        tp(j).jpTSi = row;
         mr = [mr,row];
 
         % Total amonia
@@ -385,7 +356,6 @@ function sys = mksys(obs,phscale)
         M(row, [ ipTNH3, tp(j).ipnh4, tp(j).ipnh3 ]) = [ 1, -1, -1 ];
         mc = union(mc,[ipTNH3, tp(j).ipnh4, tp(j).ipnh3]);
         M(row_alk,tp(j).ipnh3) = -1; 
-        tp(j).jpTNH3 = row;
         mr = [mr,row];
 
         % Total sulfide
@@ -393,28 +363,24 @@ function sys = mksys(obs,phscale)
         M(row,[ ipTH2S, tp(j).ipH2S, tp(j).ipHS ]) = [ 1, -1, -1 ];
         mc = union(mc,[ipTH2S, tp(j).ipH2S, tp(j).ipHS]);
         M(row_alk,tp(j).ipHS) = -1; 
-        tp(j).jTH2S = row;            
         mr = [mr,row];
 
         % total Ca
         row = row + 1;
         M(row, [ ipTCa, tp(j).ipca]) = [ 1, -1 ];
         mc = union(mc,[ipTCa, tp(j).ipca]);
-        tp(j).jpTCa = row;
         mr = [mr,row];
 
         % ph_tot and ph_free relationship
         row = row + 1;
         M(row, [ tp(j).iph_tot, tp(j).iph_free, tp(j).iphso4 ] ) = [ 1 -1 -1 ];
         mc = union(mc,[tp(j).iph_tot, tp(j).iph_free, tp(j).iphso4]);
-        tp(j).jph_tot = row;
         mr = [mr,row];
         
         % ph_sws and ph_free relationship
         row = row + 1;
         M(row,[ tp(j).iph_sws, tp(j).iph_free, tp(j).iphso4, tp(j).ipHF ]) = [ 1 -1 -1 -1 ];
         mc = union(mc,[tp(j).iph_sws, tp(j).iph_free, tp(j).iphso4, tp(j).ipHF]);
-        tp(j).jph_sws = row;
         mr = [mr,row];
         tp(j).mr = mr;
         tp(j).mc = mc.';
