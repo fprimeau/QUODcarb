@@ -128,11 +128,13 @@ function [est,obs,iflag] = QUODcarbV8(obs,opt)
        
         % calculate posterior uncertainty
         warning('off');
-        C = inv(J);
+        % C = inv(J);
+        C = inv(J(1:nv,1:nv));
         warning('on');
-        C = C(1:nv,1:nv);
+        % C = C(1:nv,1:nv);
         y = z(1:nv);
         sigy = sqrt(diag(C));
+        keyboard
 
         if (sum(isnan(sigy)) > 0) && (opt.printmes ~= 0)
             fprintf('NaN found in output means faulty run. i = %i\n',i)
@@ -211,6 +213,7 @@ function [est] = calc_revelle(z0,yobs,wobs,est,sys,opt,tol)
     end
     
 end
+
 % -------------------------------------------------------------------------
 
 function [g,H] = grad_limpco2(z,y,w,sys,opt)
@@ -2173,7 +2176,7 @@ function [zpK,zgpK,rph_free] = parse_zpK(x,sys,opt)
     M           = sys.M;
     K           = sys.K;
     nv          = size(M,2);
-    nrk         =size(K,1);
+    nrk         = size(K,1);
     zpK         = zeros(nrk,1);
     zgpK        = zeros(nrk,nv);
     rph_free    = [];
