@@ -44,20 +44,13 @@ function make_headers(est,opt,fname)
             fprintf(fname, 'tp(%i), ', j); % est
             fprintf(fname, '%s, ', '  ');  % est.e
         end
-        for i = 9:6:45 % ph, ph_free, ph_tot, 
-            % ph_sws, ph_nbs, fco2, pco2
+        for i = 9:6:39 % fco2, pco2, hco3, co3, co2*, ph
             fprintf(fname, 'tp(%i), ', j); % obs
             fprintf(fname, '%s, ', '  ');  % obs.e
             fprintf(fname, 'tp(%i), ', j); % est
             fprintf(fname, '%s, ', '  ');  % est.e
         end
-        for i = 51:6:57 % fH, p2f
-            fprintf(fname, 'tp(%i), ', j); % est
-            fprintf(fname, '%s, ', '  ');  % est.e
-        end
-        for i = 61:6:73 % hco3, co3, co2*
-            fprintf(fname, 'tp(%i), ', j); % obs
-            fprintf(fname, '%s, ', '  ');  % obs.e
+        for i = 45:6:75 % ph_free, ph_tot, ph_sws, ph_nbs, fH, p2f
             fprintf(fname, 'tp(%i), ', j); % est
             fprintf(fname, '%s, ', '  ');  % est.e
         end
@@ -91,20 +84,13 @@ function make_headers(est,opt,fname)
             fprintf(fname,'est.%s, ',  fnj{i});
             fprintf(fname,'est.e%s, ', fnj{i}); % e = error
         end
-        for i = 9:6:45 % ph, ph_free, ph_tot, 
-            % ph_sws, ph_nbs, fco2, pco2
+        for i = 9:6:39 % fco2, pco2, hco3, co3, co2*, ph
             fprintf(fname,'obs.%s, ',  fnj{i});
             fprintf(fname,'obs.e%s, ', fnj{i});
             fprintf(fname,'est.%s, ',  fnj{i});
             fprintf(fname,'est.e%s, ', fnj{i}); % e = error
         end
-        for i = 51:6:57 % fH, p2f
-            fprintf(fname,'est.%s, ',  fnj{i});
-            fprintf(fname,'est.e%s, ', fnj{i}); % e = error
-        end
-        for i = 61:6:73 % hco3, co3, co2*
-            fprintf(fname,'obs.%s, ',  fnj{i});
-            fprintf(fname,'obs.e%s, ', fnj{i});
+        for i = 45:6:75 % ph_free, ph_tot, ph_sws, ph_nbs, fH, p2f
             fprintf(fname,'est.%s, ',  fnj{i});
             fprintf(fname,'est.e%s, ', fnj{i}); % e = error
         end
@@ -135,7 +121,6 @@ function make_headers(est,opt,fname)
         fprintf(fname,'%s, ', '(umol/kg)');
     end
     for j = 1:nTP
-        fnj = fieldnames(est.tp(j));
         fprintf(fname, '%s, ', 'deg C'); % obs.T
         fprintf(fname, '%s, ', 'deg C');
         fprintf(fname, '%s, ', 'deg C'); % est.T
@@ -144,27 +129,29 @@ function make_headers(est,opt,fname)
         fprintf(fname, '%s, ', 'dbar');
         fprintf(fname, '%s, ', 'dbar'); % est.P
         fprintf(fname, '%s, ', 'dbar');
-        for i = 9:6:33 % 5 x ph
+        for i = 9:6:15 % fco2, pco2
+            fprintf(fname, '%s, ', '(uatm)');
+            fprintf(fname, '%s, ', '(uatm)');
+            fprintf(fname, '%s, ', '(uatm)');
+            fprintf(fname, '%s, ', '(uatm)');
+        end
+        for i = 21:6:33 % hco3, co3, co2*
+            fprintf(fname, '%s, ', '(umol/kg)');
+            fprintf(fname, '%s, ', '(umol/kg)');
+            fprintf(fname, '%s, ', '(umol/kg)');
+            fprintf(fname, '%s, ', '(umol/kg)');
+        end
+        fprintf(fname, '%s, ', '(p units)'); % ph, log10 unitless
+        fprintf(fname, '%s, ', '  ');
+        fprintf(fname, '%s, ', '(p units)');
+        fprintf(fname, '%s, ', '  ');
+        for i = 45:6:63 % ph_free, ph_tot, ph_sws, ph_nbs
             fprintf(fname, '%s, ', '(p units)');      % log10 unitless
             fprintf(fname, '%s, ', '  ');
-            fprintf(fname, '%s, ', '(p units)');
-            fprintf(fname, '%s, ', '  ');
         end
-        for i = 39:6:45 % fco2, pco2
-            fprintf(fname, '%s, ', '(uatm)');
-            fprintf(fname, '%s, ', '(uatm)');
-            fprintf(fname, '%s, ', '(uatm)');
-            fprintf(fname, '%s, ', '(uatm)');
-        end
-        for i = 51:6:57 % fH, p2f aka FugFac
+        for i = 69:6:75 % fH, p2f aka FugFac
             fprintf(fname, '%s, ', '(unitless)'); 
             fprintf(fname, '%s, ', '  ');
-        end
-        for i = 61:6:73 % hco3, co3, co2*
-            fprintf(fname, '%s, ', '(umol/kg)');
-            fprintf(fname, '%s, ', '(umol/kg)');
-            fprintf(fname, '%s, ', '(umol/kg)');
-            fprintf(fname, '%s, ', '(umol/kg)');
         end
         for i = 79:6:91 % pK0, pK1, pK2
             fprintf(fname, '%s, ', '(p units)');      % log10 unitless
@@ -280,11 +267,11 @@ function parse_CSV(varargin)
     fprintf(fname,'%f, ', est.TSi);
     fprintf(fname,'%f, ', est.eTSi);
 
-    % TNH3 nitrate
-    fprintf(fname,'%f, ', obs.TNH3);
-    fprintf(fname,'%f, ', obs.eTNH3);
-    fprintf(fname,'%f, ', est.TNH3);
-    fprintf(fname,'%f, ', est.eTNH3);
+    % TNH4 nitrate
+    fprintf(fname,'%f, ', obs.TNH4);
+    fprintf(fname,'%f, ', obs.eTNH4);
+    fprintf(fname,'%f, ', est.TNH4);
+    fprintf(fname,'%f, ', est.eTNH4);
 
     % TH2S sulfide
     fprintf(fname,'%f, ', obs.TH2S);
@@ -310,32 +297,6 @@ function parse_CSV(varargin)
         fprintf(fname,'%f, ', est.tp(j).P);
         fprintf(fname,'%f, ', est.tp(j).eP);
 
-        % ph
-        fprintf(fname,'%f, ', obs.tp(j).ph);
-        fprintf(fname,'%f, ', obs.tp(j).eph);
-        fprintf(fname,'%f, ', est.tp(j).ph);
-        fprintf(fname,'%f, ', est.tp(j).eph);
-        % ph_free
-        fprintf(fname,'%f, ', obs.tp(j).ph_free);
-        fprintf(fname,'%f, ', obs.tp(j).eph_free);
-        fprintf(fname,'%f, ', est.tp(j).ph_free);
-        fprintf(fname,'%f, ', est.tp(j).eph_free);
-        % ph_tot
-        fprintf(fname,'%f, ', obs.tp(j).ph_tot);
-        fprintf(fname,'%f, ', obs.tp(j).eph);
-        fprintf(fname,'%f, ', est.tp(j).ph_tot);
-        fprintf(fname,'%f, ', est.tp(j).eph);
-        % ph_sws
-        fprintf(fname,'%f, ', obs.tp(j).ph_sws);
-        fprintf(fname,'%f, ', obs.tp(j).eph);
-        fprintf(fname,'%f, ', est.tp(j).ph_sws);
-        fprintf(fname,'%f, ', est.tp(j).eph);
-        % ph_nbs
-        fprintf(fname,'%f, ', obs.tp(j).ph_nbs);
-        fprintf(fname,'%f, ', obs.tp(j).eph);
-        fprintf(fname,'%f, ', est.tp(j).ph_nbs);
-        fprintf(fname,'%f, ', est.tp(j).eph);
-
         % fco2
         fprintf(fname,'%f, ', obs.tp(j).fco2);
         fprintf(fname,'%f, ', obs.tp(j).efco2);
@@ -346,12 +307,6 @@ function parse_CSV(varargin)
         fprintf(fname,'%f, ', obs.tp(j).epco2);
         fprintf(fname,'%f, ', est.tp(j).pco2);
         fprintf(fname,'%f, ', est.tp(j).epco2);
-         % pfH = activity coefficient
-        fprintf(fname,'%f, ', est.tp(j).fh);
-        fprintf(fname,'%f, ', est.tp(j).efh);
-        % pp2f
-        fprintf(fname,'%f, ', est.tp(j).pp2f);
-        fprintf(fname,'%f, ', est.tp(j).epp2f);
         % hco3
         fprintf(fname,'%f, ', obs.tp(j).hco3);
         fprintf(fname,'%f, ', obs.tp(j).ehco3);
@@ -367,6 +322,32 @@ function parse_CSV(varargin)
         fprintf(fname,'%f, ', obs.tp(j).eco2st);
         fprintf(fname,'%f, ', est.tp(j).co2st);
         fprintf(fname,'%f, ', est.tp(j).eco2st);
+
+        % ph
+        fprintf(fname,'%f, ', obs.tp(j).ph);
+        fprintf(fname,'%f, ', obs.tp(j).eph);
+        fprintf(fname,'%f, ', est.tp(j).ph);
+        fprintf(fname,'%f, ', est.tp(j).eph);
+        % ph_free
+        fprintf(fname,'%f, ', est.tp(j).ph_free);
+        fprintf(fname,'%f, ', est.tp(j).eph_free);
+        % ph_tot
+        fprintf(fname,'%f, ', est.tp(j).ph_tot);
+        fprintf(fname,'%f, ', est.tp(j).eph);
+        % ph_sws
+        fprintf(fname,'%f, ', est.tp(j).ph_sws);
+        fprintf(fname,'%f, ', est.tp(j).eph);
+        % ph_nbs
+        fprintf(fname,'%f, ', est.tp(j).ph_nbs);
+        fprintf(fname,'%f, ', est.tp(j).eph);
+
+         % fH = activity coefficient
+        fprintf(fname,'%f, ', est.tp(j).fH);
+        fprintf(fname,'%f, ', est.tp(j).efH);
+        % pp2f
+        fprintf(fname,'%f, ', est.tp(j).pp2f);
+        fprintf(fname,'%f, ', est.tp(j).epp2f);
+
         % pK0
         fprintf(fname,'%f, ', est.tp(j).pK0);
         fprintf(fname,'%f, ', est.tp(j).epK0);
@@ -522,8 +503,8 @@ end % function
 %         input = [input,'TP'];
 %     elseif isgood(obs.TSi)
 %         input = [input,'TSi'];
-%     elseif isgood(obs.TNH3)
-%         input = [input,'TNH3'];
+%     elseif isgood(obs.TNH4)
+%         input = [input,'TNH4'];
 %     elseif isgood(obs.TH2S)
 %         input = [input,'TH2S'];
 %     elseif isgood(obs.TCa)

@@ -26,7 +26,7 @@ function [A] = compare(obs,est,opt,tpopt,pair,fname)
                 fprintf(fid,'%s, %s, %s, %s, ','C_pK1', 'Q_pK1', 'C_epK1', 'Q_epK1' ); % pK1
                 fprintf(fid,'%s, %s, %s, %s, ','C_pK2', 'Q_pK2', 'C_epK2', 'Q_epK2' ); % pK2
                 fprintf(fid,'%s, %s, %s, %s, ','C_pKw', 'Q_pKw', 'C_epKw', 'Q_epKw' ); % pKw
-                fprintf(fid,'%s, %s, %s,  ', 'C_Rev', 'Q_Rev','Q_eRev'); % Revelle
+                fprintf(fid,'%s, %s, %s,  ', 'C_Rev', 'Q_Rev' ); % Revelle
                 fprintf(fid,'%s, %s, %s, ','C_CAL', 'Q_TCa','Q_eTCa'); % TCa
                 fprintf(fid,'%s, %s, %s, %s, %s, ','C_OmegaAr', 'Q_OmegaAr', 'C_eOmegaAr', 'Q_eOmegaAr' ); % OmegaAr
                 fprintf(fid,'%s, %s, %s, %s, %s, ','C_OmegaCa', 'Q_OmegaCa', 'C_eOmegaCa', 'Q_eOmegaCa' ); % OmegaCa
@@ -41,7 +41,7 @@ function [A] = compare(obs,est,opt,tpopt,pair,fname)
                 fprintf(fid,'%s, %s,  ','C_pK3p', 'Q_pK3p' ); % pK3p
                 fprintf(fid,'%s, %s, %s,  ','C_TSi', 'Q_TSi', 'Q_eTSi' ); % TSi
                 fprintf(fid,'%s, %s,  ','C_pKsi', 'Q_pKsi' ); % pKsi
-                fprintf(fid,'%s, %s, %s,  ','C_TNH4', 'Q_TNH3', 'Q_eTNH3' ); % TNH3
+                fprintf(fid,'%s, %s, %s,  ','C_TNH4', 'Q_TNH4', 'Q_eTNH4' ); % TNH4
                 fprintf(fid,'%s, %s,  ','C_pKNH4', 'Q_pKNH4' ); % pKnh4
                 fprintf(fid,'%s, %s, %s,  ','C_TH2S', 'Q_TH2S', 'Q_eTH2S' ); % TH2S
                 fprintf(fid,'%s, %s,  ','C_pKH2S', 'Q_pKH2S' ); % pKh2s               
@@ -89,8 +89,8 @@ function [A] = compare(obs,est,opt,tpopt,pair,fname)
             k1k2c   = opt.K1K2;
             kso4c   = opt.KSO4; % 1 or 3 is Dickson 1990
             r       = 0; % correlation coefficient
-            nh4     = est(i).TNH3;
-            enh4    = est(i).eTNH3;
+            nh4     = est(i).TNH4;
+            enh4    = est(i).eTNH4;
             h2s     = est(i).TH2S;
             kfc     = opt.KF;
             tbc     = opt.TB;
@@ -276,7 +276,7 @@ function [A] = compare(obs,est,opt,tpopt,pair,fname)
                 out.ph_nbs,        est(i).tp(tpopt).ph_nbs,  ...
                 est(i).tp(tpopt).eph);
             fprintf(fid,'%0.6g, %0.6g, %0.6g,',... % pfH
-                out.pfH, est(i).tp(tpopt).pfh,  est(i).tp(tpopt).epfh);
+                out.pfH, est(i).tp(tpopt).pfH,  est(i).tp(tpopt).epfH);
             fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... % pK0
                 out.pK0, est(i).tp(tpopt).pK0, out.epK0, ...
                 est(i).tp(tpopt).epK0);
@@ -289,8 +289,8 @@ function [A] = compare(obs,est,opt,tpopt,pair,fname)
             fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... % pKw
                 out.pKw, est(i).tp(tpopt).pKw, out.epKw, ...
                 est(i).tp(tpopt).epKw);
-            fprintf(fid,'%0.6g, %0.6g, %0.6g, ', ... % Revelle
-                out.Rev, est(i).tp(tpopt).Revelle, 999 ); % est(i).tp(tpopt).eRevelle
+            fprintf(fid,'%0.6g, %0.6g, ', ... % Revelle
+                out.Rev, est(i).tp(tpopt).Revelle ); % est(i).tp(tpopt).eRevelle
             fprintf(fid,'%0.6g, %0.6g, %0.6g,', ... % TCa
                 out.CAL, est(i).TCa, est(i).eTCa);
             fprintf(fid,'%0.6g, %0.6g, %0.6g, %0.6g,', ... % OmegaAr
@@ -319,8 +319,8 @@ function [A] = compare(obs,est,opt,tpopt,pair,fname)
             fprintf(fid,'%0.6g, %0.6g, %0.6g,', ... % TSi
                 out.TSi,  est(i).TSi,   est(i).eTSi);
             fprintf(fid,'%0.6g, %0.6g, ', out.pKSi, est(i).tp(tpopt).pKsi); % pKsi
-            fprintf(fid,'%0.6g, %0.6g, %0.6g, ', ... % TNH3
-                out.TNH4, est(i).TNH3,   est(i).eTNH3);
+            fprintf(fid,'%0.6g, %0.6g, %0.6g, ', ... % TNH4
+                out.TNH4, est(i).TNH4,   est(i).eTNH4);
             fprintf(fid,'%0.6g, %0.6g, ', out.pKnh4, est(i).tp(tpopt).pKnh4); % pKnh4
             fprintf(fid,'%0.6g, %0.6g, %0.6g, ', ... % TH2S
                 out.TH2S, est(i).TH2S,   est(i).eTH2S);                     

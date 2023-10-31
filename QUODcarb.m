@@ -121,7 +121,9 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         end
        
         % calculate the marginalized posterior uncertainty using Laplace's approximation
+        warning('off');
         C = inv(J);
+        warning('on');
         C = C(1:nv,1:nv);
         %y = zhat(1:nv);
         sigx = sqrt(full(diag(C)));
@@ -191,7 +193,7 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
 
     [y, gy, ggy ] = update_y(y,x,obs,sys,opt);
     % Make a vector of measured quantities    
-    id   = find(~isnan(y));
+    id  = find(~isnan(y));
     y   = y(id).';
     gy  = gy(id,:);
     ggy = ggy(id,:,:);
@@ -217,7 +219,7 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
              K  ];
     
     %iTSP = [[sys.tp(:).iT], sys.isal, [sys.tp(:).iP]];
-    g    = [ e.'*W*ge+lam.'*dcdx,  c.' ];
+    g    = [ e.' * W * ge + lam.' * dcdx,  c.' ];
 
     ddq     =  diag( sys.d2qdx2( x ) ); % q"
         
@@ -552,24 +554,24 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.ipTSi)   = w(obs(i).TSi,obs(i).eTSi); %  mol/kg
         end
         % total amonia
-        if (~isfield(obs(i), 'TNH3'))  || (~isgood(obs(i).TNH3))
-            obs(i).TNH3         = nan;
-            yobs(i,sys.ipTNH3)  = p(1e-9); % reset minimum (mol/kg)
+        if (~isfield(obs(i), 'TNH4'))  || (~isgood(obs(i).TNH4))
+            obs(i).TNH4         = nan;
+            yobs(i,sys.ipTNH4)  = p(1e-9); % reset minimum (mol/kg)
         else
-            if ((obs(i).TNH3) == 0)
-                obs(i).TNH3     = 1e-3; % umol/kg, reset minimum to 1 nanomolar
+            if ((obs(i).TNH4) == 0)
+                obs(i).TNH4     = 1e-3; % umol/kg, reset minimum to 1 nanomolar
             end
-            yobs(i,sys.ipTNH3)  = p(obs(i).TNH3*1e-6);
+            yobs(i,sys.ipTNH4)  = p(obs(i).TNH4*1e-6);
         end
-        if (~isfield(obs(i), 'eTNH3'))  || (~isgood(obs(i).eTNH3))
-            eTNH3               = 5e-4; % µmol/kg
-            wobs(i,sys.ipTNH3)  = w(1e-3,eTNH3); % mol/kg
-            obs(i).eTNH3        = nan;
-            if (isgood(obs(i).TNH3)) && opt.printmes ~= 0
-                fprintf('Warning, no obs.eTNH3 input with obs.eTNH3. Assuming 5e-4 umol/kg.\n' )
+        if (~isfield(obs(i), 'eTNH4'))  || (~isgood(obs(i).eTNH4))
+            eTNH4               = 5e-4; % µmol/kg
+            wobs(i,sys.ipTNH4)  = w(1e-3,eTNH4); % mol/kg
+            obs(i).eTNH4        = nan;
+            if (isgood(obs(i).TNH4)) && opt.printmes ~= 0
+                fprintf('Warning, no obs.eTNH4 input with obs.eTNH4. Assuming 5e-4 umol/kg.\n' )
             end
         else
-            wobs(i,sys.ipTNH3)  = w(obs(i).TNH3,obs(i).eTNH3);
+            wobs(i,sys.ipTNH4)  = w(obs(i).TNH4,obs(i).eTNH4);
         end
         % total sulfide
         if (~isfield(obs(i), 'TH2S'))  || (~isgood(obs(i).TH2S))
@@ -586,7 +588,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.ipTH2S)  = w(1e-3,eTH2S); % mol/kg
             obs(i).eTH2S        = nan;
             if (isgood(obs(i).TH2S)) && opt.printmes ~= 0
-                fprintf(' Warning, no obs.eTH2S input with obs.eTNH3. Assuming 5e-4 umol/kg.\n' )
+                fprintf(' Warning, no obs.eTH2S input with obs.eTNH4. Assuming 5e-4 umol/kg.\n' )
             end
         else
             wobs(i,sys.ipTH2S)  = w(obs(i).TH2S,obs(i).eTH2S);
@@ -674,30 +676,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             end
             if (~isfield(obs(i).tp(j),'ph')) || (~isgood(obs(i).tp(j).ph))
                 obs(i).tp(j).ph     = nan;
-            end
-            if (~isfield(obs(i).tp(j),'eph_free')) || (~isgood(obs(i).tp(j).eph_free))
-                obs(i).tp(j).eph_free    = [];
-            end
-            if (~isfield(obs(i).tp(j),'ph_free')) || (~isgood(obs(i).tp(j).ph_free))
-                obs(i).tp(j).ph_free     = nan;
-            end
-            if (~isfield(obs(i).tp(j),'eph_tot')) || (~isgood(obs(i).tp(j).eph_tot))
-                obs(i).tp(j).eph_tot    = [];
-            end
-            if (~isfield(obs(i).tp(j),'ph_tot')) || (~isgood(obs(i).tp(j).ph_tot))
-                obs(i).tp(j).ph_tot     = nan;
-            end
-            if (~isfield(obs(i).tp(j),'eph_sws')) || (~isgood(obs(i).tp(j).eph_sws))
-                obs(i).tp(j).eph_sws    = [];
-            end
-            if (~isfield(obs(i).tp(j),'ph_sws')) || (~isgood(obs(i).tp(j).ph_sws))
-                obs(i).tp(j).ph_sws     = nan;
-            end
-            if (~isfield(obs(i).tp(j),'eph_nbs')) || (~isgood(obs(i).tp(j).eph_nbs))
-                obs(i).tp(j).eph_nbs    = [];
-            end
-            if (~isfield(obs(i).tp(j),'ph_nbs')) || (~isgood(obs(i).tp(j).ph_nbs))
-                obs(i).tp(j).ph_nbs     = nan;
             end
 
             % borate system
@@ -926,11 +904,11 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             if (~isfield(obs(i).tp(j),'ph_free')) || (~isgood(obs(i).tp(j).ph_free))
                 obs(i).tp(j).ph_free = nan;
             end
-            if (~isfield(obs(i).tp(j),'epfh')) || (~isgood(obs(i).tp(j).epfh))
-                obs(i).tp(j).epfh   = [];
+            if (~isfield(obs(i).tp(j),'epfH')) || (~isgood(obs(i).tp(j).epfH))
+                obs(i).tp(j).epfH   = [];
             end
-            if (~isfield(obs(i).tp(j),'pfh')) || (~isgood(obs(i).tp(j).pfh))
-                obs(i).tp(j).pfh    = nan;
+            if (~isfield(obs(i).tp(j),'pfH')) || (~isgood(obs(i).tp(j).pfH))
+                obs(i).tp(j).pfH    = nan;
             end
         end
 
@@ -946,14 +924,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             pKf   = pK(7);      pK1p = pK(8);     pK2p  = pK(9);  
             pK3p  = pK(10);     pKsi = pK(11);    pKnh4 = pK(12);
             pKh2s = pK(13);     pp2f = pK(14);    pKar  = pK(15); 
-            pKca  = pK(16);     pfh  = pK(17);
+            pKca  = pK(16);     pfH  = pK(17);
             
             epK0   = epK(1);    epK1  = epK(2);   epK2   = epK(3);  
             epKb   = epK(4);    epKw  = epK(5);   epKs   = epK(6);  
             epKf   = epK(7);    epK1p = epK(8);   epK2p  = epK(9);  
             epK3p  = epK(10);   epKsi = epK(11);  epKnh4 = epK(12);
             epKh2s = epK(13);   epp2f = epK(14);  epKar  = epK(15); 
-            epKca  = epK(16);   epfh  = epK(17);
+            epKca  = epK(16);   epfH  = epK(17);
             
             % add "observations" for the equilibrium constants
             % and transfer from obs struct to yobs and wobs
@@ -1499,17 +1477,17 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(ii).iph_free) = nan;
                 obs(i).tp(ii).eph_free = nan;
             end
-            if (isgood(obs(i).tp(ii).pfh)) % pfh activity coefficient
-                yobs(i,sys.tp(ii).ipfh) = obs(i).tp(ii).pfh ;
+            if (isgood(obs(i).tp(ii).pfH)) % pfH activity coefficient
+                yobs(i,sys.tp(ii).ipfH) = obs(i).tp(ii).pfH ;
             else
-                yobs(i,sys.tp(ii).ipfh) = pfh;
-                obs(i).tp(ii).pfh = pfh;
+                yobs(i,sys.tp(ii).ipfH) = pfH;
+                obs(i).tp(ii).pfH = pfH;
             end
-            if (isgood(obs(i).tp(ii).epfh)) % pfh activity coefficient
-                wobs(i,sys.tp(ii).ipfh) = (obs(i).tp(ii).epfh).^(-2) ;
+            if (isgood(obs(i).tp(ii).epfH)) % pfH activity coefficient
+                wobs(i,sys.tp(ii).ipfH) = (obs(i).tp(ii).epfH).^(-2) ;
             else
-                wobs(i,sys.tp(ii).ipfh) = (epfh).^(-2);
-                obs(i).tp(ii).epfh = epfh;
+                wobs(i,sys.tp(ii).ipfH) = (epfH).^(-2);
+                obs(i).tp(ii).epfH = epfH;
             end
         end
     end
@@ -1799,10 +1777,10 @@ function z0 = init(yobs,sys)
         
         
         Knh4    = q(y0(sys.tp(i).ipKnh4));
-        TNH3    = q(yobs(sys.ipTNH3));
-        nh3     = TNH3 / ( 1 + h / Knh4 );
-        nh4     = TNH3 - nh3 ;
-        y0(sys.ipTNH3)       = p(TNH3);
+        TNH4    = q(yobs(sys.ipTNH4));
+        nh3     = TNH4 / ( 1 + h / Knh4 );
+        nh4     = TNH4 - nh3 ;
+        y0(sys.ipTNH4)       = p(TNH4);
         y0(sys.tp(i).ipnh3)  = p(nh3);
         y0(sys.tp(i).ipnh4)  = p(nh4);
         
@@ -1832,8 +1810,8 @@ function z0 = init(yobs,sys)
         y0(sys.tp(i).iph_tot) = p(h_tot);
         y0(sys.tp(i).iph_sws) = p(h_sws);
         y0(sys.tp(i).iph_free) = p(h_free);
-        fh = q(y0(sys.tp(i).ipfh));
-        h_nbs = h_free*fh;
+        fH = q(y0(sys.tp(i).ipfH));
+        h_nbs = h_free*fH;
         y0(sys.tp(i).iph_nbs) = p(h_nbs);
     end
     nlam    = size(sys.M,1) + size(sys.K,1);
@@ -1922,13 +1900,13 @@ function [est] = parse_output(z,sigx,sys)
     est.eTSi_l  = ebar_l(sys.ipTSi)*1e6; 
     est.eTSi_u  = ebar_u(sys.ipTSi)*1e6;
     
-    % TNH3 nitrate
-    est.pTNH3       = z(sys.ipTNH3);       
-    est.epTNH3      = sigx(sys.ipTNH3);
-    est.TNH3        = q(z(sys.ipTNH3))*1e6;   % convt mol/kg to µmol/kg
-    est.eTNH3       = ebar(sys.ipTNH3)*1e6;
-    est.eTNH3_l     = ebar_l(sys.ipTNH3)*1e6; 
-    est.eTNH3_u     = ebar_u(sys.ipTNH3)*1e6;
+    % TNH4 nitrate
+    est.pTNH4       = z(sys.ipTNH4);       
+    est.epTNH4      = sigx(sys.ipTNH4);
+    est.TNH4        = q(z(sys.ipTNH4))*1e6;   % convt mol/kg to µmol/kg
+    est.eTNH4       = ebar(sys.ipTNH4)*1e6;
+    est.eTNH4_l     = ebar_l(sys.ipTNH4)*1e6; 
+    est.eTNH4_u     = ebar_u(sys.ipTNH4)*1e6;
     
     % TH2S sulfide
     est.pTH2S       = z(sys.ipTH2S);       
@@ -1960,13 +1938,53 @@ function [est] = parse_output(z,sigx,sys)
         est.tp(i).eP_l  = z(sys.tp(i).iP)-sigx(sys.tp(i).iP);
         est.tp(i).eP_u  = z(sys.tp(i).iP)+sigx(sys.tp(i).iP);
         
-        % pH on the scale used to compute the pK values
-        est.tp(i).ph   = z(sys.tp(i).iph); % (9)
-        est.tp(i).eph  = sigx(sys.tp(i).iph);
-        est.tp(i).h    = q(z(sys.tp(i).iph)) * 1e6;
-        est.tp(i).eh   = ebar(sys.tp(i).iph) * 1e6;
-        est.tp(i).eh_l   = ebar_l(sys.tp(i).iph) * 1e6;
-        est.tp(i).eh_u   = ebar_u(sys.tp(i).iph) * 1e6;
+        % fCO2
+        est.tp(i).fco2      = q(z(sys.tp(i).ipfco2)) * 1e6; % convt atm to µatm
+        est.tp(i).efco2     = ebar(sys.tp(i).ipfco2) * 1e6;
+        est.tp(i).efco2_l   = ebar_l(sys.tp(i).ipfco2) * 1e6;
+        est.tp(i).efco2_u   = ebar_u(sys.tp(i).ipfco2) * 1e6;
+        est.tp(i).pfco2     = z(sys.tp(i).ipfco2);
+        est.tp(i).epfco2    = sigx(sys.tp(i).ipfco2);
+
+        % pCO2
+        est.tp(i).pco2      = q(z(sys.tp(i).ippco2)) * 1e6; % convt atm to µatm
+        est.tp(i).epco2     = ebar(sys.tp(i).ippco2) * 1e6;
+        est.tp(i).epco2_l   = ebar_l(sys.tp(i).ippco2) * 1e6;
+        est.tp(i).epco2_u   = ebar_u(sys.tp(i).ippco2) * 1e6;
+        est.tp(i).ppco2     = z(sys.tp(i).ippco2);
+        est.tp(i).eppco2    = sigx(sys.tp(i).ippco2);
+        
+        % HCO3
+        est.tp(i).hco3      = q(z(sys.tp(i).iphco3))*1e6; % convt mol/kg to µmol/kg
+        est.tp(i).ehco3     = ebar(sys.tp(i).iphco3)*1e6;
+        est.tp(i).ehco3_l   = ebar_l(sys.tp(i).iphco3)*1e6;
+        est.tp(i).ehco3_u   = ebar_u(sys.tp(i).iphco3)*1e6;
+        est.tp(i).phco3     = z(sys.tp(i).iphco3);
+        est.tp(i).ephco3    = sigx(sys.tp(i).iphco3);
+
+        % CO3
+        est.tp(i).co3       = q(z(sys.tp(i).ipco3))*1e6; % convt mol/kg to µmol/kg
+        est.tp(i).eco3      = ebar(sys.tp(i).ipco3)*1e6;
+        est.tp(i).eco3_l    = ebar_l(sys.tp(i).ipco3)*1e6;
+        est.tp(i).eco3_u    = ebar_u(sys.tp(i).ipco3)*1e6;
+        est.tp(i).pco3      = z(sys.tp(i).ipco3);
+        est.tp(i).epco3     = sigx(sys.tp(i).ipco3);
+
+        % CO2*
+        est.tp(i).co2st     = q(z(sys.tp(i).ipco2st)); % convt mol/kg to µmol/kg
+        est.tp(i).eco2st    = ebar(sys.tp(i).ipco2st);
+        est.tp(i).eco2st_l  = ebar_l(sys.tp(i).ipco2st);
+        est.tp(i).eco2st_u  = ebar_u(sys.tp(i).ipco2st);
+        est.tp(i).pco2st    = z(sys.tp(i).ipco2st);
+        est.tp(i).epco2st   = sigx(sys.tp(i).ipco2st);
+
+        % pH on the scale opt.phscale used to compute the pK values
+        est.tp(i).ph        = z(sys.tp(i).iph); % (9)
+        est.tp(i).eph       = sigx(sys.tp(i).iph);
+        est.tp(i).h         = q(z(sys.tp(i).iph)) * 1e6;
+        est.tp(i).eh        = ebar(sys.tp(i).iph) * 1e6;
+        est.tp(i).eh_l      = ebar_l(sys.tp(i).iph) * 1e6;
+        est.tp(i).eh_u      = ebar_u(sys.tp(i).iph) * 1e6;
 
         % pH_free
         est.tp(i).ph_free    = z(sys.tp(i).iph_free); % (15)
@@ -2000,59 +2018,19 @@ function [est] = parse_output(z,sigx,sys)
         est.tp(i).eh_nbs_l  = ebar_l(sys.tp(i).iph_nbs) * 1e6;
         est.tp(i).eh_nbs_u  = ebar_u(sys.tp(i).iph_nbs) * 1e6;
 
-        % fCO2
-        est.tp(i).fco2      = q(z(sys.tp(i).ipfco2)) * 1e6; % convt atm to µatm
-        est.tp(i).efco2     = ebar(sys.tp(i).ipfco2) * 1e6;
-        est.tp(i).efco2_l   = ebar_l(sys.tp(i).ipfco2) * 1e6;
-        est.tp(i).efco2_u   = ebar_u(sys.tp(i).ipfco2) * 1e6;
-        est.tp(i).pfco2     = z(sys.tp(i).ipfco2);
-        est.tp(i).epfco2    = sigx(sys.tp(i).ipfco2);
-
-        % pCO2
-        est.tp(i).pco2      = q(z(sys.tp(i).ippco2)) * 1e6; % convt atm to µatm
-        est.tp(i).epco2     = ebar(sys.tp(i).ippco2) * 1e6;
-        est.tp(i).epco2_l   = ebar_l(sys.tp(i).ippco2) * 1e6;
-        est.tp(i).epco2_u   = ebar_u(sys.tp(i).ippco2) * 1e6;
-        est.tp(i).ppco2     = z(sys.tp(i).ippco2);
-        est.tp(i).eppco2    = sigx(sys.tp(i).ippco2);
-
         % fH = activity coefficient
-        est.tp(i).fh        = q(z(sys.tp(i).ipfh)) * 1e6;
-        est.tp(i).efh       = ebar(sys.tp(i).ipfh) * 1e6;
-        est.tp(i).efh_l     = ebar_l(sys.tp(i).ipfh) * 1e6;
-        est.tp(i).efh_u     = ebar_u(sys.tp(i).ipfh) * 1e6;
-        est.tp(i).pfh       = z(sys.tp(i).ipfh);
-        est.tp(i).epfh      = sigx(sys.tp(i).ipfh);
+        est.tp(i).fH        = q(z(sys.tp(i).ipfH)) * 1e6;
+        est.tp(i).efH       = ebar(sys.tp(i).ipfH) * 1e6;
+        est.tp(i).efH_l     = ebar_l(sys.tp(i).ipfH) * 1e6;
+        est.tp(i).efH_u     = ebar_u(sys.tp(i).ipfH) * 1e6;
+        est.tp(i).pfH       = z(sys.tp(i).ipfH);
+        est.tp(i).epfH      = sigx(sys.tp(i).ipfH);
 
         % p2f
-        est.tp(i).p2f       = q(z(sys.tp(i).ipp2f)); % (57)
+        est.tp(i).p2f       = q(z(sys.tp(i).ipp2f));
         est.tp(i).ep2f      = ebar(sys.tp(i).ipp2f);
         est.tp(i).pp2f      = z(sys.tp(i).ipp2f); 
         est.tp(i).epp2f     = sigx(sys.tp(i).ipp2f);
-
-        % HCO3
-        est.tp(i).hco3      = q(z(sys.tp(i).iphco3))*1e6; % convt mol/kg to µmol/kg
-        est.tp(i).ehco3     = ebar(sys.tp(i).iphco3)*1e6;
-        est.tp(i).ehco3_l   = ebar_l(sys.tp(i).iphco3)*1e6;
-        est.tp(i).ehco3_u   = ebar_u(sys.tp(i).iphco3)*1e6;
-        est.tp(i).phco3     = z(sys.tp(i).iphco3);
-        est.tp(i).ephco3    = sigx(sys.tp(i).iphco3);
-
-        % CO3
-        est.tp(i).co3       = q(z(sys.tp(i).ipco3))*1e6; % convt mol/kg to µmol/kg
-        est.tp(i).eco3      = ebar(sys.tp(i).ipco3)*1e6;
-        est.tp(i).eco3_l    = ebar_l(sys.tp(i).ipco3)*1e6;
-        est.tp(i).eco3_u    = ebar_u(sys.tp(i).ipco3)*1e6;
-        est.tp(i).pco3      = z(sys.tp(i).ipco3);
-        est.tp(i).epco3     = sigx(sys.tp(i).ipco3);
-
-        % CO2*
-        est.tp(i).co2st     = q(z(sys.tp(i).ipco2st)); % convt mol/kg to µmol/kg
-        est.tp(i).eco2st    = ebar(sys.tp(i).ipco2st);
-        est.tp(i).eco2st_l  = ebar_l(sys.tp(i).ipco2st);
-        est.tp(i).eco2st_u  = ebar_u(sys.tp(i).ipco2st);
-        est.tp(i).pco2st    = z(sys.tp(i).ipco2st);
-        est.tp(i).epco2st   = sigx(sys.tp(i).ipco2st);
 
         % pK0 
         est.tp(i).pK0       = z(sys.tp(i).ipK0); % (79)
