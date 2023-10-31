@@ -115,15 +115,17 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         fun = @(z) limp(z,yobs(i,:),wobs(i,:),obs(i),sys,opt);
 
         % find the maximum of the posterior probability 
+        % warning('off');
         [zhat,J,iflag(i)] = newtn(z0,fun,tol);
+        % warning('on');
         if (iflag(i) ~=0) && (opt.printmes ~= 0)
             fprintf('Newton''s method iflag = %i at i = %i \n',iflag(i),i);
         end
        
         % calculate the marginalized posterior uncertainty using Laplace's approximation
-        warning('off');
+        % warning('off');
         C = inv(J);
-        warning('on');
+        % warning('on');
         C = C(1:nv,1:nv);
         %y = zhat(1:nv);
         sigx = sqrt(full(diag(C)));
@@ -143,10 +145,12 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
             ej = ones(length(jfree),1);
             for j = 1:length(sys.tp(:))
                 jac = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
+                % warning('off');
                 z = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
                 est(i).tp(j).Revelle = z(2)/z(1);
                 jac = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
                 z = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
+                % warning('on');
                 est(i).tp(j).dpfco2dpTA = z(2)/z(1);
             end
         end

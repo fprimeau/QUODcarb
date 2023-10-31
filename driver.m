@@ -19,7 +19,7 @@ opt.KF   = 2; % option for KF formulation
 opt.TB   = 2; % option for TB formulation
 opt.phscale  = 4;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
 opt.printcsv = 1;  % print est to CSV? 1 = on , 0 = off
-%opt.fname    = 'QUODcarb_output.csv'; % don't need it if printcsv is off
+opt.fname    = 'QUODcarb_output.csv'; % don't need it if printcsv is off
 opt.co2press = 1; % 1 = on, 0 = off
 opt.Revelle  = 1; % 1 = on, 0 = off
 
