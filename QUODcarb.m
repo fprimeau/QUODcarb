@@ -110,7 +110,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
     for i = 1:nD % loop over the full data set
 
         z0      = init(yobs(i,:),sys);       % initialize
-        tol     = 1e-9;                      % tolerance
+        tol     = 2e-6;                      % tolerance
         % negative of the log of the posterior 
         % aka the log improbability (limp for short)
         fun = @(z) limp(z,yobs(i,:),wobs(i,:),obs(i),sys,opt);
@@ -203,7 +203,7 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     nrk     = size(K,1);
     nTP     = length(sys.tp); 
     nv      = size(M,2);
-    x       =  z(1:nv);      % measured variables
+    x       = z(1:nv);      % measured variables
 
     % fill ypK, gypK, ggypK, and with associated calculated pK, gpK, and ggpK values
     % update the pK values based on the new estimate of (T,P)
@@ -219,13 +219,13 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     W   = diag(w(id));
 
     % Build a matrix that Picks out the measured components of x
-    I   = eye(nv); % for chain rule
-    PP  = I(id,:); % picking/pick out the measured ones
+    I   = eye(nv);  % for chain rule
+    PP  = I(id,:);  % picking/pick out the measured ones
     e   = PP*x - y; % calculated - measured (minus)
     ge  = PP - gy;
     
     nlam    = size(M,1) + size(K,1);
-    lam     =  z(nv+1:end);  % Lagrange multipliers 
+    lam     = z(nv+1:end);  % Lagrange multipliers 
 
     % constraint equations
     c   = [  M * q( x ); ...
@@ -234,7 +234,7 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
     dcdx = [ M * diag( sys.dqdx( x ) ); ...
              K  ];
-    
+ 
     %iTSP = [[sys.tp(:).iT], sys.isal, [sys.tp(:).iP]];
     g    = [ e.' * W * ge + lam.' * dcdx,  c.' ];
 
@@ -247,7 +247,7 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     end
     tmp = zeros(length(x));
     eW  = e.'*W;
-    for jj = 1:size(ggy,1);
+    for jj = 1:size(ggy,1)
         tmp = tmp + eW(jj)*(squeeze(ggy(jj,:,:)));
     end
     H   = [  ge.'*W*ge-tmp+gg,  dcdx.'    ; ... % derivatives wrt lambdas
@@ -423,7 +423,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         % total borate
         if (~isfield(obs(i),'TB')) || (~isgood(obs(i).TB))
             obs(i).TB        = nan;
-
+            yobs(i,sys.ipTB) = pTB;
         else
             if ((obs(i).TB) == 0)
                 obs(i).TB   = 1e-3; % umol/kg, reset minimum to 1 nanomolar
@@ -699,7 +699,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             if (~isfield(obs(i).tp(j), 'eHF')) || (~isgood(obs(i).tp(j).eHF))
                 obs(i).tp(j).eHF    = [];
             end
-            
+            % phosphate system
             if (~isfield(obs(i).tp(j), 'epKp1'))
                 obs(i).tp(j).epKp1  = [];
             end
@@ -1132,7 +1132,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(ii).ipKp1) = (obs(i).tp(ii).epKp1).^(-2);
             else
                 obs(i).tp(ii).epKp1 = epKp1;
-                wobs(i,sys.tp(ii).ipKp1) = (obs(i).tp(ii).epKp1).^(-2);  % wKp1 = 1/(1 + (0.09/pKsys(8)))^2 ;
+                wobs(i,sys.tp(ii).ipKp1) = (obs(i).tp(ii).epKp1).^(-2);
             end
             if (isgood(obs(i).tp(ii).pKp1))
                 yobs(i,sys.tp(ii).ipKp1) = obs(i).tp(ii).pKp1;
@@ -1144,7 +1144,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(ii).ipKp2) = (obs(i).tp(ii).epKp2).^(-2);
             else
                 obs(i).tp(ii).epKp2 = epKp2;
-                wobs(i,sys.tp(ii).ipKp2) = (obs(i).tp(ii).epKp2).^(-2);  % wKp2 = 1/(1 + (0.03/pKsys(9)))^2 ;
+                wobs(i,sys.tp(ii).ipKp2) = (obs(i).tp(ii).epKp2).^(-2); 
             end
             if (isgood(obs(i).tp(ii).pKp2))
                 yobs(i,sys.tp(ii).ipKp2) = obs(i).tp(ii).pKp2;
@@ -1156,7 +1156,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(ii).ipKp3) = (obs(i).tp(ii).epKp3).^(-2);
             else
                 obs(i).tp(ii).epKp3 = epKp3;
-                wobs(i,sys.tp(ii).ipKp3) = (obs(i).tp(ii).epKp3).^(-2);  % wKp3 = 1/(1 + (0.02/pKsys(10)))^2 ;
+                wobs(i,sys.tp(ii).ipKp3) = (obs(i).tp(ii).epKp3).^(-2);
             end
             if (isgood(obs(i).tp(ii).pKp3))
                 yobs(i,sys.tp(ii).ipKp3) = obs(i).tp(ii).pKp3;
@@ -1176,7 +1176,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(ii).iph3po4) = nan;
                 obs(i).tp(ii).eh3po4 = nan;
             end
-            
             if (isgood(obs(i).tp(ii).h2po4))
                 yobs(i,sys.tp(ii).iph2po4) = p(obs(i).tp(ii).h2po4*1e-6); % convt µmol/kg to mol/kg
             else
