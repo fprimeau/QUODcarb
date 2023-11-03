@@ -4,19 +4,19 @@ function sys = mksys(obs,phscale)
 % it creates the K and M matrices
 %
 % utility functions and constants
-    LOG10 = log(10);
-    p = @(x) -log10( x );  % inverse of q    
-    q = @(x)  10.^( -x );  % inverse of p
-    sys.p = p;
-    sys.q = q;
-    dqdx = @(x) - LOG10 * 10.^( -x );  % q'
-    d2qdx2 = @(x) LOG10^2 * 10.^(-x ); % q"
-    dpdx = @(x) -1 / (x .* LOG10);     % p'
-    d2pdx2 = @(x) 1 / (x.^2 * LOG10);  % p"
-    sys.dqdx = dqdx;
-    sys.dpdx = dpdx;
-    sys.d2pdx2 = d2pdx2;
-    sys.d2qdx2 = d2qdx2;
+    LOG10   = log(10);
+    p       = @(x) -log10( x );  % inverse of q    
+    q       = @(x)  10.^( -x );  % inverse of p
+    sys.p   = p;
+    sys.q   = q;
+    dqdx    = @(x) - LOG10 * 10.^( -x );  % q'
+    d2qdx2  = @(x) LOG10^2 * 10.^(-x ); % q"
+    dpdx    = @(x) -1 / (x .* LOG10);     % p'
+    d2pdx2  = @(x) 1 / (x.^2 * LOG10);  % p"
+    sys.dqdx    = dqdx;
+    sys.dpdx    = dpdx;
+    sys.d2pdx2  = d2pdx2;
+    sys.d2qdx2  = d2qdx2;
     isgood = @(thing) (~sum(isnan(thing)) & ~isempty(thing));
     if (~isfield(obs,'tp'))
         error('Need to provide temperature and pressure measurement.')
@@ -419,14 +419,6 @@ function sys = mksys(obs,phscale)
 
         ML = M(tp(j).mr,:); KL = K(tp(j).kr,:);
         ML = ML(:,tp(j).ifree); KL = KL(:,tp(j).ifree);
-
-        %MR = M(tp(j).mr,:); KR = K(tp(j).kr,:);
-        %MR = MR(:,tp(j).ifixed); KR = KR(:,tp(j).ifixed);
-
-        %tp(j).ML = ML;
-        %tp(j).KL = KL;
-        %tp(j).MR = MR;
-        %tp(j).KR = KR;
         
         %tp(j).c = @(xfree,zhat) [ML*q(xfree); KL*xfree] + [MR*q(zhat(ifixed)); KR*zhat(ifixed)];
         tp(j).dcdx_pTAfixed = @(xfree) [ML*diag(dqdx(xfree));KL];

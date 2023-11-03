@@ -109,9 +109,10 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 
     for i = 1:nD % loop over the full data set
 
-        z0 = init(yobs(i,:),sys);       % initialize
-        tol = 1e-9;                         % tolerance
-        % negative of the log of the posterior aka the log improbability (limp for short)
+        z0      = init(yobs(i,:),sys);       % initialize
+        tol     = 1e-9;                      % tolerance
+        % negative of the log of the posterior 
+        % aka the log improbability (limp for short)
         fun = @(z) limp(z,yobs(i,:),wobs(i,:),obs(i),sys,opt);
 
         % find the maximum of the posterior probability 
@@ -120,57 +121,57 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
             fprintf('Newton''s method iflag = %i at i = %i \n',iflag(i),i);
         end
         
-        if (0)
-            % check derivatives
-            n = length(zhat);
-            I = eye(n);
-            e = sqrt(eps);
-            Htest = zeros(n,n);
-            for ii = 1:n
-                gp = fun(zhat+I(:,ii)*e);
-                gm = fun(shat-I(:,ii)*e);
-                H(:,ii) = (gp-gm)/(2*e);
-            end
-            [ii,jj,iv] = find(H);
-            [iii,jjj,iiv] = find(J);
-            keyboard
-            re = abs(iv - iiv)./iiv; % 1e-3
-        end
+        % if (0)
+        %     % check derivatives
+        %     n = length(zhat);
+        %     I = eye(n);
+        %     e = sqrt(eps);
+        %     Htest = zeros(n,n);
+        %     for ii = 1:n
+        %         gp = fun(zhat+I(:,ii)*e);
+        %         gm = fun(shat-I(:,ii)*e);
+        %         H(:,ii) = (gp-gm)/(2*e);
+        %     end
+        %     [ii,jj,iv] = find(H);
+        %     [iii,jjj,iiv] = find(J);
+        %     keyboard
+        %     re = abs(iv - iiv)./iiv; % 1e-3
+        % end
 
         % calculate the marginalized posterior uncertainty using Laplace's approximation
         C = inv(J);
         C = C(1:nv,1:nv);
-        %y = zhat(1:nv);
         sigx = sqrt(full(diag(C)));
         if (sum(isnan(sigx)) > 0) && (opt.printmes ~= 0)
             fprintf('NaN found in output means faulty run. i = %i\n',i)
         end
+
         % populate est
         [est(i)] = parse_output(zhat,sigx,sys);    
 
+        % calculate the Revelle factor if opt.Revelle = 1
         if opt.Revelle == 1
-            % calculate the Revelle factor if opt.Revelle = 1
             for j = 1:length(sys.tp(:))
-                ifree = sys.tp(j).ifree;
-                I_TA = speye(length(ifree));
-                ei = ones(length(ifree),1);
-                jfree = sys.tp(j).jfree;
-                I_TC = speye(length(jfree));
-                ej = ones(length(jfree),1);
-           
-                jac = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
-                z = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
+                % Revelle
+                ifree   = sys.tp(j).ifree;
+                I_TA    = speye(length(ifree));
+                ei      = ones(length(ifree),1);
+                jfree   = sys.tp(j).jfree;
+                I_TC    = speye(length(jfree));
+                ej      = ones(length(jfree),1);
+                % dpfCO2dpTA (similar to Revelle but TC held fixed)
+                jac     = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
+                z       = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
                 est(i).tp(j).Revelle = z(2)/z(1);
-                jac = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
-                z = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
+                jac     = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
+                z       = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
                 est(i).tp(j).dpfco2dpTA = z(2)/z(1);
             end
         end
-    end % (for i = 1:nD)
+    end
 
     % PrintCSV if opt.printcsv = 1 using filename opt.fname
     PrintCSV(est,obs,iflag,opt);
-
 end
 
 % -------------------------------------------------------------------------
@@ -245,7 +246,7 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
         gg  = gg + lam(row)*diag(M(row,:))*ddq;
     end
     tmp = zeros(length(x));
-    eW = e.'*W;
+    eW  = e.'*W;
     for jj = 1:size(ggy,1);
         tmp = tmp + eW(jj)*(squeeze(ggy(jj,:,:)));
     end
@@ -418,31 +419,11 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         pTB  = pT(1); epTB  = epT(1);
         pTS  = pT(2); epTS  = epT(2);
         pTF  = pT(3); epTF  = epT(3);
-        pTCa = pT(4); epTCa = epT(4);
+        pTCa = pT(4); epTCa = epT(4); % (see Ref's within calc_pTOT)
         % total borate
         if (~isfield(obs(i),'TB')) || (~isgood(obs(i).TB))
             obs(i).TB        = nan;
-            yobs(i,sys.ipTB) = pTB;
-            % if opt.TB == 1
-            %     % Uppstrom, L., Deep-Sea Research 21:161-162, 1974
-            %     % ( copied from Orr's code )
-            %     % TB = ( 0.000232/ 10.811) * (sal/1.80655)
-            %     obs(i).TB        = nan;  
-            %     yobs(i,sys.ipTB) = p(0.0004157 * obs(i).sal / 35); % mol/kg
-            % elseif opt.TB == 2
-            %     % Lee, Kim, Myrne, Millero, Feely, Yong-Ming Liu. 2010.
-            %     % Geochemica Et Cosmochimica Acta 74 (6): 1801-1811.
-            %     % ( copied from Sharp's code )
-            %     % TB = (0.0002414/ 10.811) * (sal/1.80655)
-            %     obs(i).TB        = nan; 
-            %     yobs(i,sys.ipTB) = p( 0.0004326 * obs(i).sal / 35 ); % mol/kg 
-            % elseif opt.K1K2 == 6 || opt.K1K2 == 7
-            %     % Culkin, F., in Chemical Oceanography,
-            %     % ed. Riley and Skirrow, 1965: GEOSECS references this
-            %     % (copied from Orr's code)
-            %     obs(i).TB        = nan;
-            %     yobs(i,sys.ipTB) = p( 0.0004106 * obs(i).sal / 35 ); % mol/kg
-            % end
+
         else
             if ((obs(i).TB) == 0)
                 obs(i).TB   = 1e-3; % umol/kg, reset minimum to 1 nanomolar
@@ -452,34 +433,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         if (~isfield(obs(i), 'eTB'))  || (~isgood(obs(i).eTB))
             obs(i).eTB       = nan;
             wobs(i,sys.ipTB) = epTB;
-            % if opt.TB == 1 % Uppstrom 1974
-            %                % std 5e-6 on avg 2.32e-4
-            %     TB  = (2.34e-4/10.811) * obs(i).sal/1.80655;
-            %     TBu = ( ( (2.32e-4 + 5e-6)/10.811) * obs(i).sal/1.80655 );
-            %     TBl = ( ( (2.32e-4 - 5e-6)/10.811) * obs(i).sal/1.80655 );
-            %     eTB                 = (TBu - TBl) /2 ;
-            %     wobs(i,sys.ipTB)    = w(TB,eTB); % mol/kg
-            %     obs(i).eTB          = nan ;
-            % elseif opt.TB == 2 % Lee et al 2010
-            %                    % std 9e-6 on avg 2.414e-4
-            %     TB  = (2.414e-4/10.811) * obs(i).sal/1.80655;
-            %     TBu = ( ( (2.414e-4 + 9e-6)/10.811) * obs(i).sal/1.80655);
-            %     TBl = ( ( (2.414e-4 - 9e-6)/10.811) * obs(i).sal/1.80655);
-            %     eTB                 = (TBu - TBl) /2;
-            %     wobs(i,sys.ipTB)    = w(TB,eTB); % mol/kg
-            %     obs(i).eTB          = nan ;
-            % end
         else
             wobs(i,sys.ipTB) = w(obs(i).TB,obs(i).eTB); % mol/kg
         end
         
         % total sulfate
         if (~isfield(obs(i), 'TS'))  || (~isgood(obs(i).TS))
-            % Morris, A. W., and Riley, J. P., Deep-Sea Research 13:699-705, 1966:
-            % copied from Orr's code
             obs(i).TS        = nan;
             yobs(i,sys.ipTS) = pTS;
-            % yobs(i,sys.ipTS) = p(( 0.14 / 96.062 ) * ( obs(i).sal / 1.80655 ) ); % mol/kg
         else
             if ((obs(i).TS) == 0)
                 obs(i).TS = 1e-3; % µmol/kg reset minimum to 1 nanomolar
@@ -487,12 +448,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.ipTS)     = p(obs(i).TS*1e-6); % mol/kg
         end
         if (~isfield(obs(i), 'eTS'))  || (~isgood(obs(i).eTS))
-            % % 0.14000 ± 0.00023
-            % TS  = (0.14/96.062)*obs(i).sal/1.80655;
-            % TSu = ( ( (0.14+0.00023)/96.062 ) * obs(i).sal/ 1.80655 );
-            % TSl = ( ( (0.14-0.00023)/96.062 ) * obs(i).sal/ 1.80655 );
-            % eTS                 = (TSu - TSl) / 2;
-            % wobs(i,sys.ipTS)    = w(TS,eTS); % mol/kg
             obs(i).eTS       = nan ;
             wobs(i,sys.ipTS) = epTS;
         else
@@ -501,12 +456,8 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         end
         % total fluoride
         if (~isfield(obs(i), 'TF'))  || (~isgood(obs(i).TF))
-            % Riley, J. P., Deep-Sea Research 12:219-220, 1965:
-            % this is .000068.*Sali./35. = .00000195.*Sali
             obs(i).TF        = nan; 
             yobs(i,sys.ipTF) = pTF;
-            % yobs(i,sys.ipTF)    = p(( 0.000067 / 18.998 ) * ...
-            %                      ( obs(i).sal / 1.80655 ) ); % mol/kg
         else
             if ((obs(i).TF) == 0)
                 obs(i).TF       = 1e-3; % umol/kg, reset minimum to 1 nanomolar
@@ -514,12 +465,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.ipTF)    = p(obs(i).TF*1e-6); % convt µmol/kg to mol/kg
         end
         if (~isfield(obs(i), 'eTF'))  || (~isgood(obs(i).eTF))
-            % % 6.7 ± 0.1 e-5
-            % TF = (6.7e-5/18.998)*obs(i).sal/1.80655;
-            % TFu = ( ( (6.7e-5 + 0.1e-5)/18.998) * obs(i).sal/1.80655 );
-            % TFl = ( ( (6.7e-5 - 0.1e-5)/18.998) * obs(i).sal/1.80655 );
-            % eTF                 = (TFu - TFl) / 2;
-            % wobs(i,sys.ipTF)    = w(TF,eTF); % mol/kg
             obs(i).eTF       = nan;
             wobs(i,sys.ipTF) = epTF;
         else
@@ -614,16 +559,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         if (~isfield(obs(i), 'TCa'))  || (~isgood(obs(i).TCa))
             obs(i).TCa        = nan;
             yobs(i,sys.ipTCa) = pTCa;
-            % if opt.K1K2 == 6 || opt.K1K2 == 7
-            %     % Calculate Ca for GEOSECS, Riley and Skirrow 1965
-            %     obs(i).TCa          = nan;
-            %     yobs(i,sys.ipTCa)   = p( 0.01026 .* obs(i).sal ./ 35 ); % mol/kg
-            % else
-            %     % Calculate Ca, Riley and Tongdui 1967
-            %     % this is 0.010285.*obs.sal./35;
-            %     obs(i).TCa          = nan; 
-            %     yobs(i,sys.ipTCa)   = p( 0.02128./40.087.*(obs(i).sal./1.80655) ); % mol/kg
-            % end
         else
             if ((obs(i).TCa) == 0)
                 obs(i).TCa      = 1e-9; % mol/kg, reset minimum to 1 nanomolar
@@ -631,8 +566,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.ipTCa)   = p(obs(i).TCa); % assume user input of mol/kg
         end
         if (~isfield(obs(i), 'eTCa'))  || (~isgood(obs(i).eTCa))
-            % eTCa                = (6e-5); % mol/kg, from Riley and Tongdui 1967
-            % wobs(i,sys.ipTCa)   = w(q(yobs(i,sys.ipTCa)),eTCa);
             obs(i).eTCa       = nan;
             wobs(i,sys.ipTCa) = epTCa;
             if (isgood(obs(i).TCa)) && opt.printmes ~= 0
@@ -1026,8 +959,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).tp(ii).hco3 = nan;
             end
             if (isgood(obs(i).tp(ii).ehco3))
-                wobs(i,sys.tp(ii).iphco3) = w(obs(i).tp(ii).hco3, ...
-                                              obs(i).tp(ii).ehco3);
+                wobs(i,sys.tp(ii).iphco3) = w(obs(i).tp(ii).hco3, obs(i).tp(ii).ehco3);
             else
                 wobs(i,sys.tp(ii).iphco3) = nan;
                 obs(i).tp(ii).ehco3 = nan;
@@ -1039,8 +971,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).tp(ii).co3 = nan;
             end
             if (isgood(obs(i).tp(ii).eco3))
-                wobs(i,sys.tp(ii).ipco3) = w(obs(i).tp(ii).co3, ...
-                                             obs(i).tp(ii).eco3);
+                wobs(i,sys.tp(ii).ipco3) = w(obs(i).tp(ii).co3, obs(i).tp(ii).eco3);
             else
                 wobs(i,sys.tp(ii).ipco3) = nan;
                 obs(i).tp(ii).eco3 = nan;
@@ -1163,7 +1094,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(ii).ipKf) = (obs(i).tp(ii).epKf).^(-2);
             else
                 obs(i).tp(ii).epKf = epKf;
-                wobs(i,sys.tp(ii).ipKf) = (obs(i).tp(ii).epKf).^(-2);   % wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
+                wobs(i,sys.tp(ii).ipKf) = (obs(i).tp(ii).epKf).^(-2);
             end
             if (isgood(obs(i).tp(ii).pKf))
                 yobs(i,sys.tp(ii).ipKf) = obs(i).tp(ii).pKf;
@@ -1376,8 +1307,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).tp(ii).H2S = nan;
             end
             if (isgood(obs(i).tp(ii).eH2S))
-                wobs(i,sys.tp(ii).ipH2S) = w(obs(i).tp(ii).H2S, ...
-                                             obs(i).tp(ii).eH2S);
+                wobs(i,sys.tp(ii).ipH2S) = w(obs(i).tp(ii).H2S, obs(i).tp(ii).eH2S);
             else
                 wobs(i,sys.tp(ii).ipH2S) = nan;
                 obs(i).tp(ii).eH2S = nan;
@@ -1521,7 +1451,7 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
     sal         = x(sys.isal);
     e3          = eps^3;
     ie3         = sqrt(-1)*e3;
-    % calculate totals
+    % calculate totals (see Ref's in calc_pTOT)
     [pT,gpT,ggpT,~] = calc_pTOT(opt,sal);
     pTB  = pT(1);  gpTB = gpT(1);  ggpTB = ggpT(1);
     pTS  = pT(2);  gpTS = gpT(2);  ggpTS = ggpT(2);
@@ -1532,74 +1462,21 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
         y(sys.ipTB)                     = pTB;
         gy(sys.ipTB,sys.isal)           = gpTB;
         ggy(sys.ipTB,sys.isal,sys.isal) = ggpTB;
-        % if (opt.TB == 1)
-        %     % Uppstrom, L., Deep-Sea Research 21:161-162, 1974
-        %     % ( copied from Orr's code )
-        %     % TB = ( 0.000232/ 10.811) * (sal/1.80655)
-        %     TB = 0.0004157 * sal / 35;
-        %     y(sys.ipTB)             = sys.p( TB );
-        %     gy(sys.ipTB,isal)       = sys.dpdx( TB )   *  0.0004157 / 35 ;
-        %     ggy(sys.ipTB,isal,isal) = sys.d2pdx2( TB ) * (0.0004157 / 35 ) ^ 2;
-        %
-        % elseif (opt.TB == 2)
-        %     % Lee, Kim, Myrne, Millero, Feely, Yong-Ming Liu. 2010.
-        %     % Geochemica Et Cosmochimica Acta 74 (6): 1801-1811.
-        %     % ( copied from Sharp's code )
-        %     % TB = (0.0002414/ 10.811) * (sal/1.80655)
-        %     TB = 0.0004326 * sal / 35;
-        %     y(sys.ipTB)             = sys.p(TB);
-        %     gy(sys.ipTB,isal)       =  sys.dpdx( TB )  *   0.0004326 / 35;
-        %     ggy(sys.ipTB,isal,isal) = sys.d2pdx2( TB ) * ( 0.0004326 / 35 ) ^ 2;
-        % elseif (opt.TB == 3)
-        %     % Culkin, F., in Chemical Oceanography,
-        %     % ed. Riley and Skirrow, 1965: GEOSECS references this
-        %     % (copied from Orr's code)
-        %     TB = 0.0004106 * sal / 35;
-        %     y(sys.ipTB)             = p( TB );
-        %     gy(sys.ipTB,isal)       = sys.dpdx( TB )   *   0.0004106 / 35 ;
-        %     ggy(sys.ipTB,isal,isal) = sys.d2pdx2( TB ) * ( 0.0004106 / 35 ) ^ 2;
-        % end
     end
     if (isnan(obs.TS))
         y(sys.ipTS)                     = pTS;
         gy(sys.ipTS,sys.isal)           = gpTS;
         ggy(sys.ipTS,sys.isal,sys.isal) = ggpTS;
-        % % Morris, A. W., and Riley, J. P., Deep-Sea Research 13:699-705, 1966:
-        % % copied from Orr's code
-        % TS     = ( 0.14 / 96.062 ) * ( sal / 1.80655 );
-        % y(sys.ipTS)             = sys.p( TS );
-        % gy(sys.ipTS,isal)       = sys.dpdx( TS )   *   (0.14 / 96.062 ) / 1.80655 ;
-        % ggy(sys.ipTS,isal,isal) = sys.d2pdx2( TS ) * ( (0.14 / 96.062 ) / 1.80655 ) ^ 2 ;
     end
     if (isnan(obs.TF))
         y(sys.ipTF)                     = pTF;
         gy(sys.ipTF,sys.isal)           = gpTF;
         ggy(sys.ipTF,sys.isal,sys.isal) = ggpTF;
-        % % Riley, J. P., Deep-Sea Research 12:219-220, 1965:
-        % % this is .000068.*Sali./35. = .00000195.*Sali      % why don't we use this expression?
-        % TF  = ( 0.000067 / 18.998 ) * ( sal / 1.80655 );
-        % y(sys.ipTF)              = sys.p( TF );
-        % gy(sys.ipTF,isal)        = sys.dpdx( TF )   *   (0.000067 / 18.998 ) / 1.80655 ;
-        % ggy(sys.ipTF,isal,isal)  = sys.d2pdx2( TF ) * ( (0.000067 / 18.998 ) / 1.80655 ) ^ 2 ;
     end
     if (isnan(obs.TCa))
         y(sys.ipTCa)                        = pTCa;
         gy(sys.ipTCa,sys.isal)              = gpTCa;
         ggy(sys.ipTCa,sys.isal,sys.isal)    = ggpTCa;
-        % if opt.K1K2 == 6 || opt.K1K2 == 7
-        %     % Calculate Ca for GEOSECS, Riley and Skirrow 1965
-        %     TCa    =  ( 0.01026 * sal / 35) ;
-        %     y(sys.ipTCa)             = sys.p( TCa );
-        %     gy(sys.ipTCa,isal)       = sys.dpdx( TCa )   *   0.01026 / 35 ;
-        %     ggy(sys.iTCal,isal,isal) = sys.d2pdx2( TCa ) * ( 0.01026 / 35 ) ^ 2 ;
-        % else
-        %     % Calculate Ca, Riley and Tongdui 1967
-        %     % this is 0.010285.*obs.sal./35;
-        %     TCa = ( 0.02128 / 40.087 * ( sal / 1.80655 ) );
-        %     y(sys.ipTCa)             = sys.p( TCa );
-        %     gy(sys.ipTCa,isal)       = sys.dpdx( TCa )   *   ( 0.02128 / 40.087 ) / 1.80655 ;
-        %     ggy(sys.ipTCa,isal,isal) = sys.d2pdx2( TCa ) * ( ( 0.02128 / 40.087 ) / 1.80655 ) ^ 2 ;
-        % end
     end
 
     for i = 1:nTP
