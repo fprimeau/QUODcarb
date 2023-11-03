@@ -13,11 +13,11 @@ load datag.mat;
 nD = 5; %1186; % until UW start, or before: %length(in);
 
 % choose options for opt structure
-opt.K1K2 = 17; % option for K1K2 formulation
+opt.K1K2 = 10; % option for K1K2 formulation
 opt.KSO4 = 1;  % option for KSO4 formulation
 opt.KF   = 2;  % option for KF formulation
 opt.TB   = 2;  % option for TB formulation
-opt.phscale  = 4;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
+opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
 opt.printcsv = 0;  % print est to CSV? 1 = on , 0 = off
 opt.fname    = 'QUODcarb_output.csv'; % don't need it if printcsv is off
 opt.co2press = 1; % 1 = on, 0 = off
