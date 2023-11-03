@@ -115,17 +115,30 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         fun = @(z) limp(z,yobs(i,:),wobs(i,:),obs(i),sys,opt);
 
         % find the maximum of the posterior probability 
-        % warning('off');
         [zhat,J,iflag(i)] = newtn(z0,fun,tol);
-        % warning('on');
         if (iflag(i) ~=0) && (opt.printmes ~= 0)
             fprintf('Newton''s method iflag = %i at i = %i \n',iflag(i),i);
         end
-       
+        
+        if (0)
+            % check derivatives
+            n = length(zhat);
+            I = eye(n);
+            e = sqrt(eps);
+            Htest = zeros(n,n);
+            for ii = 1:n
+                gp = fun(zhat+I(:,ii)*e);
+                gm = fun(shat-I(:,ii)*e);
+                H(:,ii) = (gp-gm)/(2*e);
+            end
+            [ii,jj,iv] = find(H);
+            [iii,jjj,iiv] = find(J);
+            keyboard
+            re = abs(iv - iiv)./iiv; % 1e-3
+        end
+
         % calculate the marginalized posterior uncertainty using Laplace's approximation
-        % warning('off');
         C = inv(J);
-        % warning('on');
         C = C(1:nv,1:nv);
         %y = zhat(1:nv);
         sigx = sqrt(full(diag(C)));
@@ -137,20 +150,19 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 
         if opt.Revelle == 1
             % calculate the Revelle factor if opt.Revelle = 1
-            ifree = sys.tp(1).ifree;
-            I_TA = speye(length(ifree));
-            ei = ones(length(ifree),1);
-            jfree = sys.tp(1).jfree;
-            I_TC = speye(length(jfree));
-            ej = ones(length(jfree),1);
             for j = 1:length(sys.tp(:))
+                ifree = sys.tp(j).ifree;
+                I_TA = speye(length(ifree));
+                ei = ones(length(ifree),1);
+                jfree = sys.tp(j).jfree;
+                I_TC = speye(length(jfree));
+                ej = ones(length(jfree),1);
+           
                 jac = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
-                % warning('off');
                 z = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
                 est(i).tp(j).Revelle = z(2)/z(1);
                 jac = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
                 z = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
-                % warning('on');
                 est(i).tp(j).dpfco2dpTA = z(2)/z(1);
             end
         end
@@ -237,8 +249,8 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     for jj = 1:size(ggy,1);
         tmp = tmp + eW(jj)*(squeeze(ggy(jj,:,:)));
     end
-    H   = [  ge.'*W*ge-tmp+gg,  dcdx.'    ; ...
-             dcdx            ,  zeros(nlam)  ];
+    H   = [  ge.'*W*ge-tmp+gg,  dcdx.'    ; ... % derivatives wrt lambdas
+             dcdx            ,  zeros(nlam)  ]; % derivatives wrt var's
     g = g(:); % make sure g is returned as a column vector
 end
 
@@ -755,23 +767,23 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).tp(j).eHF    = [];
             end
             
-            if (~isfield(obs(i).tp(j), 'epK1p'))
-                obs(i).tp(j).epK1p  = [];
+            if (~isfield(obs(i).tp(j), 'epKp1'))
+                obs(i).tp(j).epKp1  = [];
             end
-            if (~isfield(obs(i).tp(j), 'pK1p'))
-                obs(i).tp(j).pK1p   = nan;
+            if (~isfield(obs(i).tp(j), 'pKp1'))
+                obs(i).tp(j).pKp1   = nan;
             end
-            if (~isfield(obs(i).tp(j), 'epK2p'))
-                obs(i).tp(j).epK2p  = [];
+            if (~isfield(obs(i).tp(j), 'epKp2'))
+                obs(i).tp(j).epKp2  = [];
             end
-            if (~isfield(obs(i).tp(j), 'pK2p'))
-                obs(i).tp(j).pK2p   = nan;
+            if (~isfield(obs(i).tp(j), 'pKp2'))
+                obs(i).tp(j).pKp2   = nan;
             end
-            if (~isfield(obs(i).tp(j), 'epK3p'))
-                obs(i).tp(j).epK3p  = [];
+            if (~isfield(obs(i).tp(j), 'epKp3'))
+                obs(i).tp(j).epKp3  = [];
             end
-            if (~isfield(obs(i).tp(j), 'pK3p'))
-                obs(i).tp(j).pK3p   = nan;
+            if (~isfield(obs(i).tp(j), 'pKp3'))
+                obs(i).tp(j).pKp3   = nan;
             end
             if (~isfield(obs(i).tp(j), 'h3po4')) || (~isgood(obs(i).tp(j).h3po4))
                 obs(i).tp(j).h3po4  = [];
@@ -925,15 +937,15 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                                               obs(i).sal, obs(i).tp(ii).P );
             pK0   = pK(1);      pK1  = pK(2);     pK2   = pK(3);  
             pKb   = pK(4);      pKw  = pK(5);     pKs   = pK(6);  
-            pKf   = pK(7);      pK1p = pK(8);     pK2p  = pK(9);  
-            pK3p  = pK(10);     pKsi = pK(11);    pKnh4 = pK(12);
+            pKf   = pK(7);      pKp1 = pK(8);     pKp2  = pK(9);  
+            pKp3  = pK(10);     pKsi = pK(11);    pKnh4 = pK(12);
             pKh2s = pK(13);     pp2f = pK(14);    pKar  = pK(15); 
             pKca  = pK(16);     pfH  = pK(17);
             
             epK0   = epK(1);    epK1  = epK(2);   epK2   = epK(3);  
             epKb   = epK(4);    epKw  = epK(5);   epKs   = epK(6);  
-            epKf   = epK(7);    epK1p = epK(8);   epK2p  = epK(9);  
-            epK3p  = epK(10);   epKsi = epK(11);  epKnh4 = epK(12);
+            epKf   = epK(7);    epKp1 = epK(8);   epKp2  = epK(9);  
+            epKp3  = epK(10);   epKsi = epK(11);  epKnh4 = epK(12);
             epKh2s = epK(13);   epp2f = epK(14);  epKar  = epK(15); 
             epKca  = epK(16);   epfH  = epK(17);
             
@@ -1185,41 +1197,41 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             end
             
             % phosphate system
-            if (isgood(obs(i).tp(ii).epK1p))
-                wobs(i,sys.tp(ii).ipK1p) = (obs(i).tp(ii).epK1p).^(-2);
+            if (isgood(obs(i).tp(ii).epKp1))
+                wobs(i,sys.tp(ii).ipKp1) = (obs(i).tp(ii).epKp1).^(-2);
             else
-                obs(i).tp(ii).epK1p = epK1p;
-                wobs(i,sys.tp(ii).ipK1p) = (obs(i).tp(ii).epK1p).^(-2);  % wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
+                obs(i).tp(ii).epKp1 = epKp1;
+                wobs(i,sys.tp(ii).ipKp1) = (obs(i).tp(ii).epKp1).^(-2);  % wKp1 = 1/(1 + (0.09/pKsys(8)))^2 ;
             end
-            if (isgood(obs(i).tp(ii).pK1p))
-                yobs(i,sys.tp(ii).ipK1p) = obs(i).tp(ii).pK1p;
+            if (isgood(obs(i).tp(ii).pKp1))
+                yobs(i,sys.tp(ii).ipKp1) = obs(i).tp(ii).pKp1;
             else
-                yobs(i,sys.tp(ii).ipK1p) = pK1p;
-                obs(i).tp(ii).pK1p = nan;
+                yobs(i,sys.tp(ii).ipKp1) = pKp1;
+                obs(i).tp(ii).pKp1 = nan;
             end
-            if (isgood(obs(i).tp(ii).epK2p))
-                wobs(i,sys.tp(ii).ipK2p) = (obs(i).tp(ii).epK2p).^(-2);
+            if (isgood(obs(i).tp(ii).epKp2))
+                wobs(i,sys.tp(ii).ipKp2) = (obs(i).tp(ii).epKp2).^(-2);
             else
-                obs(i).tp(ii).epK2p = epK2p;
-                wobs(i,sys.tp(ii).ipK2p) = (obs(i).tp(ii).epK2p).^(-2);  % wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
+                obs(i).tp(ii).epKp2 = epKp2;
+                wobs(i,sys.tp(ii).ipKp2) = (obs(i).tp(ii).epKp2).^(-2);  % wKp2 = 1/(1 + (0.03/pKsys(9)))^2 ;
             end
-            if (isgood(obs(i).tp(ii).pK2p))
-                yobs(i,sys.tp(ii).ipK2p) = obs(i).tp(ii).pK2p;
+            if (isgood(obs(i).tp(ii).pKp2))
+                yobs(i,sys.tp(ii).ipKp2) = obs(i).tp(ii).pKp2;
             else
-                yobs(i,sys.tp(ii).ipK2p) = pK2p;
-                obs(i).tp(ii).pK2p = nan;
+                yobs(i,sys.tp(ii).ipKp2) = pKp2;
+                obs(i).tp(ii).pKp2 = nan;
             end
-            if (isgood(obs(i).tp(ii).epK3p))
-                wobs(i,sys.tp(ii).ipK3p) = (obs(i).tp(ii).epK3p).^(-2);
+            if (isgood(obs(i).tp(ii).epKp3))
+                wobs(i,sys.tp(ii).ipKp3) = (obs(i).tp(ii).epKp3).^(-2);
             else
-                obs(i).tp(ii).epK3p = epK3p;
-                wobs(i,sys.tp(ii).ipK3p) = (obs(i).tp(ii).epK3p).^(-2);  % wK3p = 1/(1 + (0.02/pKsys(10)))^2 ;
+                obs(i).tp(ii).epKp3 = epKp3;
+                wobs(i,sys.tp(ii).ipKp3) = (obs(i).tp(ii).epKp3).^(-2);  % wKp3 = 1/(1 + (0.02/pKsys(10)))^2 ;
             end
-            if (isgood(obs(i).tp(ii).pK3p))
-                yobs(i,sys.tp(ii).ipK3p) = obs(i).tp(ii).pK3p;
+            if (isgood(obs(i).tp(ii).pKp3))
+                yobs(i,sys.tp(ii).ipKp3) = obs(i).tp(ii).pKp3;
             else
-                yobs(i,sys.tp(ii).ipK3p) = pK3p;
-                obs(i).tp(ii).pK3p = nan;
+                yobs(i,sys.tp(ii).ipKp3) = pKp3;
+                obs(i).tp(ii).pKp3 = nan;
             end
             if (isgood(obs(i).tp(ii).h3po4))
                 yobs(i,sys.tp(ii).iph3po4) = p(obs(i).tp(ii).h3po4*1e-6); % convt µmol/kg to mol/kg
@@ -1401,7 +1413,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).tp(ii).pco2 = nan;
             end
             if (isgood(obs(i).tp(ii).epco2))
-                wobs(i,sys.tp(ii).ipco2) = w(obs(i).tp(ii).pco2, obs(i).tp(ii).epco2);
+                wobs(i,sys.tp(ii).ippco2) = w(obs(i).tp(ii).pco2, obs(i).tp(ii).epco2);
             else
                 wobs(i,sys.tp(ii).ippco2) = nan;
                 obs(i).tp(ii).epco2 = nan;
@@ -1639,20 +1651,20 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
             gy(sys.tp(i).ipKf,iTSP)       = gpK(7,:);
             ggy(sys.tp(i).ipKf,iTSP,iTSP) = ggpK(7,:,:);
         end
-        if (isnan(obs.tp(i).pK1p))
-            y(sys.tp(i).ipK1p)             = pK(8); 
-            gy(sys.tp(i).ipK1p,iTSP)       = gpK(8,:);
-            ggy(sys.tp(i).ipK1p,iTSP,iTSP) = ggpK(8,:,:);
+        if (isnan(obs.tp(i).pKp1))
+            y(sys.tp(i).ipKp1)             = pK(8); 
+            gy(sys.tp(i).ipKp1,iTSP)       = gpK(8,:);
+            ggy(sys.tp(i).ipKp1,iTSP,iTSP) = ggpK(8,:,:);
         end
-        if (isnan(obs.tp(i).pK2p))
-            y(sys.tp(i).ipK2p)             = pK(9);
-            gy(sys.tp(i).ipK2p,iTSP)       = gpK(9,:);
-            ggy(sys.tp(i).ipK2p,iTSP,iTSP) = ggpK(9,:,:);
+        if (isnan(obs.tp(i).pKp2))
+            y(sys.tp(i).ipKp2)             = pK(9);
+            gy(sys.tp(i).ipKp2,iTSP)       = gpK(9,:);
+            ggy(sys.tp(i).ipKp2,iTSP,iTSP) = ggpK(9,:,:);
         end
-        if (isnan(obs.tp(i).pK3p))
-            y(sys.tp(i).ipK3p)             = pK(10); 
-            gy(sys.tp(i).ipK3p,iTSP)       = gpK(10,:);
-            ggy(sys.tp(i).ipK3p,iTSP,iTSP) = ggpK(10,:,:);
+        if (isnan(obs.tp(i).pKp3))
+            y(sys.tp(i).ipKp3)             = pK(10); 
+            gy(sys.tp(i).ipKp3,iTSP)       = gpK(10,:);
+            ggy(sys.tp(i).ipKp3,iTSP,iTSP) = ggpK(10,:,:);
         end  
         if (isnan(obs.tp(i).pKsi))
             y(sys.tp(i).ipKsi)             = pK(11);  
@@ -1756,15 +1768,15 @@ function z0 = init(yobs,sys)
         y0(sys.tp(i).ipF)    = p(F);
         y0(sys.tp(i).ipHF)   = p(HF);
         
-        K1p     = q(y0(sys.tp(i).ipK1p));
-        K2p     = q(y0(sys.tp(i).ipK2p));
-        K3p     = q(y0(sys.tp(i).ipK3p));
+        Kp1     = q(y0(sys.tp(i).ipKp1));
+        Kp2     = q(y0(sys.tp(i).ipKp2));
+        Kp3     = q(y0(sys.tp(i).ipKp3));
         TP      = q(yobs(sys.ipTP));
-        d = ( h^3 + K1p * h^2 + K1p * K2p * h + K1p * K2p * K3p);
+        d = ( h^3 + Kp1 * h^2 + Kp1 * Kp2 * h + Kp1 * Kp2 * Kp3);
         h3po4   = TP * h^3 / d;
-        h2po4   = TP * K1p * h^2 / d;
-        hpo4    = TP * K1p * K2p * h / d;
-        po4     = TP * K1p * K2p * K3p / d;
+        h2po4   = TP * Kp1 * h^2 / d;
+        hpo4    = TP * Kp1 * Kp2 * h / d;
+        po4     = TP * Kp1 * Kp2 * Kp3 / d;
         y0(sys.ipTP)             = p(TP);
         y0(sys.tp(i).iph3po4)    = p(h3po4);
         y0(sys.tp(i).iph2po4)    = p(h2po4);
@@ -2180,29 +2192,29 @@ function [est] = parse_output(z,sigx,sys)
         est.tp(i).ph3po4    = z(sys.tp(i).iph3po4);
         est.tp(i).eph3po4   = sigx(sys.tp(i).iph3po4);
 
-        % pK1p
-        est.tp(i).pK1p      = z(sys.tp(i).ipK1p);
-        est.tp(i).epK1p     = sigx(sys.tp(i).ipK1p);
-        est.tp(i).K1p       = q(z(sys.tp(i).ipK1p));
-        est.tp(i).eK1p      = ebar(sys.tp(i).ipK1p);
-        est.tp(i).eK1p_l    = ebar_l(sys.tp(i).ipK1p);
-        est.tp(i).eK1p_u    = ebar_u(sys.tp(i).ipK1p);
+        % pKp1
+        est.tp(i).pKp1      = z(sys.tp(i).ipKp1);
+        est.tp(i).epKp1     = sigx(sys.tp(i).ipKp1);
+        est.tp(i).Kp1       = q(z(sys.tp(i).ipKp1));
+        est.tp(i).eKp1      = ebar(sys.tp(i).ipKp1);
+        est.tp(i).eKp1_l    = ebar_l(sys.tp(i).ipKp1);
+        est.tp(i).eKp1_u    = ebar_u(sys.tp(i).ipKp1);
 
-        % pK2p
-        est.tp(i).pK2p      = z(sys.tp(i).ipK2p);
-        est.tp(i).epK2p     = sigx(sys.tp(i).ipK2p);
-        est.tp(i).K2p       = q(z(sys.tp(i).ipK2p));
-        est.tp(i).eK2p      = ebar(sys.tp(i).ipK2p);
-        est.tp(i).pK2p_l    = ebar_l(sys.tp(i).ipK2p);
-        est.tp(i).eK2p_u    = ebar_u(sys.tp(i).ipK2p);
+        % pKp2
+        est.tp(i).pKp2      = z(sys.tp(i).ipKp2);
+        est.tp(i).epKp2     = sigx(sys.tp(i).ipKp2);
+        est.tp(i).Kp2       = q(z(sys.tp(i).ipKp2));
+        est.tp(i).eKp2      = ebar(sys.tp(i).ipKp2);
+        est.tp(i).pKp2_l    = ebar_l(sys.tp(i).ipKp2);
+        est.tp(i).eKp2_u    = ebar_u(sys.tp(i).ipKp2);
 
-        % pK3p
-        est.tp(i).pK3p      = z(sys.tp(i).ipK3p);
-        est.tp(i).epK3p     = sigx(sys.tp(i).ipK3p);
-        est.tp(i).K3p       = q(z(sys.tp(i).ipK3p));
-        est.tp(i).eK3p      = ebar(sys.tp(i).ipK3p);
-        est.tp(i).eK3p_l    = ebar_l(sys.tp(i).ipK3p);
-        est.tp(i).eK3p_u    = ebar_u(sys.tp(i).ipK3p);
+        % pKp3
+        est.tp(i).pKp3      = z(sys.tp(i).ipKp3);
+        est.tp(i).epKp3     = sigx(sys.tp(i).ipKp3);
+        est.tp(i).Kp3       = q(z(sys.tp(i).ipKp3));
+        est.tp(i).eKp3      = ebar(sys.tp(i).ipKp3);
+        est.tp(i).eKp3_l    = ebar_l(sys.tp(i).ipKp3);
+        est.tp(i).eKp3_u    = ebar_u(sys.tp(i).ipKp3);
         
         % SiOH4
         est.tp(i).sioh4     = q(z(sys.tp(i).ipsioh4))*1e6; % convt

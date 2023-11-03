@@ -173,7 +173,7 @@ function make_headers(est,opt,fname)
             fprintf(fname, '%s, ', '(umol/kg)');
             fprintf(fname, '%s, ', '(umol/kg)');
         end
-        for i = 1:3 % pK1p, pK2p, pK3p
+        for i = 1:3 % pKp1, pKp2, pKp3
             fprintf(fname, '%s, ', '(p units)');
             fprintf(fname, '%s, ', '  ');
         end
@@ -407,15 +407,15 @@ function parse_CSV(varargin)
         % h3po4
         fprintf(fname,'%f, ', est.tp(j).h3po4);
         fprintf(fname,'%f, ', est.tp(j).eh3po4);
-        % pK1p = [h][h2po4]/[h3po4]
-        fprintf(fname,'%f, ', est.tp(j).pK1p);
-        fprintf(fname,'%f, ', est.tp(j).epK1p);
-        % pK2p = [h][hpo4]/[h2po4]
-        fprintf(fname,'%f, ', est.tp(j).pK2p);
-        fprintf(fname,'%f, ', est.tp(j).epK2p);
-        % pK3p = [h][po4]/[hpo4]
-        fprintf(fname,'%f, ', est.tp(j).pK3p);
-        fprintf(fname,'%f, ', est.tp(j).epK3p);
+        % pKp1 = [h][h2po4]/[h3po4]
+        fprintf(fname,'%f, ', est.tp(j).pKp1);
+        fprintf(fname,'%f, ', est.tp(j).epKp1);
+        % pKp2 = [h][hpo4]/[h2po4]
+        fprintf(fname,'%f, ', est.tp(j).pKp2);
+        fprintf(fname,'%f, ', est.tp(j).epKp2);
+        % pKp3 = [h][po4]/[hpo4]
+        fprintf(fname,'%f, ', est.tp(j).pKp3);
+        fprintf(fname,'%f, ', est.tp(j).epKp3);
 
         % sioh4
         fprintf(fname,'%f, ', est.tp(j).sioh4);
