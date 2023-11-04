@@ -10,7 +10,7 @@
 
 load datag.mat;
 [in] = datag;
-nD = 1186; % until UW start, or before: %length(in);
+nD = 5; % 1186; % until UW start, or before: %length(in);
 
 % choose options for opt structure
 opt.K1K2 = 10; % option for K1K2 formulation
