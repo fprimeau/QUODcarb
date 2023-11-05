@@ -49,7 +49,7 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             % Uppstrom, L., Deep-Sea Research 21:161-162, 1974
             % ( copied from Orr's code )
             % TB = ( 0.000232/ 10.811) * (sal/1.80655)
-            TB = 0.0004157 * S / 35;
+            TB     = 0.0004157 * S / 35;
             pTB    =  p( TB );
             gpTB   = dpdx( TB )   *  0.0004157 / 35 ;
             ggpTB  = d2pdx2( TB ) * (0.0004157 / 35 ) ^ 2;

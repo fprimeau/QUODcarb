@@ -109,9 +109,10 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 
     for i = 1:nD % loop over the full data set
 
-        z0 = init(yobs(i,:),sys);       % initialize
-        tol = 1e-9;                         % tolerance
-        % negative of the log of the posterior aka the log improbability (limp for short)
+        z0      = init(yobs(i,:),sys);       % initialize
+        tol     = 2e-6;                      % tolerance
+        % negative of the log of the posterior 
+        % aka the log improbability (limp for short)
         fun = @(z) limp(z,yobs(i,:),wobs(i,:),obs(i),sys,opt);
 
         % find the maximum of the posterior probability 
@@ -119,40 +120,58 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         if (iflag(i) ~=0) && (opt.printmes ~= 0)
             fprintf('Newton''s method iflag = %i at i = %i \n',iflag(i),i);
         end
-       
+        
+        % if (0)
+        %     % check derivatives
+        %     n = length(zhat);
+        %     I = eye(n);
+        %     e = sqrt(eps);
+        %     Htest = zeros(n,n);
+        %     for ii = 1:n
+        %         gp = fun(zhat+I(:,ii)*e);
+        %         gm = fun(shat-I(:,ii)*e);
+        %         H(:,ii) = (gp-gm)/(2*e);
+        %     end
+        %     [ii,jj,iv] = find(H);
+        %     [iii,jjj,iiv] = find(J);
+        %     keyboard
+        %     re = abs(iv - iiv)./iiv; % 1e-3
+        % end
+
         % calculate the marginalized posterior uncertainty using Laplace's approximation
         C = inv(J);
         C = C(1:nv,1:nv);
-        %y = zhat(1:nv);
         sigx = sqrt(full(diag(C)));
         if (sum(isnan(sigx)) > 0) && (opt.printmes ~= 0)
             fprintf('NaN found in output means faulty run. i = %i\n',i)
         end
+
         % populate est
         [est(i)] = parse_output(zhat,sigx,sys);    
 
+        % calculate the Revelle factor if opt.Revelle = 1
         if opt.Revelle == 1
-            % calculate the Revelle factor if opt.Revelle = 1
-            ifree = sys.tp(1).ifree;
-            I_TA = speye(length(ifree));
-            ei = ones(length(ifree),1);
-            jfree = sys.tp(1).jfree;
-            I_TC = speye(length(jfree));
-            ej = ones(length(jfree),1);
             for j = 1:length(sys.tp(:))
-                jac = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
-                z = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
+                % Revelle
+                ifree   = sys.tp(j).ifree;
+                I_TA    = speye(length(ifree));
+                ei      = ones(length(ifree),1);
+                jfree   = sys.tp(j).jfree;
+                I_TC    = speye(length(jfree));
+                ej      = ones(length(jfree),1);
+                % dpfCO2dpTA (similar to Revelle but TC held fixed)
+                jac     = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
+                z       = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
                 est(i).tp(j).Revelle = z(2)/z(1);
-                jac = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
-                z = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
+                jac     = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
+                z       = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
                 est(i).tp(j).dpfco2dpTA = z(2)/z(1);
             end
         end
-    end % (for i = 1:nD)
+    end
 
     % PrintCSV if opt.printcsv = 1 using filename opt.fname
     PrintCSV(est,obs,iflag,opt);
-
 end
 
 % -------------------------------------------------------------------------
@@ -184,14 +203,14 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     nrk     = size(K,1);
     nTP     = length(sys.tp); 
     nv      = size(M,2);
-    x       =  z(1:nv);      % measured variables
+    x       = z(1:nv);      % measured variables
 
     % fill ypK, gypK, ggypK, and with associated calculated pK, gpK, and ggpK values
     % update the pK values based on the new estimate of (T,P)
 
     [y, gy, ggy ] = update_y(y,x,obs,sys,opt);
     % Make a vector of measured quantities    
-    id   = find(~isnan(y));
+    id  = find(~isnan(y));
     y   = y(id).';
     gy  = gy(id,:);
     ggy = ggy(id,:,:);
@@ -200,13 +219,13 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     W   = diag(w(id));
 
     % Build a matrix that Picks out the measured components of x
-    I   = eye(nv); % for chain rule
-    PP  = I(id,:); % picking/pick out the measured ones
+    I   = eye(nv);  % for chain rule
+    PP  = I(id,:);  % picking/pick out the measured ones
     e   = PP*x - y; % calculated - measured (minus)
     ge  = PP - gy;
     
     nlam    = size(M,1) + size(K,1);
-    lam     =  z(nv+1:end);  % Lagrange multipliers 
+    lam     = z(nv+1:end);  % Lagrange multipliers 
 
     % constraint equations
     c   = [  M * q( x ); ...
@@ -215,9 +234,9 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
     dcdx = [ M * diag( sys.dqdx( x ) ); ...
              K  ];
-    
+ 
     %iTSP = [[sys.tp(:).iT], sys.isal, [sys.tp(:).iP]];
-    g    = [ e.'*W*ge+lam.'*dcdx,  c.' ];
+    g    = [ e.' * W * ge + lam.' * dcdx,  c.' ];
 
     ddq     =  diag( sys.d2qdx2( x ) ); % q"
         
@@ -227,12 +246,12 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
         gg  = gg + lam(row)*diag(M(row,:))*ddq;
     end
     tmp = zeros(length(x));
-    eW = e.'*W;
-    for jj = 1:size(ggy,1);
+    eW  = e.'*W;
+    for jj = 1:size(ggy,1)
         tmp = tmp + eW(jj)*(squeeze(ggy(jj,:,:)));
     end
-    H   = [  ge.'*W*ge-tmp+gg,  dcdx.'    ; ...
-             dcdx            ,  zeros(nlam)  ];
+    H   = [  ge.'*W*ge-tmp+gg,  dcdx.'    ; ... % derivatives wrt lambdas
+             dcdx            ,  zeros(nlam)  ]; % derivatives wrt var's
     g = g(:); % make sure g is returned as a column vector
 end
 
@@ -400,31 +419,11 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         pTB  = pT(1); epTB  = epT(1);
         pTS  = pT(2); epTS  = epT(2);
         pTF  = pT(3); epTF  = epT(3);
-        pTCa = pT(4); epTCa = epT(4);
+        pTCa = pT(4); epTCa = epT(4); % (see Ref's within calc_pTOT)
         % total borate
         if (~isfield(obs(i),'TB')) || (~isgood(obs(i).TB))
             obs(i).TB        = nan;
             yobs(i,sys.ipTB) = pTB;
-            % if opt.TB == 1
-            %     % Uppstrom, L., Deep-Sea Research 21:161-162, 1974
-            %     % ( copied from Orr's code )
-            %     % TB = ( 0.000232/ 10.811) * (sal/1.80655)
-            %     obs(i).TB        = nan;  
-            %     yobs(i,sys.ipTB) = p(0.0004157 * obs(i).sal / 35); % mol/kg
-            % elseif opt.TB == 2
-            %     % Lee, Kim, Myrne, Millero, Feely, Yong-Ming Liu. 2010.
-            %     % Geochemica Et Cosmochimica Acta 74 (6): 1801-1811.
-            %     % ( copied from Sharp's code )
-            %     % TB = (0.0002414/ 10.811) * (sal/1.80655)
-            %     obs(i).TB        = nan; 
-            %     yobs(i,sys.ipTB) = p( 0.0004326 * obs(i).sal / 35 ); % mol/kg 
-            % elseif opt.K1K2 == 6 || opt.K1K2 == 7
-            %     % Culkin, F., in Chemical Oceanography,
-            %     % ed. Riley and Skirrow, 1965: GEOSECS references this
-            %     % (copied from Orr's code)
-            %     obs(i).TB        = nan;
-            %     yobs(i,sys.ipTB) = p( 0.0004106 * obs(i).sal / 35 ); % mol/kg
-            % end
         else
             if ((obs(i).TB) == 0)
                 obs(i).TB   = 1e-3; % umol/kg, reset minimum to 1 nanomolar
@@ -434,34 +433,14 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         if (~isfield(obs(i), 'eTB'))  || (~isgood(obs(i).eTB))
             obs(i).eTB       = nan;
             wobs(i,sys.ipTB) = epTB;
-            % if opt.TB == 1 % Uppstrom 1974
-            %                % std 5e-6 on avg 2.32e-4
-            %     TB  = (2.34e-4/10.811) * obs(i).sal/1.80655;
-            %     TBu = ( ( (2.32e-4 + 5e-6)/10.811) * obs(i).sal/1.80655 );
-            %     TBl = ( ( (2.32e-4 - 5e-6)/10.811) * obs(i).sal/1.80655 );
-            %     eTB                 = (TBu - TBl) /2 ;
-            %     wobs(i,sys.ipTB)    = w(TB,eTB); % mol/kg
-            %     obs(i).eTB          = nan ;
-            % elseif opt.TB == 2 % Lee et al 2010
-            %                    % std 9e-6 on avg 2.414e-4
-            %     TB  = (2.414e-4/10.811) * obs(i).sal/1.80655;
-            %     TBu = ( ( (2.414e-4 + 9e-6)/10.811) * obs(i).sal/1.80655);
-            %     TBl = ( ( (2.414e-4 - 9e-6)/10.811) * obs(i).sal/1.80655);
-            %     eTB                 = (TBu - TBl) /2;
-            %     wobs(i,sys.ipTB)    = w(TB,eTB); % mol/kg
-            %     obs(i).eTB          = nan ;
-            % end
         else
             wobs(i,sys.ipTB) = w(obs(i).TB,obs(i).eTB); % mol/kg
         end
         
         % total sulfate
         if (~isfield(obs(i), 'TS'))  || (~isgood(obs(i).TS))
-            % Morris, A. W., and Riley, J. P., Deep-Sea Research 13:699-705, 1966:
-            % copied from Orr's code
             obs(i).TS        = nan;
             yobs(i,sys.ipTS) = pTS;
-            % yobs(i,sys.ipTS) = p(( 0.14 / 96.062 ) * ( obs(i).sal / 1.80655 ) ); % mol/kg
         else
             if ((obs(i).TS) == 0)
                 obs(i).TS = 1e-3; % µmol/kg reset minimum to 1 nanomolar
@@ -469,12 +448,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.ipTS)     = p(obs(i).TS*1e-6); % mol/kg
         end
         if (~isfield(obs(i), 'eTS'))  || (~isgood(obs(i).eTS))
-            % % 0.14000 ± 0.00023
-            % TS  = (0.14/96.062)*obs(i).sal/1.80655;
-            % TSu = ( ( (0.14+0.00023)/96.062 ) * obs(i).sal/ 1.80655 );
-            % TSl = ( ( (0.14-0.00023)/96.062 ) * obs(i).sal/ 1.80655 );
-            % eTS                 = (TSu - TSl) / 2;
-            % wobs(i,sys.ipTS)    = w(TS,eTS); % mol/kg
             obs(i).eTS       = nan ;
             wobs(i,sys.ipTS) = epTS;
         else
@@ -483,12 +456,8 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         end
         % total fluoride
         if (~isfield(obs(i), 'TF'))  || (~isgood(obs(i).TF))
-            % Riley, J. P., Deep-Sea Research 12:219-220, 1965:
-            % this is .000068.*Sali./35. = .00000195.*Sali
             obs(i).TF        = nan; 
             yobs(i,sys.ipTF) = pTF;
-            % yobs(i,sys.ipTF)    = p(( 0.000067 / 18.998 ) * ...
-            %                      ( obs(i).sal / 1.80655 ) ); % mol/kg
         else
             if ((obs(i).TF) == 0)
                 obs(i).TF       = 1e-3; % umol/kg, reset minimum to 1 nanomolar
@@ -496,12 +465,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.ipTF)    = p(obs(i).TF*1e-6); % convt µmol/kg to mol/kg
         end
         if (~isfield(obs(i), 'eTF'))  || (~isgood(obs(i).eTF))
-            % % 6.7 ± 0.1 e-5
-            % TF = (6.7e-5/18.998)*obs(i).sal/1.80655;
-            % TFu = ( ( (6.7e-5 + 0.1e-5)/18.998) * obs(i).sal/1.80655 );
-            % TFl = ( ( (6.7e-5 - 0.1e-5)/18.998) * obs(i).sal/1.80655 );
-            % eTF                 = (TFu - TFl) / 2;
-            % wobs(i,sys.ipTF)    = w(TF,eTF); % mol/kg
             obs(i).eTF       = nan;
             wobs(i,sys.ipTF) = epTF;
         else
@@ -552,24 +515,24 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.ipTSi)   = w(obs(i).TSi,obs(i).eTSi); %  mol/kg
         end
         % total amonia
-        if (~isfield(obs(i), 'TNH3'))  || (~isgood(obs(i).TNH3))
-            obs(i).TNH3         = nan;
-            yobs(i,sys.ipTNH3)  = p(1e-9); % reset minimum (mol/kg)
+        if (~isfield(obs(i), 'TNH4'))  || (~isgood(obs(i).TNH4))
+            obs(i).TNH4         = nan;
+            yobs(i,sys.ipTNH4)  = p(1e-9); % reset minimum (mol/kg)
         else
-            if ((obs(i).TNH3) == 0)
-                obs(i).TNH3     = 1e-3; % umol/kg, reset minimum to 1 nanomolar
+            if ((obs(i).TNH4) == 0)
+                obs(i).TNH4     = 1e-3; % umol/kg, reset minimum to 1 nanomolar
             end
-            yobs(i,sys.ipTNH3)  = p(obs(i).TNH3*1e-6);
+            yobs(i,sys.ipTNH4)  = p(obs(i).TNH4*1e-6);
         end
-        if (~isfield(obs(i), 'eTNH3'))  || (~isgood(obs(i).eTNH3))
-            eTNH3               = 5e-4; % µmol/kg
-            wobs(i,sys.ipTNH3)  = w(1e-3,eTNH3); % mol/kg
-            obs(i).eTNH3        = nan;
-            if (isgood(obs(i).TNH3)) && opt.printmes ~= 0
-                fprintf('Warning, no obs.eTNH3 input with obs.eTNH3. Assuming 5e-4 umol/kg.\n' )
+        if (~isfield(obs(i), 'eTNH4'))  || (~isgood(obs(i).eTNH4))
+            eTNH4               = 5e-4; % µmol/kg
+            wobs(i,sys.ipTNH4)  = w(1e-3,eTNH4); % mol/kg
+            obs(i).eTNH4        = nan;
+            if (isgood(obs(i).TNH4)) && opt.printmes ~= 0
+                fprintf('Warning, no obs.eTNH4 input with obs.eTNH4. Assuming 5e-4 umol/kg.\n' )
             end
         else
-            wobs(i,sys.ipTNH3)  = w(obs(i).TNH3,obs(i).eTNH3);
+            wobs(i,sys.ipTNH4)  = w(obs(i).TNH4,obs(i).eTNH4);
         end
         % total sulfide
         if (~isfield(obs(i), 'TH2S'))  || (~isgood(obs(i).TH2S))
@@ -586,7 +549,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.ipTH2S)  = w(1e-3,eTH2S); % mol/kg
             obs(i).eTH2S        = nan;
             if (isgood(obs(i).TH2S)) && opt.printmes ~= 0
-                fprintf(' Warning, no obs.eTH2S input with obs.eTNH3. Assuming 5e-4 umol/kg.\n' )
+                fprintf(' Warning, no obs.eTH2S input with obs.eTNH4. Assuming 5e-4 umol/kg.\n' )
             end
         else
             wobs(i,sys.ipTH2S)  = w(obs(i).TH2S,obs(i).eTH2S);
@@ -596,16 +559,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         if (~isfield(obs(i), 'TCa'))  || (~isgood(obs(i).TCa))
             obs(i).TCa        = nan;
             yobs(i,sys.ipTCa) = pTCa;
-            % if opt.K1K2 == 6 || opt.K1K2 == 7
-            %     % Calculate Ca for GEOSECS, Riley and Skirrow 1965
-            %     obs(i).TCa          = nan;
-            %     yobs(i,sys.ipTCa)   = p( 0.01026 .* obs(i).sal ./ 35 ); % mol/kg
-            % else
-            %     % Calculate Ca, Riley and Tongdui 1967
-            %     % this is 0.010285.*obs.sal./35;
-            %     obs(i).TCa          = nan; 
-            %     yobs(i,sys.ipTCa)   = p( 0.02128./40.087.*(obs(i).sal./1.80655) ); % mol/kg
-            % end
         else
             if ((obs(i).TCa) == 0)
                 obs(i).TCa      = 1e-9; % mol/kg, reset minimum to 1 nanomolar
@@ -613,8 +566,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.ipTCa)   = p(obs(i).TCa); % assume user input of mol/kg
         end
         if (~isfield(obs(i), 'eTCa'))  || (~isgood(obs(i).eTCa))
-            % eTCa                = (6e-5); % mol/kg, from Riley and Tongdui 1967
-            % wobs(i,sys.ipTCa)   = w(q(yobs(i,sys.ipTCa)),eTCa);
             obs(i).eTCa       = nan;
             wobs(i,sys.ipTCa) = epTCa;
             if (isgood(obs(i).TCa)) && opt.printmes ~= 0
@@ -674,30 +625,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             end
             if (~isfield(obs(i).tp(j),'ph')) || (~isgood(obs(i).tp(j).ph))
                 obs(i).tp(j).ph     = nan;
-            end
-            if (~isfield(obs(i).tp(j),'eph_free')) || (~isgood(obs(i).tp(j).eph_free))
-                obs(i).tp(j).eph_free    = [];
-            end
-            if (~isfield(obs(i).tp(j),'ph_free')) || (~isgood(obs(i).tp(j).ph_free))
-                obs(i).tp(j).ph_free     = nan;
-            end
-            if (~isfield(obs(i).tp(j),'eph_tot')) || (~isgood(obs(i).tp(j).eph_tot))
-                obs(i).tp(j).eph_tot    = [];
-            end
-            if (~isfield(obs(i).tp(j),'ph_tot')) || (~isgood(obs(i).tp(j).ph_tot))
-                obs(i).tp(j).ph_tot     = nan;
-            end
-            if (~isfield(obs(i).tp(j),'eph_sws')) || (~isgood(obs(i).tp(j).eph_sws))
-                obs(i).tp(j).eph_sws    = [];
-            end
-            if (~isfield(obs(i).tp(j),'ph_sws')) || (~isgood(obs(i).tp(j).ph_sws))
-                obs(i).tp(j).ph_sws     = nan;
-            end
-            if (~isfield(obs(i).tp(j),'eph_nbs')) || (~isgood(obs(i).tp(j).eph_nbs))
-                obs(i).tp(j).eph_nbs    = [];
-            end
-            if (~isfield(obs(i).tp(j),'ph_nbs')) || (~isgood(obs(i).tp(j).ph_nbs))
-                obs(i).tp(j).ph_nbs     = nan;
             end
 
             % borate system
@@ -772,24 +699,24 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             if (~isfield(obs(i).tp(j), 'eHF')) || (~isgood(obs(i).tp(j).eHF))
                 obs(i).tp(j).eHF    = [];
             end
-            
-            if (~isfield(obs(i).tp(j), 'epK1p'))
-                obs(i).tp(j).epK1p  = [];
+            % phosphate system
+            if (~isfield(obs(i).tp(j), 'epKp1'))
+                obs(i).tp(j).epKp1  = [];
             end
-            if (~isfield(obs(i).tp(j), 'pK1p'))
-                obs(i).tp(j).pK1p   = nan;
+            if (~isfield(obs(i).tp(j), 'pKp1'))
+                obs(i).tp(j).pKp1   = nan;
             end
-            if (~isfield(obs(i).tp(j), 'epK2p'))
-                obs(i).tp(j).epK2p  = [];
+            if (~isfield(obs(i).tp(j), 'epKp2'))
+                obs(i).tp(j).epKp2  = [];
             end
-            if (~isfield(obs(i).tp(j), 'pK2p'))
-                obs(i).tp(j).pK2p   = nan;
+            if (~isfield(obs(i).tp(j), 'pKp2'))
+                obs(i).tp(j).pKp2   = nan;
             end
-            if (~isfield(obs(i).tp(j), 'epK3p'))
-                obs(i).tp(j).epK3p  = [];
+            if (~isfield(obs(i).tp(j), 'epKp3'))
+                obs(i).tp(j).epKp3  = [];
             end
-            if (~isfield(obs(i).tp(j), 'pK3p'))
-                obs(i).tp(j).pK3p   = nan;
+            if (~isfield(obs(i).tp(j), 'pKp3'))
+                obs(i).tp(j).pKp3   = nan;
             end
             if (~isfield(obs(i).tp(j), 'h3po4')) || (~isgood(obs(i).tp(j).h3po4))
                 obs(i).tp(j).h3po4  = [];
@@ -926,11 +853,11 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             if (~isfield(obs(i).tp(j),'ph_free')) || (~isgood(obs(i).tp(j).ph_free))
                 obs(i).tp(j).ph_free = nan;
             end
-            if (~isfield(obs(i).tp(j),'epfh')) || (~isgood(obs(i).tp(j).epfh))
-                obs(i).tp(j).epfh   = [];
+            if (~isfield(obs(i).tp(j),'epfH')) || (~isgood(obs(i).tp(j).epfH))
+                obs(i).tp(j).epfH   = [];
             end
-            if (~isfield(obs(i).tp(j),'pfh')) || (~isgood(obs(i).tp(j).pfh))
-                obs(i).tp(j).pfh    = nan;
+            if (~isfield(obs(i).tp(j),'pfH')) || (~isgood(obs(i).tp(j).pfH))
+                obs(i).tp(j).pfH    = nan;
             end
         end
 
@@ -943,17 +870,17 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                                               obs(i).sal, obs(i).tp(ii).P );
             pK0   = pK(1);      pK1  = pK(2);     pK2   = pK(3);  
             pKb   = pK(4);      pKw  = pK(5);     pKs   = pK(6);  
-            pKf   = pK(7);      pK1p = pK(8);     pK2p  = pK(9);  
-            pK3p  = pK(10);     pKsi = pK(11);    pKnh4 = pK(12);
+            pKf   = pK(7);      pKp1 = pK(8);     pKp2  = pK(9);  
+            pKp3  = pK(10);     pKsi = pK(11);    pKnh4 = pK(12);
             pKh2s = pK(13);     pp2f = pK(14);    pKar  = pK(15); 
-            pKca  = pK(16);     pfh  = pK(17);
+            pKca  = pK(16);     pfH  = pK(17);
             
             epK0   = epK(1);    epK1  = epK(2);   epK2   = epK(3);  
             epKb   = epK(4);    epKw  = epK(5);   epKs   = epK(6);  
-            epKf   = epK(7);    epK1p = epK(8);   epK2p  = epK(9);  
-            epK3p  = epK(10);   epKsi = epK(11);  epKnh4 = epK(12);
+            epKf   = epK(7);    epKp1 = epK(8);   epKp2  = epK(9);  
+            epKp3  = epK(10);   epKsi = epK(11);  epKnh4 = epK(12);
             epKh2s = epK(13);   epp2f = epK(14);  epKar  = epK(15); 
-            epKca  = epK(16);   epfh  = epK(17);
+            epKca  = epK(16);   epfH  = epK(17);
             
             % add "observations" for the equilibrium constants
             % and transfer from obs struct to yobs and wobs
@@ -1032,8 +959,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).tp(ii).hco3 = nan;
             end
             if (isgood(obs(i).tp(ii).ehco3))
-                wobs(i,sys.tp(ii).iphco3) = w(obs(i).tp(ii).hco3, ...
-                                              obs(i).tp(ii).ehco3);
+                wobs(i,sys.tp(ii).iphco3) = w(obs(i).tp(ii).hco3, obs(i).tp(ii).ehco3);
             else
                 wobs(i,sys.tp(ii).iphco3) = nan;
                 obs(i).tp(ii).ehco3 = nan;
@@ -1045,8 +971,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).tp(ii).co3 = nan;
             end
             if (isgood(obs(i).tp(ii).eco3))
-                wobs(i,sys.tp(ii).ipco3) = w(obs(i).tp(ii).co3, ...
-                                             obs(i).tp(ii).eco3);
+                wobs(i,sys.tp(ii).ipco3) = w(obs(i).tp(ii).co3, obs(i).tp(ii).eco3);
             else
                 wobs(i,sys.tp(ii).ipco3) = nan;
                 obs(i).tp(ii).eco3 = nan;
@@ -1169,7 +1094,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(ii).ipKf) = (obs(i).tp(ii).epKf).^(-2);
             else
                 obs(i).tp(ii).epKf = epKf;
-                wobs(i,sys.tp(ii).ipKf) = (obs(i).tp(ii).epKf).^(-2);   % wKF = 1/(p(1 + 0.02/KF))^2 ; % 2% relative error
+                wobs(i,sys.tp(ii).ipKf) = (obs(i).tp(ii).epKf).^(-2);
             end
             if (isgood(obs(i).tp(ii).pKf))
                 yobs(i,sys.tp(ii).ipKf) = obs(i).tp(ii).pKf;
@@ -1203,41 +1128,41 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             end
             
             % phosphate system
-            if (isgood(obs(i).tp(ii).epK1p))
-                wobs(i,sys.tp(ii).ipK1p) = (obs(i).tp(ii).epK1p).^(-2);
+            if (isgood(obs(i).tp(ii).epKp1))
+                wobs(i,sys.tp(ii).ipKp1) = (obs(i).tp(ii).epKp1).^(-2);
             else
-                obs(i).tp(ii).epK1p = epK1p;
-                wobs(i,sys.tp(ii).ipK1p) = (obs(i).tp(ii).epK1p).^(-2);  % wK1p = 1/(1 + (0.09/pKsys(8)))^2 ;
+                obs(i).tp(ii).epKp1 = epKp1;
+                wobs(i,sys.tp(ii).ipKp1) = (obs(i).tp(ii).epKp1).^(-2);
             end
-            if (isgood(obs(i).tp(ii).pK1p))
-                yobs(i,sys.tp(ii).ipK1p) = obs(i).tp(ii).pK1p;
+            if (isgood(obs(i).tp(ii).pKp1))
+                yobs(i,sys.tp(ii).ipKp1) = obs(i).tp(ii).pKp1;
             else
-                yobs(i,sys.tp(ii).ipK1p) = pK1p;
-                obs(i).tp(ii).pK1p = nan;
+                yobs(i,sys.tp(ii).ipKp1) = pKp1;
+                obs(i).tp(ii).pKp1 = nan;
             end
-            if (isgood(obs(i).tp(ii).epK2p))
-                wobs(i,sys.tp(ii).ipK2p) = (obs(i).tp(ii).epK2p).^(-2);
+            if (isgood(obs(i).tp(ii).epKp2))
+                wobs(i,sys.tp(ii).ipKp2) = (obs(i).tp(ii).epKp2).^(-2);
             else
-                obs(i).tp(ii).epK2p = epK2p;
-                wobs(i,sys.tp(ii).ipK2p) = (obs(i).tp(ii).epK2p).^(-2);  % wK2p = 1/(1 + (0.03/pKsys(9)))^2 ;
+                obs(i).tp(ii).epKp2 = epKp2;
+                wobs(i,sys.tp(ii).ipKp2) = (obs(i).tp(ii).epKp2).^(-2); 
             end
-            if (isgood(obs(i).tp(ii).pK2p))
-                yobs(i,sys.tp(ii).ipK2p) = obs(i).tp(ii).pK2p;
+            if (isgood(obs(i).tp(ii).pKp2))
+                yobs(i,sys.tp(ii).ipKp2) = obs(i).tp(ii).pKp2;
             else
-                yobs(i,sys.tp(ii).ipK2p) = pK2p;
-                obs(i).tp(ii).pK2p = nan;
+                yobs(i,sys.tp(ii).ipKp2) = pKp2;
+                obs(i).tp(ii).pKp2 = nan;
             end
-            if (isgood(obs(i).tp(ii).epK3p))
-                wobs(i,sys.tp(ii).ipK3p) = (obs(i).tp(ii).epK3p).^(-2);
+            if (isgood(obs(i).tp(ii).epKp3))
+                wobs(i,sys.tp(ii).ipKp3) = (obs(i).tp(ii).epKp3).^(-2);
             else
-                obs(i).tp(ii).epK3p = epK3p;
-                wobs(i,sys.tp(ii).ipK3p) = (obs(i).tp(ii).epK3p).^(-2);  % wK3p = 1/(1 + (0.02/pKsys(10)))^2 ;
+                obs(i).tp(ii).epKp3 = epKp3;
+                wobs(i,sys.tp(ii).ipKp3) = (obs(i).tp(ii).epKp3).^(-2);
             end
-            if (isgood(obs(i).tp(ii).pK3p))
-                yobs(i,sys.tp(ii).ipK3p) = obs(i).tp(ii).pK3p;
+            if (isgood(obs(i).tp(ii).pKp3))
+                yobs(i,sys.tp(ii).ipKp3) = obs(i).tp(ii).pKp3;
             else
-                yobs(i,sys.tp(ii).ipK3p) = pK3p;
-                obs(i).tp(ii).pK3p = nan;
+                yobs(i,sys.tp(ii).ipKp3) = pKp3;
+                obs(i).tp(ii).pKp3 = nan;
             end
             if (isgood(obs(i).tp(ii).h3po4))
                 yobs(i,sys.tp(ii).iph3po4) = p(obs(i).tp(ii).h3po4*1e-6); % convt µmol/kg to mol/kg
@@ -1251,7 +1176,6 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(ii).iph3po4) = nan;
                 obs(i).tp(ii).eh3po4 = nan;
             end
-            
             if (isgood(obs(i).tp(ii).h2po4))
                 yobs(i,sys.tp(ii).iph2po4) = p(obs(i).tp(ii).h2po4*1e-6); % convt µmol/kg to mol/kg
             else
@@ -1382,8 +1306,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).tp(ii).H2S = nan;
             end
             if (isgood(obs(i).tp(ii).eH2S))
-                wobs(i,sys.tp(ii).ipH2S) = w(obs(i).tp(ii).H2S, ...
-                                             obs(i).tp(ii).eH2S);
+                wobs(i,sys.tp(ii).ipH2S) = w(obs(i).tp(ii).H2S, obs(i).tp(ii).eH2S);
             else
                 wobs(i,sys.tp(ii).ipH2S) = nan;
                 obs(i).tp(ii).eH2S = nan;
@@ -1419,7 +1342,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 obs(i).tp(ii).pco2 = nan;
             end
             if (isgood(obs(i).tp(ii).epco2))
-                wobs(i,sys.tp(ii).ipco2) = w(obs(i).tp(ii).pco2, obs(i).tp(ii).epco2);
+                wobs(i,sys.tp(ii).ippco2) = w(obs(i).tp(ii).pco2, obs(i).tp(ii).epco2);
             else
                 wobs(i,sys.tp(ii).ippco2) = nan;
                 obs(i).tp(ii).epco2 = nan;
@@ -1499,17 +1422,17 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(ii).iph_free) = nan;
                 obs(i).tp(ii).eph_free = nan;
             end
-            if (isgood(obs(i).tp(ii).pfh)) % pfh activity coefficient
-                yobs(i,sys.tp(ii).ipfh) = obs(i).tp(ii).pfh ;
+            if (isgood(obs(i).tp(ii).pfH)) % pfH activity coefficient
+                yobs(i,sys.tp(ii).ipfH) = obs(i).tp(ii).pfH ;
             else
-                yobs(i,sys.tp(ii).ipfh) = pfh;
-                obs(i).tp(ii).pfh = pfh;
+                yobs(i,sys.tp(ii).ipfH) = pfH;
+                obs(i).tp(ii).pfH = pfH;
             end
-            if (isgood(obs(i).tp(ii).epfh)) % pfh activity coefficient
-                wobs(i,sys.tp(ii).ipfh) = (obs(i).tp(ii).epfh).^(-2) ;
+            if (isgood(obs(i).tp(ii).epfH)) % pfH activity coefficient
+                wobs(i,sys.tp(ii).ipfH) = (obs(i).tp(ii).epfH).^(-2) ;
             else
-                wobs(i,sys.tp(ii).ipfh) = (epfh).^(-2);
-                obs(i).tp(ii).epfh = epfh;
+                wobs(i,sys.tp(ii).ipfH) = (epfH).^(-2);
+                obs(i).tp(ii).epfH = epfH;
             end
         end
     end
@@ -1527,7 +1450,7 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
     sal         = x(sys.isal);
     e3          = eps^3;
     ie3         = sqrt(-1)*e3;
-    % calculate totals
+    % calculate totals (see Ref's in calc_pTOT)
     [pT,gpT,ggpT,~] = calc_pTOT(opt,sal);
     pTB  = pT(1);  gpTB = gpT(1);  ggpTB = ggpT(1);
     pTS  = pT(2);  gpTS = gpT(2);  ggpTS = ggpT(2);
@@ -1538,74 +1461,21 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
         y(sys.ipTB)                     = pTB;
         gy(sys.ipTB,sys.isal)           = gpTB;
         ggy(sys.ipTB,sys.isal,sys.isal) = ggpTB;
-        % if (opt.TB == 1)
-        %     % Uppstrom, L., Deep-Sea Research 21:161-162, 1974
-        %     % ( copied from Orr's code )
-        %     % TB = ( 0.000232/ 10.811) * (sal/1.80655)
-        %     TB = 0.0004157 * sal / 35;
-        %     y(sys.ipTB)             = sys.p( TB );
-        %     gy(sys.ipTB,isal)       = sys.dpdx( TB )   *  0.0004157 / 35 ;
-        %     ggy(sys.ipTB,isal,isal) = sys.d2pdx2( TB ) * (0.0004157 / 35 ) ^ 2;
-        %
-        % elseif (opt.TB == 2)
-        %     % Lee, Kim, Myrne, Millero, Feely, Yong-Ming Liu. 2010.
-        %     % Geochemica Et Cosmochimica Acta 74 (6): 1801-1811.
-        %     % ( copied from Sharp's code )
-        %     % TB = (0.0002414/ 10.811) * (sal/1.80655)
-        %     TB = 0.0004326 * sal / 35;
-        %     y(sys.ipTB)             = sys.p(TB);
-        %     gy(sys.ipTB,isal)       =  sys.dpdx( TB )  *   0.0004326 / 35;
-        %     ggy(sys.ipTB,isal,isal) = sys.d2pdx2( TB ) * ( 0.0004326 / 35 ) ^ 2;
-        % elseif (opt.TB == 3)
-        %     % Culkin, F., in Chemical Oceanography,
-        %     % ed. Riley and Skirrow, 1965: GEOSECS references this
-        %     % (copied from Orr's code)
-        %     TB = 0.0004106 * sal / 35;
-        %     y(sys.ipTB)             = p( TB );
-        %     gy(sys.ipTB,isal)       = sys.dpdx( TB )   *   0.0004106 / 35 ;
-        %     ggy(sys.ipTB,isal,isal) = sys.d2pdx2( TB ) * ( 0.0004106 / 35 ) ^ 2;
-        % end
     end
     if (isnan(obs.TS))
         y(sys.ipTS)                     = pTS;
         gy(sys.ipTS,sys.isal)           = gpTS;
         ggy(sys.ipTS,sys.isal,sys.isal) = ggpTS;
-        % % Morris, A. W., and Riley, J. P., Deep-Sea Research 13:699-705, 1966:
-        % % copied from Orr's code
-        % TS     = ( 0.14 / 96.062 ) * ( sal / 1.80655 );
-        % y(sys.ipTS)             = sys.p( TS );
-        % gy(sys.ipTS,isal)       = sys.dpdx( TS )   *   (0.14 / 96.062 ) / 1.80655 ;
-        % ggy(sys.ipTS,isal,isal) = sys.d2pdx2( TS ) * ( (0.14 / 96.062 ) / 1.80655 ) ^ 2 ;
     end
     if (isnan(obs.TF))
         y(sys.ipTF)                     = pTF;
         gy(sys.ipTF,sys.isal)           = gpTF;
         ggy(sys.ipTF,sys.isal,sys.isal) = ggpTF;
-        % % Riley, J. P., Deep-Sea Research 12:219-220, 1965:
-        % % this is .000068.*Sali./35. = .00000195.*Sali      % why don't we use this expression?
-        % TF  = ( 0.000067 / 18.998 ) * ( sal / 1.80655 );
-        % y(sys.ipTF)              = sys.p( TF );
-        % gy(sys.ipTF,isal)        = sys.dpdx( TF )   *   (0.000067 / 18.998 ) / 1.80655 ;
-        % ggy(sys.ipTF,isal,isal)  = sys.d2pdx2( TF ) * ( (0.000067 / 18.998 ) / 1.80655 ) ^ 2 ;
     end
     if (isnan(obs.TCa))
         y(sys.ipTCa)                        = pTCa;
         gy(sys.ipTCa,sys.isal)              = gpTCa;
         ggy(sys.ipTCa,sys.isal,sys.isal)    = ggpTCa;
-        % if opt.K1K2 == 6 || opt.K1K2 == 7
-        %     % Calculate Ca for GEOSECS, Riley and Skirrow 1965
-        %     TCa    =  ( 0.01026 * sal / 35) ;
-        %     y(sys.ipTCa)             = sys.p( TCa );
-        %     gy(sys.ipTCa,isal)       = sys.dpdx( TCa )   *   0.01026 / 35 ;
-        %     ggy(sys.iTCal,isal,isal) = sys.d2pdx2( TCa ) * ( 0.01026 / 35 ) ^ 2 ;
-        % else
-        %     % Calculate Ca, Riley and Tongdui 1967
-        %     % this is 0.010285.*obs.sal./35;
-        %     TCa = ( 0.02128 / 40.087 * ( sal / 1.80655 ) );
-        %     y(sys.ipTCa)             = sys.p( TCa );
-        %     gy(sys.ipTCa,isal)       = sys.dpdx( TCa )   *   ( 0.02128 / 40.087 ) / 1.80655 ;
-        %     ggy(sys.ipTCa,isal,isal) = sys.d2pdx2( TCa ) * ( ( 0.02128 / 40.087 ) / 1.80655 ) ^ 2 ;
-        % end
     end
 
     for i = 1:nTP
@@ -1657,20 +1527,20 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
             gy(sys.tp(i).ipKf,iTSP)       = gpK(7,:);
             ggy(sys.tp(i).ipKf,iTSP,iTSP) = ggpK(7,:,:);
         end
-        if (isnan(obs.tp(i).pK1p))
-            y(sys.tp(i).ipK1p)             = pK(8); 
-            gy(sys.tp(i).ipK1p,iTSP)       = gpK(8,:);
-            ggy(sys.tp(i).ipK1p,iTSP,iTSP) = ggpK(8,:,:);
+        if (isnan(obs.tp(i).pKp1))
+            y(sys.tp(i).ipKp1)             = pK(8); 
+            gy(sys.tp(i).ipKp1,iTSP)       = gpK(8,:);
+            ggy(sys.tp(i).ipKp1,iTSP,iTSP) = ggpK(8,:,:);
         end
-        if (isnan(obs.tp(i).pK2p))
-            y(sys.tp(i).ipK2p)             = pK(9);
-            gy(sys.tp(i).ipK2p,iTSP)       = gpK(9,:);
-            ggy(sys.tp(i).ipK2p,iTSP,iTSP) = ggpK(9,:,:);
+        if (isnan(obs.tp(i).pKp2))
+            y(sys.tp(i).ipKp2)             = pK(9);
+            gy(sys.tp(i).ipKp2,iTSP)       = gpK(9,:);
+            ggy(sys.tp(i).ipKp2,iTSP,iTSP) = ggpK(9,:,:);
         end
-        if (isnan(obs.tp(i).pK3p))
-            y(sys.tp(i).ipK3p)             = pK(10); 
-            gy(sys.tp(i).ipK3p,iTSP)       = gpK(10,:);
-            ggy(sys.tp(i).ipK3p,iTSP,iTSP) = ggpK(10,:,:);
+        if (isnan(obs.tp(i).pKp3))
+            y(sys.tp(i).ipKp3)             = pK(10); 
+            gy(sys.tp(i).ipKp3,iTSP)       = gpK(10,:);
+            ggy(sys.tp(i).ipKp3,iTSP,iTSP) = ggpK(10,:,:);
         end  
         if (isnan(obs.tp(i).pKsi))
             y(sys.tp(i).ipKsi)             = pK(11);  
@@ -1774,15 +1644,15 @@ function z0 = init(yobs,sys)
         y0(sys.tp(i).ipF)    = p(F);
         y0(sys.tp(i).ipHF)   = p(HF);
         
-        K1p     = q(y0(sys.tp(i).ipK1p));
-        K2p     = q(y0(sys.tp(i).ipK2p));
-        K3p     = q(y0(sys.tp(i).ipK3p));
+        Kp1     = q(y0(sys.tp(i).ipKp1));
+        Kp2     = q(y0(sys.tp(i).ipKp2));
+        Kp3     = q(y0(sys.tp(i).ipKp3));
         TP      = q(yobs(sys.ipTP));
-        d = ( h^3 + K1p * h^2 + K1p * K2p * h + K1p * K2p * K3p);
+        d = ( h^3 + Kp1 * h^2 + Kp1 * Kp2 * h + Kp1 * Kp2 * Kp3);
         h3po4   = TP * h^3 / d;
-        h2po4   = TP * K1p * h^2 / d;
-        hpo4    = TP * K1p * K2p * h / d;
-        po4     = TP * K1p * K2p * K3p / d;
+        h2po4   = TP * Kp1 * h^2 / d;
+        hpo4    = TP * Kp1 * Kp2 * h / d;
+        po4     = TP * Kp1 * Kp2 * Kp3 / d;
         y0(sys.ipTP)             = p(TP);
         y0(sys.tp(i).iph3po4)    = p(h3po4);
         y0(sys.tp(i).iph2po4)    = p(h2po4);
@@ -1799,10 +1669,10 @@ function z0 = init(yobs,sys)
         
         
         Knh4    = q(y0(sys.tp(i).ipKnh4));
-        TNH3    = q(yobs(sys.ipTNH3));
-        nh3     = TNH3 / ( 1 + h / Knh4 );
-        nh4     = TNH3 - nh3 ;
-        y0(sys.ipTNH3)       = p(TNH3);
+        TNH4    = q(yobs(sys.ipTNH4));
+        nh3     = TNH4 / ( 1 + h / Knh4 );
+        nh4     = TNH4 - nh3 ;
+        y0(sys.ipTNH4)       = p(TNH4);
         y0(sys.tp(i).ipnh3)  = p(nh3);
         y0(sys.tp(i).ipnh4)  = p(nh4);
         
@@ -1832,8 +1702,8 @@ function z0 = init(yobs,sys)
         y0(sys.tp(i).iph_tot) = p(h_tot);
         y0(sys.tp(i).iph_sws) = p(h_sws);
         y0(sys.tp(i).iph_free) = p(h_free);
-        fh = q(y0(sys.tp(i).ipfh));
-        h_nbs = h_free*fh;
+        fH = q(y0(sys.tp(i).ipfH));
+        h_nbs = h_free*fH;
         y0(sys.tp(i).iph_nbs) = p(h_nbs);
     end
     nlam    = size(sys.M,1) + size(sys.K,1);
@@ -1922,13 +1792,13 @@ function [est] = parse_output(z,sigx,sys)
     est.eTSi_l  = ebar_l(sys.ipTSi)*1e6; 
     est.eTSi_u  = ebar_u(sys.ipTSi)*1e6;
     
-    % TNH3 nitrate
-    est.pTNH3       = z(sys.ipTNH3);       
-    est.epTNH3      = sigx(sys.ipTNH3);
-    est.TNH3        = q(z(sys.ipTNH3))*1e6;   % convt mol/kg to µmol/kg
-    est.eTNH3       = ebar(sys.ipTNH3)*1e6;
-    est.eTNH3_l     = ebar_l(sys.ipTNH3)*1e6; 
-    est.eTNH3_u     = ebar_u(sys.ipTNH3)*1e6;
+    % TNH4 nitrate
+    est.pTNH4       = z(sys.ipTNH4);       
+    est.epTNH4      = sigx(sys.ipTNH4);
+    est.TNH4        = q(z(sys.ipTNH4))*1e6;   % convt mol/kg to µmol/kg
+    est.eTNH4       = ebar(sys.ipTNH4)*1e6;
+    est.eTNH4_l     = ebar_l(sys.ipTNH4)*1e6; 
+    est.eTNH4_u     = ebar_u(sys.ipTNH4)*1e6;
     
     % TH2S sulfide
     est.pTH2S       = z(sys.ipTH2S);       
@@ -1960,13 +1830,53 @@ function [est] = parse_output(z,sigx,sys)
         est.tp(i).eP_l  = z(sys.tp(i).iP)-sigx(sys.tp(i).iP);
         est.tp(i).eP_u  = z(sys.tp(i).iP)+sigx(sys.tp(i).iP);
         
-        % pH on the scale used to compute the pK values
-        est.tp(i).ph   = z(sys.tp(i).iph); % (9)
-        est.tp(i).eph  = sigx(sys.tp(i).iph);
-        est.tp(i).h    = q(z(sys.tp(i).iph)) * 1e6;
-        est.tp(i).eh   = ebar(sys.tp(i).iph) * 1e6;
-        est.tp(i).eh_l   = ebar_l(sys.tp(i).iph) * 1e6;
-        est.tp(i).eh_u   = ebar_u(sys.tp(i).iph) * 1e6;
+        % fCO2
+        est.tp(i).fco2      = q(z(sys.tp(i).ipfco2)) * 1e6; % convt atm to µatm
+        est.tp(i).efco2     = ebar(sys.tp(i).ipfco2) * 1e6;
+        est.tp(i).efco2_l   = ebar_l(sys.tp(i).ipfco2) * 1e6;
+        est.tp(i).efco2_u   = ebar_u(sys.tp(i).ipfco2) * 1e6;
+        est.tp(i).pfco2     = z(sys.tp(i).ipfco2);
+        est.tp(i).epfco2    = sigx(sys.tp(i).ipfco2);
+
+        % pCO2
+        est.tp(i).pco2      = q(z(sys.tp(i).ippco2)) * 1e6; % convt atm to µatm
+        est.tp(i).epco2     = ebar(sys.tp(i).ippco2) * 1e6;
+        est.tp(i).epco2_l   = ebar_l(sys.tp(i).ippco2) * 1e6;
+        est.tp(i).epco2_u   = ebar_u(sys.tp(i).ippco2) * 1e6;
+        est.tp(i).ppco2     = z(sys.tp(i).ippco2);
+        est.tp(i).eppco2    = sigx(sys.tp(i).ippco2);
+        
+        % HCO3
+        est.tp(i).hco3      = q(z(sys.tp(i).iphco3))*1e6; % convt mol/kg to µmol/kg
+        est.tp(i).ehco3     = ebar(sys.tp(i).iphco3)*1e6;
+        est.tp(i).ehco3_l   = ebar_l(sys.tp(i).iphco3)*1e6;
+        est.tp(i).ehco3_u   = ebar_u(sys.tp(i).iphco3)*1e6;
+        est.tp(i).phco3     = z(sys.tp(i).iphco3);
+        est.tp(i).ephco3    = sigx(sys.tp(i).iphco3);
+
+        % CO3
+        est.tp(i).co3       = q(z(sys.tp(i).ipco3))*1e6; % convt mol/kg to µmol/kg
+        est.tp(i).eco3      = ebar(sys.tp(i).ipco3)*1e6;
+        est.tp(i).eco3_l    = ebar_l(sys.tp(i).ipco3)*1e6;
+        est.tp(i).eco3_u    = ebar_u(sys.tp(i).ipco3)*1e6;
+        est.tp(i).pco3      = z(sys.tp(i).ipco3);
+        est.tp(i).epco3     = sigx(sys.tp(i).ipco3);
+
+        % CO2*
+        est.tp(i).co2st     = q(z(sys.tp(i).ipco2st)); % convt mol/kg to µmol/kg
+        est.tp(i).eco2st    = ebar(sys.tp(i).ipco2st);
+        est.tp(i).eco2st_l  = ebar_l(sys.tp(i).ipco2st);
+        est.tp(i).eco2st_u  = ebar_u(sys.tp(i).ipco2st);
+        est.tp(i).pco2st    = z(sys.tp(i).ipco2st);
+        est.tp(i).epco2st   = sigx(sys.tp(i).ipco2st);
+
+        % pH on the scale opt.phscale used to compute the pK values
+        est.tp(i).ph        = z(sys.tp(i).iph); % (9)
+        est.tp(i).eph       = sigx(sys.tp(i).iph);
+        est.tp(i).h         = q(z(sys.tp(i).iph)) * 1e6;
+        est.tp(i).eh        = ebar(sys.tp(i).iph) * 1e6;
+        est.tp(i).eh_l      = ebar_l(sys.tp(i).iph) * 1e6;
+        est.tp(i).eh_u      = ebar_u(sys.tp(i).iph) * 1e6;
 
         % pH_free
         est.tp(i).ph_free    = z(sys.tp(i).iph_free); % (15)
@@ -2000,59 +1910,19 @@ function [est] = parse_output(z,sigx,sys)
         est.tp(i).eh_nbs_l  = ebar_l(sys.tp(i).iph_nbs) * 1e6;
         est.tp(i).eh_nbs_u  = ebar_u(sys.tp(i).iph_nbs) * 1e6;
 
-        % fCO2
-        est.tp(i).fco2      = q(z(sys.tp(i).ipfco2)) * 1e6; % convt atm to µatm
-        est.tp(i).efco2     = ebar(sys.tp(i).ipfco2) * 1e6;
-        est.tp(i).efco2_l   = ebar_l(sys.tp(i).ipfco2) * 1e6;
-        est.tp(i).efco2_u   = ebar_u(sys.tp(i).ipfco2) * 1e6;
-        est.tp(i).pfco2     = z(sys.tp(i).ipfco2);
-        est.tp(i).epfco2    = sigx(sys.tp(i).ipfco2);
-
-        % pCO2
-        est.tp(i).pco2      = q(z(sys.tp(i).ippco2)) * 1e6; % convt atm to µatm
-        est.tp(i).epco2     = ebar(sys.tp(i).ippco2) * 1e6;
-        est.tp(i).epco2_l   = ebar_l(sys.tp(i).ippco2) * 1e6;
-        est.tp(i).epco2_u   = ebar_u(sys.tp(i).ippco2) * 1e6;
-        est.tp(i).ppco2     = z(sys.tp(i).ippco2);
-        est.tp(i).eppco2    = sigx(sys.tp(i).ippco2);
-
         % fH = activity coefficient
-        est.tp(i).fh        = q(z(sys.tp(i).ipfh)) * 1e6;
-        est.tp(i).efh       = ebar(sys.tp(i).ipfh) * 1e6;
-        est.tp(i).efh_l     = ebar_l(sys.tp(i).ipfh) * 1e6;
-        est.tp(i).efh_u     = ebar_u(sys.tp(i).ipfh) * 1e6;
-        est.tp(i).pfh       = z(sys.tp(i).ipfh);
-        est.tp(i).epfh      = sigx(sys.tp(i).ipfh);
+        est.tp(i).fH        = q(z(sys.tp(i).ipfH)) * 1e6;
+        est.tp(i).efH       = ebar(sys.tp(i).ipfH) * 1e6;
+        est.tp(i).efH_l     = ebar_l(sys.tp(i).ipfH) * 1e6;
+        est.tp(i).efH_u     = ebar_u(sys.tp(i).ipfH) * 1e6;
+        est.tp(i).pfH       = z(sys.tp(i).ipfH);
+        est.tp(i).epfH      = sigx(sys.tp(i).ipfH);
 
         % p2f
-        est.tp(i).p2f       = q(z(sys.tp(i).ipp2f)); % (57)
+        est.tp(i).p2f       = q(z(sys.tp(i).ipp2f));
         est.tp(i).ep2f      = ebar(sys.tp(i).ipp2f);
         est.tp(i).pp2f      = z(sys.tp(i).ipp2f); 
         est.tp(i).epp2f     = sigx(sys.tp(i).ipp2f);
-
-        % HCO3
-        est.tp(i).hco3      = q(z(sys.tp(i).iphco3))*1e6; % convt mol/kg to µmol/kg
-        est.tp(i).ehco3     = ebar(sys.tp(i).iphco3)*1e6;
-        est.tp(i).ehco3_l   = ebar_l(sys.tp(i).iphco3)*1e6;
-        est.tp(i).ehco3_u   = ebar_u(sys.tp(i).iphco3)*1e6;
-        est.tp(i).phco3     = z(sys.tp(i).iphco3);
-        est.tp(i).ephco3    = sigx(sys.tp(i).iphco3);
-
-        % CO3
-        est.tp(i).co3       = q(z(sys.tp(i).ipco3))*1e6; % convt mol/kg to µmol/kg
-        est.tp(i).eco3      = ebar(sys.tp(i).ipco3)*1e6;
-        est.tp(i).eco3_l    = ebar_l(sys.tp(i).ipco3)*1e6;
-        est.tp(i).eco3_u    = ebar_u(sys.tp(i).ipco3)*1e6;
-        est.tp(i).pco3      = z(sys.tp(i).ipco3);
-        est.tp(i).epco3     = sigx(sys.tp(i).ipco3);
-
-        % CO2*
-        est.tp(i).co2st     = q(z(sys.tp(i).ipco2st)); % convt mol/kg to µmol/kg
-        est.tp(i).eco2st    = ebar(sys.tp(i).ipco2st);
-        est.tp(i).eco2st_l  = ebar_l(sys.tp(i).ipco2st);
-        est.tp(i).eco2st_u  = ebar_u(sys.tp(i).ipco2st);
-        est.tp(i).pco2st    = z(sys.tp(i).ipco2st);
-        est.tp(i).epco2st   = sigx(sys.tp(i).ipco2st);
 
         % pK0 
         est.tp(i).pK0       = z(sys.tp(i).ipK0); % (79)
@@ -2198,29 +2068,29 @@ function [est] = parse_output(z,sigx,sys)
         est.tp(i).ph3po4    = z(sys.tp(i).iph3po4);
         est.tp(i).eph3po4   = sigx(sys.tp(i).iph3po4);
 
-        % pK1p
-        est.tp(i).pK1p      = z(sys.tp(i).ipK1p);
-        est.tp(i).epK1p     = sigx(sys.tp(i).ipK1p);
-        est.tp(i).K1p       = q(z(sys.tp(i).ipK1p));
-        est.tp(i).eK1p      = ebar(sys.tp(i).ipK1p);
-        est.tp(i).eK1p_l    = ebar_l(sys.tp(i).ipK1p);
-        est.tp(i).eK1p_u    = ebar_u(sys.tp(i).ipK1p);
+        % pKp1
+        est.tp(i).pKp1      = z(sys.tp(i).ipKp1);
+        est.tp(i).epKp1     = sigx(sys.tp(i).ipKp1);
+        est.tp(i).Kp1       = q(z(sys.tp(i).ipKp1));
+        est.tp(i).eKp1      = ebar(sys.tp(i).ipKp1);
+        est.tp(i).eKp1_l    = ebar_l(sys.tp(i).ipKp1);
+        est.tp(i).eKp1_u    = ebar_u(sys.tp(i).ipKp1);
 
-        % pK2p
-        est.tp(i).pK2p      = z(sys.tp(i).ipK2p);
-        est.tp(i).epK2p     = sigx(sys.tp(i).ipK2p);
-        est.tp(i).K2p       = q(z(sys.tp(i).ipK2p));
-        est.tp(i).eK2p      = ebar(sys.tp(i).ipK2p);
-        est.tp(i).pK2p_l    = ebar_l(sys.tp(i).ipK2p);
-        est.tp(i).eK2p_u    = ebar_u(sys.tp(i).ipK2p);
+        % pKp2
+        est.tp(i).pKp2      = z(sys.tp(i).ipKp2);
+        est.tp(i).epKp2     = sigx(sys.tp(i).ipKp2);
+        est.tp(i).Kp2       = q(z(sys.tp(i).ipKp2));
+        est.tp(i).eKp2      = ebar(sys.tp(i).ipKp2);
+        est.tp(i).pKp2_l    = ebar_l(sys.tp(i).ipKp2);
+        est.tp(i).eKp2_u    = ebar_u(sys.tp(i).ipKp2);
 
-        % pK3p
-        est.tp(i).pK3p      = z(sys.tp(i).ipK3p);
-        est.tp(i).epK3p     = sigx(sys.tp(i).ipK3p);
-        est.tp(i).K3p       = q(z(sys.tp(i).ipK3p));
-        est.tp(i).eK3p      = ebar(sys.tp(i).ipK3p);
-        est.tp(i).eK3p_l    = ebar_l(sys.tp(i).ipK3p);
-        est.tp(i).eK3p_u    = ebar_u(sys.tp(i).ipK3p);
+        % pKp3
+        est.tp(i).pKp3      = z(sys.tp(i).ipKp3);
+        est.tp(i).epKp3     = sigx(sys.tp(i).ipKp3);
+        est.tp(i).Kp3       = q(z(sys.tp(i).ipKp3));
+        est.tp(i).eKp3      = ebar(sys.tp(i).ipKp3);
+        est.tp(i).eKp3_l    = ebar_l(sys.tp(i).ipKp3);
+        est.tp(i).eKp3_u    = ebar_u(sys.tp(i).ipKp3);
         
         % SiOH4
         est.tp(i).sioh4     = q(z(sys.tp(i).ipsioh4))*1e6; % convt
