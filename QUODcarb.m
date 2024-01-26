@@ -70,11 +70,16 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 %
 %   opt.KF    -> choice of KF formulation
 %           1 = Dickson and Riley, 1979
-%           2 = Perez and Fraga, 1987  (DEFAULT)
+%           2 = Perez and Fraga, 1987   (DEFAULT)
 %
 %   opt.TB    -> choice of total borate formulation
 %           1 = Uppstrom, 1979
-%           2 = Lee et al., 2010       (DEFAULT)
+%           2 = Lee et al., 2010        (DEFAULT)
+%
+%   opt.co2press -> turn on or off the pressure dependencies for K0 and
+%           pCO2 to fCO2 fugacity factor (p2f)
+%           1 = on                      (DEFAULT)
+%           2 = off
 %
 %--------------------------------------------------------------------------
 %
@@ -142,8 +147,10 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         C = inv(J);
         C = C(1:nv,1:nv);
         sigx = sqrt(full(diag(C)));
-        if (sum(isnan(sigx)) > 0) && (opt.printmes ~= 0)
+        if (opt.printmes ~= 0)
+            if (sum(isnan(sigx)) > 0) || (sum(isinf(sigx)) > 0) 
             fprintf('NaN found in output means faulty run. i = %i\n',i)
+            end
         end
 
         % populate est
@@ -342,6 +349,13 @@ function [opt] = check_opt(opt)
             end
         end
     end
+    % opt.co2press
+    if ~isfield(opt,'co2press') || isbad(opt.co2press)
+        opt.co2press = 1; % on
+        if opt.printmes ~=0
+            fprintf('No opt.co2press chosen. Assuming opt.co2press = 1 (on). \n');
+        end
+    end
     % opt.Revelle
     if ~isfield(opt,'Revelle') || isbad(opt.Revelle)
         opt.Revelle = 0;
@@ -349,6 +363,7 @@ function [opt] = check_opt(opt)
             fprintf('No opt.Revelle chosen. Assuming opt.Revelle = 0 (off). \n');
         end
     end
+    % opt.turnoff
 end
 
 % ------------------------------------------------------------------------
@@ -358,7 +373,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
     isgood  = @(thing) (~isempty(thing) & ~sum(isnan(thing)));
     p       = sys.p;
     q       = sys.q;
-    % convert x+/-e into precision for p(x)
+    % convert x+/-e into precision for p(x) (precision = 1/variance)
     w       = @(x,e) abs( p(1 + e./x) ).^(-2);
 
     nv      = size(sys.K,2);
@@ -432,7 +447,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         end
         if (~isfield(obs(i), 'eTB'))  || (~isgood(obs(i).eTB))
             obs(i).eTB       = nan;
-            wobs(i,sys.ipTB) = epTB;
+            wobs(i,sys.ipTB) = (epTB)^(-2); % convert to precision
         else
             wobs(i,sys.ipTB) = w(obs(i).TB,obs(i).eTB); % mol/kg
         end
@@ -449,7 +464,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         end
         if (~isfield(obs(i), 'eTS'))  || (~isgood(obs(i).eTS))
             obs(i).eTS       = nan ;
-            wobs(i,sys.ipTS) = epTS;
+            wobs(i,sys.ipTS) = (epTS)^(-2); % convert to precision
         else
             TS = (0.14/96.062)*obs(i).sal/1.80655;
             wobs(i,sys.ipTS)    = w(TS,obs(i).eTS);
@@ -466,7 +481,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         end
         if (~isfield(obs(i), 'eTF'))  || (~isgood(obs(i).eTF))
             obs(i).eTF       = nan;
-            wobs(i,sys.ipTF) = epTF;
+            wobs(i,sys.ipTF) = (epTF)^(-2);
         else
             TF = (6.7e-5/18.998)*obs(i).sal/1.80655;
             wobs(i,sys.ipTF)    = w(TF,obs(i).eTF);
@@ -567,7 +582,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         end
         if (~isfield(obs(i), 'eTCa'))  || (~isgood(obs(i).eTCa))
             obs(i).eTCa       = nan;
-            wobs(i,sys.ipTCa) = epTCa;
+            wobs(i,sys.ipTCa) = (epTCa)^(-2);
             if (isgood(obs(i).TCa)) && opt.printmes ~= 0
                 fprintf(' Warning, no obs.eTCa input with obs.eTCa. Assuming 6e-5 mol/kg.\n' )
             end
@@ -1622,7 +1637,6 @@ function z0 = init(yobs,sys)
         Kw      = q(y0(sys.tp(i).ipKw));
         oh      = Kw / h;
         y0(sys.tp(i).ipoh)   = p(oh);
-
         
         Ks      = q(y0(sys.tp(i).ipKs));
         TS      = q(yobs(sys.ipTS));

@@ -24,7 +24,7 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
     d2pdx2  = @(x) 1 / (x^2 * LOG10);       % p''
     dqdx    = @(x) -LOG10 * 10.^( -x );     % q'
     d2qdx2  = @(x) LOG10^2 * 10.^( -x );    % q''
-    w       = @(x,e) abs( p(1 + e./x) ).^(-2);
+    my_abs  = @(x) sqrt(x*x);
 
     % compute the totals and their derivatives
     [pTB  , gpTB  , ggpTB  , epTB  ] = calc_pTB(opt,S);
@@ -58,7 +58,7 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             TBu     = ( ( (2.32e-4 + 5e-6)/10.811) * S/1.80655 );
             TBl     = ( ( (2.32e-4 - 5e-6)/10.811) * S/1.80655 );
             eTB     = (TBu - TBl) /2 ;
-            epTB    = w(TB,eTB); % mol/kg
+            epTB    = my_abs( p(TB + eTB) - pTB ); % mol/kg
             
         elseif (opt.TB == 2)
             % Lee, Kim, Myrne, Millero, Feely, Yong-Ming Liu. 2010.
@@ -74,8 +74,8 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             TBu     = ( ( (2.414e-4 + 9e-6)/10.811) * S/1.80655);
             TBl     = ( ( (2.414e-4 - 9e-6)/10.811) * S/1.80655);
             eTB     = (TBu - TBl) /2;
-            epTB    = w(TB,eTB); % mol/kg
-
+            epTB    = my_abs( p(TB + eTB) - pTB ); % mol/kg
+            
         elseif (opt.K1K2 == 6) || (opt.K1K2 == 7)
             % this is about 1% lower than Uppstrom's value
             % Culkin, F., in Chemical Oceanography,
@@ -90,7 +90,7 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             TBu     = ( ( (2.32e-4 + 5e-6)/10.811) * S/1.80655 );
             TBl     = ( ( (2.32e-4 - 5e-6)/10.811) * S/1.80655 );
             eTB     = (TBu - TBl) /2 ;
-            epTB    = w(TB,eTB); % mol/kg
+            epTB    = my_abs( p(TB + eTB) - pTB ); % mol/kg
         end 
     end
 
@@ -106,7 +106,8 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
         TSu     = ( ( (0.14+0.00023)/96.062 ) * S/ 1.80655 );
         TSl     = ( ( (0.14-0.00023)/96.062 ) * S/ 1.80655 );
         eTS     = (TSu - TSl) / 2;
-        epTS    = w(TS,eTS); % mol/kg
+        my_abs  = @(x) sqrt(x*x);
+        epTS    = my_abs( p(TS + eTS) - pTS );
     end
 
     function [pTF,gpTF,ggpTF,epTF] = calc_pTF(opt,S)
@@ -121,7 +122,8 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
         TFu     = ( ( (6.7e-5 + 0.1e-5)/18.998) * S/1.80655 );
         TFl     = ( ( (6.7e-5 - 0.1e-5)/18.998) * S/1.80655 );
         eTF     = (TFu - TFl) / 2;
-        epTF    = w(TF,eTF); % mol/kg
+        my_abs  = @(x) sqrt(x*x);
+        epTF    = my_abs( p(TF + eTF) - pTF );
     end
 
     function [pTCa,gpTCa,ggpTCa,epTCa] = calc_pTCa(opt,S)
@@ -140,7 +142,8 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             ggpTCa  = d2pdx2( TCa ) * ( ( 0.02128 / 40.087 ) / 1.80655 ) ^ 2 ; 
         end
         eTCa    = (6e-5); % mol/kg, from Riley and Tongdui 1967
-        epTCa   = w(TCa,eTCa);
+        my_abs  = @(x) sqrt(x*x);
+        epTCa   = my_abs( p(TCa + eTCa) - pTCa );
     end
 
 end
