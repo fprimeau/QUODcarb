@@ -435,7 +435,6 @@ function sys = mksys(obs,phscale)
         ML = M(tp(j).mr,:); KL = K(tp(j).kr,:);
         ML = ML(:,tp(j).jfree); KL = KL(:,tp(j).jfree);
         tp(j).dcdx_pTCfixed = @(xfree) [ML*diag(dqdx(xfree));KL];
-        
 
     end
     sys.M  = M;
