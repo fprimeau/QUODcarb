@@ -82,7 +82,7 @@ def create_obs(nD):
     'T':  degC
     'eT': from cruise report
     TODO:  Not sure about the P option
-    'P':  NOT in situ
+    'P':  NOT in situpr
     'ph': total scale
     'co3':(µmol/kg)
     'eco3':std ±2µmol/kg

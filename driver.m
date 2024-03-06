@@ -1,5 +1,3 @@
-
-
 % driver to go with QUODcarb
 
 % updated opt (options) structure
@@ -102,6 +100,3 @@ est03   = est;
 % tp      = 2;
 % fid3    = 'compare_outs/compare_TA_ph.csv';
 % [A]     = compare(obs,est,opt,tp,3,fid3);
-
-
-
