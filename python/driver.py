@@ -1,5 +1,4 @@
 # driver to go with QUODcarb
-# add np.nan values
 
 # g = GOMECC data
 # format long
@@ -62,7 +61,6 @@ for i in range(nD):
     """
     'T':  degC
     'eT': from cruise report
-    #TODO: What is ad?
     'P':  in(i+ad,1);  NOT in situ
     'ph': total scale
     'co3':(µmol/kg)
@@ -90,6 +88,7 @@ obs_backup = copy.deepcopy(obs)
 # CT AT pH pCO2 CO3 (Q5) (fid5)
 
 obs = copy.deepcopy(obs_backup)
+
 # newtuple = QUODcarb(obs,opt)
 # est = newtuple[0]
 # obs = newtuple[1]
@@ -97,36 +96,33 @@ obs = copy.deepcopy(obs_backup)
 # iflag = newtuple[3]
 
 # est05 = est
-
 # Q2: Input pairs
 # TA TC (Q2) (fid2)
 for i in range(nD):
-    obs[i]['tp'][1]['ph'] = np.nan
-    obs[i]['tp'][1]['eph'] = np.nan
-    obs[i]['tp'][2]['pco2'] = np.nan
-    obs[i]['tp'][2]['epco2'] = np.nan
-    obs[i]['tp'][1]['co3'] = np.nan
-    obs[i]['tp'][1]['eco3'] = np.nan
+    obs[i][10]['tp'][1]['ph'] = np.nan
+    obs[i][10]['tp'][1]['eph'] = np.nan
+    obs[i][10]['tp'][2]['pco2'] = np.nan
+    obs[i][10]['tp'][2]['epco2'] = np.nan
+    obs[i][10]['tp'][1]['co3'] = np.nan
+    obs[i][10]['tp'][1]['eco3'] = np.nan
 
-#TODO: QUODcarb function uncomment
 #est,obs, _, _ = QUODcarb(obs,opt); # [est, obs, sys, iflag]
 # est02  = est
 # fid2   = 'compare_outs/compare_TC_TA.csv'; 
 # tp     = 2 # second tp system for ph in there
-#future TODO: make sure compare function works
 #A      = compare(obs,est,opt,tp,1,fid2); # 1 for input pair TA TC
 
-# # TA ph (Q2) (fid3)
+# TA ph (Q2) (fid3)
 
-# obs = obs_backup.copy()
+obs = obs_backup.copy()
 
-# for i in range(nD):
-#     obs[i]['TC'] = np.nan
-#     obs[i]['eTC'] = np.nan
-#     obs[i]['tp'][2]['pco2'] = np.nan
-#     obs[i]['tp'][2]['epco2'] = np.nan
-#     obs[i]['tp'][1]['co3'] = np.nan
-#     obs[i]['tp'][1]['eco3'] = np.nan
+for i in range(nD):
+    obs[i][0]['TC'] = np.nan
+    obs[i][1]['eTC'] = np.nan
+    obs[i][10]['tp'][2]['pco2'] = np.nan
+    obs[i][10]['tp'][2]['epco2'] = np.nan
+    obs[i][10]['tp'][1]['co3'] = np.nan
+    obs[i][10]['tp'][1]['eco3'] = np.nan
 
 # est, obs, _, _ = QUODcarb(obs, opt)
 #est03 = est
