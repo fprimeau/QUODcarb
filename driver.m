@@ -47,7 +47,7 @@ for i = 1:10
     obs(i).tp(2).ph   = in(9,i); % total scale
     obs(i).tp(2).eph  = 0.0004 ;
     obs(i).tp(2).co3  = in(11,i); % (µmol/kg)
-    obs(i).tp(2).eco3 = in(11,1)*0.02;  % 2% from Jon Sharp NEW 1/25/24
+    obs(i).tp(2).eco3 = in(11,i)*0.02; % 2% from Jon Sharp NEW 1/25/24
 
     % third (T,P)-dependent measurement
     obs(i).tp(3).T     = 20 ; %degC
@@ -66,64 +66,73 @@ obs_backup = obs;
 % K04
 [est,~,~,~] = QUODcarb(obs,opt);
 estK04 = est;
+fprintf('K04 done \n')
 
-% K10
-obs = obs_backup;
-opt.K1K2 = 10;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK10 = est;
-
-% K11
-obs = obs_backup;
-opt.K1K2 = 11;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK11 = est;
-
-% K12
-obs = obs_backup;
-opt.K1K2 = 12;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK12 = est;
-
-% K13
-obs = obs_backup;
-opt.K1K2 = 13;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK13 = est;
-
-% K14
-obs = obs_backup;
-opt.K1K2 = 14;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK14 = est;
-
-% K15
-obs = obs_backup;
-opt.K1K2 = 15;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK15 = est;
-
-% K16
-obs = obs_backup;
-opt.K1K2 = 16;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK16 = est;
-
-% K17
-obs = obs_backup;
-opt.K1K2 = 17;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK17 = est;
-
-save output_mat_files/pKi/estK10.mat estK10;
-save output_mat_files/pKi/estK04.mat estK04;
-save output_mat_files/pKi/estK11.mat estK11;
-save output_mat_files/pKi/estK12.mat estK12;
-save output_mat_files/pKi/estK13.mat estK13;
-save output_mat_files/pKi/estK14.mat estK14;
-save output_mat_files/pKi/estK15.mat estK15;
-save output_mat_files/pKi/estK16.mat estK16;
-save output_mat_files/pKi/estK17.mat estK17;
+% % K10
+% obs = obs_backup;
+% opt.K1K2 = 10;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK10 = est;
+% fprintf('K10 done \n')
+% 
+% % K11
+% obs = obs_backup;
+% opt.K1K2 = 11;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK11 = est;
+% fprintf('K11 done \n')
+% 
+% % K12
+% obs = obs_backup;
+% opt.K1K2 = 12;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK12 = est;
+% fprintf('K12 done \n')
+% 
+% % K13
+% obs = obs_backup;
+% opt.K1K2 = 13;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK13 = est;
+% fprintf('K13 done \n')
+% 
+% % K14
+% obs = obs_backup;
+% opt.K1K2 = 14;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK14 = est;
+% fprintf('K14 done \n')
+% 
+% % K15
+% obs = obs_backup;
+% opt.K1K2 = 15;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK15 = est;
+% fprintf('K15 done \n')
+% 
+% % K16
+% obs = obs_backup;
+% opt.K1K2 = 16;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK16 = est;
+% fprintf('K16 done \n')
+% 
+% % K17
+% obs = obs_backup;
+% opt.K1K2 = 17;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK17 = est;
+% fprintf('K17 done \n')
+% 
+% save output_mat_files/pKi/estK10.mat estK10;
+% save output_mat_files/pKi/estK04.mat estK04;
+% save output_mat_files/pKi/estK11.mat estK11;
+% save output_mat_files/pKi/estK12.mat estK12;
+% save output_mat_files/pKi/estK13.mat estK13;
+% save output_mat_files/pKi/estK14.mat estK14;
+% save output_mat_files/pKi/estK15.mat estK15;
+% save output_mat_files/pKi/estK16.mat estK16;
+% save output_mat_files/pKi/estK17.mat estK17;
 
 
 
