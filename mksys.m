@@ -4,19 +4,19 @@ function sys = mksys(obs,phscale)
 % it creates the K and M matrices
 %
 % utility functions and constants
-    LOG10 = log(10);
-    p = @(x) -log10( x );  % inverse of q    
-    q = @(x)  10.^( -x );  % inverse of p
-    sys.p = p;
-    sys.q = q;
-    dqdx = @(x) - LOG10 * 10.^( -x );  % q'
-    d2qdx2 = @(x) LOG10^2 * 10.^(-x ); % q"
-    dpdx = @(x) -1 / (x .* LOG10);     % p'
-    d2pdx2 = @(x) 1 / (x.^2 * LOG10);  % p"
-    sys.dqdx = dqdx;
-    sys.dpdx = dpdx;
-    sys.d2pdx2 = d2pdx2;
-    sys.d2qdx2 = d2qdx2;
+    LOG10   = log(10);
+    p       = @(x) -log10( x );  % inverse of q    
+    q       = @(x)  10.^( -x );  % inverse of p
+    sys.p   = p;
+    sys.q   = q;
+    dqdx    = @(x) - LOG10 * 10.^( -x );  % q'
+    d2qdx2  = @(x) LOG10^2 * 10.^(-x ); % q"
+    dpdx    = @(x) -1 / (x .* LOG10);     % p'
+    d2pdx2  = @(x) 1 / (x.^2 * LOG10);  % p"
+    sys.dqdx    = dqdx;
+    sys.dpdx    = dpdx;
+    sys.d2pdx2  = d2pdx2;
+    sys.d2qdx2  = d2qdx2;
     isgood = @(thing) (~sum(isnan(thing)) & ~isempty(thing));
     if (~isfield(obs,'tp'))
         error('Need to provide temperature and pressure measurement.')
@@ -50,7 +50,7 @@ function sys = mksys(obs,phscale)
     i = i + 1;
     ipTF = i;  sys.ipTF = ipTF; % p(total fluoride)
     
-    % phosphate: K1p = [h][h2po4]/[h3po4], K2p = [h][hpo4]/[h2po4], K3p = [h][po4]/[hpo4]
+    % phosphate: Kp1 = [h][h2po4]/[h3po4], Kp2 = [h][hpo4]/[h2po4], Kp3 = [h][po4]/[hpo4]
     i = i+1;
     ipTP = i; sys.ipTP = ipTP; % p(total phosphate)
 
@@ -60,7 +60,7 @@ function sys = mksys(obs,phscale)
     
     % Knh4 = [h][nh3]/[nh4]
     i = i+1;
-    ipTNH3 = i; sys.ipTNH3 = ipTNH3; % p(total amonia)
+    ipTNH4 = i; sys.ipTNH4 = ipTNH4; % p(total amonia)
     
     % Kh2s = [h][hs]/[h2s]
     i = i+1;
@@ -111,13 +111,13 @@ function sys = mksys(obs,phscale)
         tp(j).ipKf = i;       i = i + 1;
         tp(j).ipF  = i;       i = i + 1;
         tp(j).ipHF = i;
-        % K1p = [h][h2po4]/[h3po4]
-        % K2p = [h][hpo4]/[h2po4]
-        % K3p = [h][po4]/[hpo4]
+        % Kp1 = [h][h2po4]/[h3po4]
+        % Kp2 = [h][hpo4]/[h2po4]
+        % Kp3 = [h][po4]/[hpo4]
         nrk = nrk + 3;        i = i + 1;
-        tp(j).ipK1p   = i;    i = i + 1;
-        tp(j).ipK2p   = i;    i = i + 1;
-        tp(j).ipK3p   = i;    i = i + 1;
+        tp(j).ipKp1   = i;    i = i + 1;
+        tp(j).ipKp2   = i;    i = i + 1;
+        tp(j).ipKp3   = i;    i = i + 1;
         tp(j).iph3po4 = i;    i = i + 1;
         tp(j).iph2po4 = i;    i = i + 1;
         tp(j).iphpo4  = i;    i = i + 1;
@@ -155,7 +155,7 @@ function sys = mksys(obs,phscale)
         nrk = nrk + 1;        i = i + 1;
         tp(j).ipKca     = i;  i = i + 1;
         tp(j).ipOmegaCa = i;  i = i+1;
-        tp(j).ipfh      = i; i = i + 1;
+        tp(j).ipfH      = i; i = i + 1;
         
         %  ph scales 
         tp(j).iph_tot  = i;   i = i + 1;
@@ -211,22 +211,22 @@ function sys = mksys(obs,phscale)
         kc = union(kc,[ tp(j).ipKf, tp(j).iph_free, tp(j).ipF, tp(j).ipHF]);
         kr = [kr, row];
         
-        % K1p = [H][H2PO4]/[H3PO4]
+        % Kp1 = [H][H2PO4]/[H3PO4]
         row = row+1;
-        K(row,[ tp(j).ipK1p, tp(j).iph, tp(j).iph2po4, tp(j).iph3po4]) = [ -1, 1, 1, -1 ];
-        kc = union(kc,[ tp(j).ipK1p, tp(j).iph, tp(j).iph2po4, tp(j).iph3po4]);
+        K(row,[ tp(j).ipKp1, tp(j).iph, tp(j).iph2po4, tp(j).iph3po4]) = [ -1, 1, 1, -1 ];
+        kc = union(kc,[ tp(j).ipKp1, tp(j).iph, tp(j).iph2po4, tp(j).iph3po4]);
         kr = [kr, row];
         
-        % K2p = [H][HPO4]/[H2PO4]
+        % Kp2 = [H][HPO4]/[H2PO4]
         row = row + 1;
-        K(row,[ tp(j).ipK2p, tp(j).iph, tp(j).iphpo4, tp(j).iph2po4 ]) = [ -1, 1, 1, -1 ];
-        kc = union(kc,[ tp(j).ipK2p, tp(j).iph, tp(j).iphpo4, tp(j).iph2po4] );
+        K(row,[ tp(j).ipKp2, tp(j).iph, tp(j).iphpo4, tp(j).iph2po4 ]) = [ -1, 1, 1, -1 ];
+        kc = union(kc,[ tp(j).ipKp2, tp(j).iph, tp(j).iphpo4, tp(j).iph2po4] );
         kr = [kr, row];
         
-        % K3p = [H][PO4]/[HPO4]        
+        % Kp3 = [H][PO4]/[HPO4]        
         row = row + 1;
-        K(row,[ tp(j).ipK3p, tp(j).iph, tp(j).ippo4,tp(j).iphpo4 ]) = [ -1, 1, 1, -1 ];
-        kc = union(kc,[ tp(j).ipK3p, tp(j).iph, tp(j).ippo4, tp(j).iphpo4]);
+        K(row,[ tp(j).ipKp3, tp(j).iph, tp(j).ippo4,tp(j).iphpo4 ]) = [ -1, 1, 1, -1 ];
+        kc = union(kc,[ tp(j).ipKp3, tp(j).iph, tp(j).ippo4, tp(j).iphpo4]);
         kr = [kr, row];       
             
         % KSi = [H][SiO(OH)3]/[Si(OH)4]
@@ -269,7 +269,7 @@ function sys = mksys(obs,phscale)
         switch phscale % working ph to phscale
           case 1
             K(row,[ tp(j).iph  tp(j).iph_tot]) = [ -1 1 ];
-            kc = union(kc,[ tp(j).iph, tp(j).iphtot]);
+            kc = union(kc,[ tp(j).iph, tp(j).iph_tot]);
           case 2
             K(row,[ tp(j).iph tp(j).iph_sws] ) = [ -1 1 ];
             kc = union(kc,[ tp(j).iph, tp(j).iph_sws]);
@@ -285,12 +285,12 @@ function sys = mksys(obs,phscale)
 
         % def'n for nbs
         row = row + 1;
-        K(row,[ tp(j).iph_nbs, tp(j).iph_sws, tp(j).ipfh ]) = [ 1 -1 -1 ];
-        kc = union(kc, [ tp(j).iph_nbs, tp(j).iph_sws, tp(j).ipfh]);            
+        K(row,[ tp(j).iph_nbs, tp(j).iph_sws, tp(j).ipfH ]) = [ 1 -1 -1 ];
+        kc = union(kc, [ tp(j).iph_nbs, tp(j).iph_sws, tp(j).ipfH]);            
         kr = [kr, row];
         tp(j).kr = kr;
         tp(j).kc = kc;
-        nr = 12; % TA, TC, TB, TS, TF, TP, TSi TNH3 TH2S TCa ph_tot ph_sws ph_nbs
+        nr = 12; % TA, TC, TB, TS, TF, TP, TSi TNH4 TH2S TCa ph_tot ph_sws ph_nbs
     end
     % "mass conservation" equations
     M = sparse(nTP*nr,nv);
@@ -327,7 +327,6 @@ function sys = mksys(obs,phscale)
         % rescale row
         M(row,:) = M(row,:)*1e3;
         
-
         % Total sulfate
         row = row + 1;
         M(row, [ ipTS, tp(j).iphso4, tp(j).ipso4 ])   =  [ 1, -1, -1 ];
@@ -366,8 +365,8 @@ function sys = mksys(obs,phscale)
         
         % Total amonia
         row = row+1;
-        M(row, [ ipTNH3, tp(j).ipnh4, tp(j).ipnh3 ]) = [ 1, -1, -1 ];
-        mc = union(mc,[ipTNH3, tp(j).ipnh4, tp(j).ipnh3]);
+        M(row, [ ipTNH4, tp(j).ipnh4, tp(j).ipnh3 ]) = [ 1, -1, -1 ];
+        mc = union(mc,[ipTNH4, tp(j).ipnh4, tp(j).ipnh3]);
         M(row_alk,tp(j).ipnh3) = -1; 
         mr = [mr,row];
         % rescale row
@@ -411,40 +410,31 @@ function sys = mksys(obs,phscale)
     end
     for j = 1:nTP
         % STUFF needed to compute the Revelle buffer factor
-        ifixed = [ ipTA, ipTB, ipTS, ipTF, ipTP, ipTSi, ipTNH3, ipTH2S, ipTCa, isal ];
+        ifixed = [ ipTA, ipTB, ipTS, ipTF, ipTP, ipTSi, ipTNH4, ipTH2S, ipTCa, isal ];
         ifixed = [ifixed, tp(j).ipK0,  tp(j).ipK1,  tp(j).ipK2,  tp(j).ipKb,  tp(j).ipKw, tp(j).ipKs,  tp(j).ipKf, ...
-                 tp(j).ipK1p, tp(j).ipK2p, tp(j).ipK3p, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
-                 tp(j).ipp2f, tp(j).ipKar, tp(j).ipKca, tp(j).ipfh,  tp(j).iP, tp(j).iT];
+                 tp(j).ipKp1, tp(j).ipKp2, tp(j).ipKp3, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
+                 tp(j).ipp2f, tp(j).ipKar, tp(j).ipKca, tp(j).ipfH,  tp(j).iP, tp(j).iT];
         tp(j).ifixed = ifixed;
         tp(j).ifree = setdiff(union(tp(j).mc,tp(j).kc),ifixed);
 
         ML = M(tp(j).mr,:); KL = K(tp(j).kr,:);
         ML = ML(:,tp(j).ifree); KL = KL(:,tp(j).ifree);
-
-        %MR = M(tp(j).mr,:); KR = K(tp(j).kr,:);
-        %MR = MR(:,tp(j).ifixed); KR = KR(:,tp(j).ifixed);
-
-        %tp(j).ML = ML;
-        %tp(j).KL = KL;
-        %tp(j).MR = MR;
-        %tp(j).KR = KR;
         
         %tp(j).c = @(xfree,zhat) [ML*q(xfree); KL*xfree] + [MR*q(zhat(ifixed)); KR*zhat(ifixed)];
         tp(j).dcdx_pTAfixed = @(xfree) [ML*diag(dqdx(xfree));KL];
                 
 
         % STUFF needed to compute a dpfco2/dpTA holding pTC fixed 
-        jfixed = [ ipTC, ipTB, ipTS, ipTF, ipTP, ipTSi, ipTNH3, ipTH2S, ipTCa, isal ];
+        jfixed = [ ipTC, ipTB, ipTS, ipTF, ipTP, ipTSi, ipTNH4, ipTH2S, ipTCa, isal ];
         jfixed = [jfixed, tp(j).ipK0,  tp(j).ipK1,  tp(j).ipK2,  tp(j).ipKb,  tp(j).ipKw, tp(j).ipKs,  tp(j).ipKf, ...
-                 tp(j).ipK1p, tp(j).ipK2p, tp(j).ipK3p, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
-                 tp(j).ipp2f, tp(j).ipKar, tp(j).ipKca, tp(j).ipfh,  tp(j).iP, tp(j).iT];
+                 tp(j).ipKp1, tp(j).ipKp2, tp(j).ipKp3, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
+                 tp(j).ipp2f, tp(j).ipKar, tp(j).ipKca, tp(j).ipfH,  tp(j).iP, tp(j).iT];
         tp(j).jfixed = jfixed;
         tp(j).jfree = setdiff(union(tp(j).mc,tp(j).kc),jfixed);
 
         ML = M(tp(j).mr,:); KL = K(tp(j).kr,:);
         ML = ML(:,tp(j).jfree); KL = KL(:,tp(j).jfree);
         tp(j).dcdx_pTCfixed = @(xfree) [ML*diag(dqdx(xfree));KL];
-        
 
     end
     sys.M  = M;
