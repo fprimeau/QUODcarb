@@ -161,19 +161,19 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
             for j = 1:length(sys.tp(:))
                 % Revelle
                 ifree   = sys.tp(j).ifree;
-                I_TA    = speye(length(ifree));
-                ei      = ones(length(ifree),1);
-                jfree   = sys.tp(j).jfree;
-                I_TC    = speye(length(jfree));
-                ej      = ones(length(jfree),1);
-                % dpfCO2dpTA (similar to Revelle but TC held fixed)
+                ei = zeros(length(ifree),1);
+                ei(1) = 1;
                 jac     = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
                 z       = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
                 est(i).tp(j).Revelle = z(2)/z(1);
+
+                % dpfCO2dpTA (similar to Revelle but TC held fixed)
+                jfree   = sys.tp(j).jfree;
+                ej      = zeros(length(jfree),1);
+                ej(1) = 1;
                 jac     = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
                 z       = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
                 est(i).tp(j).dpfco2dpTA = z(2)/z(1);
-                keyboard
             end
         end
     end
