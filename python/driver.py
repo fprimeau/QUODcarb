@@ -10,11 +10,11 @@ import copy
 #import QUODcarb
 
 data = scipy.io.loadmat('datag.mat')
-nD = 5
+nD = len(data)
 
-obs = []
+#   choose options for opt structure
 opt = {
-    'K1K2': 10,     # option for K1K2 formulation
+    'K1K2': 4,     # option for K1K2 formulation
     'KSO4': 1,      # option for KSO4 formulation
     'KF': 2,        # option for KF formulation
     'TB': 2,        # option for TB formulation
@@ -22,13 +22,14 @@ opt = {
     'printcsv': 0,  # 1print est to CSV? 1 = on, 0 = off
     #'fname': 'QUODcarb_output.csv',  # Uncomment and set the filename if printcsv is on
     #'fname': 'output_csv/Q5_Nov3.csv',
-    'co2press': 0,  # 1 = on, 0 = off
+    'co2press': 1,  # 1 = on, 0 = off
     'Revelle': 0,   # 1 = on, 0 = off
     'printmes': 0   # 1 = on, 0 = off
 }
 
 obs = []
 
+# read in GOMECC data and put into obs structure
 for i in range(nD):
     obs.append([])
     # measurements independent of (T,P)
