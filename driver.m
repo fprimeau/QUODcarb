@@ -4,7 +4,7 @@
 
 load data.mat; % NEW as of Nov.11
 [in] = data;
-nD = length(in);
+nD = 10; %length(in);
 
 % choose options for opt structure
 opt.K1K2 = 4; % option for K1K2 formulation
@@ -14,10 +14,11 @@ opt.TB   = 2;  % option for TB formulation
 opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
 opt.printcsv = 0;  % print est to CSV? 1 = on , 0 = off
 % opt.fname    = 'QUODcarb_output.csv'; % don't need it if printcsv is off
-% opt.fname    = 'output_csv/Q5_Nov7.csv';
+opt.fname    = 'output_csv/Q5.csv';
 opt.co2press = 1; % 1 = on, 0 = off
 opt.Revelle  = 0; % 1 = on, 0 = off 
 opt.printmes = 0; % 1 = on, 0 = off
+
 
 % read in GOMECC data and put into obs structure
 for i = 1:nD
@@ -69,72 +70,6 @@ obs_backup = obs;
 [est,~,~,~] = QUODcarb(obs,opt);
 estK04 = est;
 fprintf('K04 done \n')
-
-% % K10
-% obs = obs_backup;
-% opt.K1K2 = 10;
-% [est,~,~,~] = QUODcarb(obs,opt);
-% estK10 = est;
-% fprintf('K10 done \n')
-% 
-% % K11
-% obs = obs_backup;
-% opt.K1K2 = 11;
-% [est,~,~,~] = QUODcarb(obs,opt);
-% estK11 = est;
-% fprintf('K11 done \n')
-% 
-% % K12
-% obs = obs_backup;
-% opt.K1K2 = 12;
-% [est,~,~,~] = QUODcarb(obs,opt);
-% estK12 = est;
-% fprintf('K12 done \n')
-% 
-% % K13
-% obs = obs_backup;
-% opt.K1K2 = 13;
-% [est,~,~,~] = QUODcarb(obs,opt);
-% estK13 = est;
-% fprintf('K13 done \n')
-% 
-% % K14
-% obs = obs_backup;
-% opt.K1K2 = 14;
-% [est,~,~,~] = QUODcarb(obs,opt);
-% estK14 = est;
-% fprintf('K14 done \n')
-% 
-% % K15
-% obs = obs_backup;
-% opt.K1K2 = 15;
-% [est,~,~,~] = QUODcarb(obs,opt);
-% estK15 = est;
-% fprintf('K15 done \n')
-% 
-% % K16
-% obs = obs_backup;
-% opt.K1K2 = 16;
-% [est,~,~,~] = QUODcarb(obs,opt);
-% estK16 = est;
-% fprintf('K16 done \n')
-% 
-% % K17
-% obs = obs_backup;
-% opt.K1K2 = 17;
-% [est,~,~,~] = QUODcarb(obs,opt);
-% estK17 = est;
-% fprintf('K17 done \n')
-% 
-% save output_mat_files/pKi/estK10.mat estK10;
-% save output_mat_files/pKi/estK04.mat estK04;
-% save output_mat_files/pKi/estK11.mat estK11;
-% save output_mat_files/pKi/estK12.mat estK12;
-% save output_mat_files/pKi/estK13.mat estK13;
-% save output_mat_files/pKi/estK14.mat estK14;
-% save output_mat_files/pKi/estK15.mat estK15;
-% save output_mat_files/pKi/estK16.mat estK16;
-% save output_mat_files/pKi/estK17.mat estK17;
 
 
 

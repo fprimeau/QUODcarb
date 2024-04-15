@@ -112,7 +112,7 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
 
     function [pTF,gpTF,ggpTF,epTF] = calc_pTF(opt,S)
         % Riley, J. P., Deep-Sea Research 12:219-220, 1965:
-        % this is .000068.*Sali./35. = .00000195.*Sali      % why don't we use this expression?
+        % this is .000068.*Sali./35. = .00000195.*Sali   
         TF      = ( 0.000067 / 18.998 ) * ( S / 1.80655 ); 
         pTF     = p( TF );
         gpTF    = dpdx( TF )   *   (0.000067 / 18.998 ) / 1.80655 ;
