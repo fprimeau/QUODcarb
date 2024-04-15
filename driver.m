@@ -1,5 +1,3 @@
-
-
 % driver to go with QUODcarb
 
 load data.mat; % NEW as of Nov.11
@@ -17,11 +15,11 @@ opt.printcsv = 1;  % print est to CSV? 1 = on , 0 = off
 opt.fname    = 'output_csv/Q5v2.csv';
 opt.co2press = 1; % 1 = on, 0 = off
 opt.Revelle  = 1; % 1 = on, 0 = off 
-opt.printmes = 1; % 1 = on, 0 = off
+opt.printmes = 0; % 1 = on, 0 = off
 
 
 % read in GOMECC data and put into obs structure
-for i = 1:nD
+for i = 1:10
     
     % measurements that are independent of (T,P)
     obs(i).TC    = in(5,i); % (umol/kg)

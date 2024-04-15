@@ -161,6 +161,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
             for j = 1:length(sys.tp(:))
                 % Revelle
                 ifree   = sys.tp(j).ifree;
+
                 ei      = zeros(length(ifree),1);
                 ei(1)   = 1;
                 jac     = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
@@ -170,6 +171,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
                 % dpfCO2dpTA (similar to Revelle but TC held fixed)
                 jfree   = sys.tp(j).jfree;
                 ej      = zeros(length(jfree),1);
+
                 ej(1)   = 1;
                 jac     = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
                 z       = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
@@ -177,7 +179,6 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
             end
         end
     end
-
     % PrintCSV if opt.printcsv = 1 using filename opt.fname
     PrintCSV(est,obs,iflag,opt);
 end
@@ -261,6 +262,168 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     H   = [  ge.'*W*ge-tmp+gg,  dcdx.'    ; ... % derivatives wrt lambdas
              dcdx            ,  zeros(nlam)  ]; % derivatives wrt var's
     g = g(:); % make sure g is returned as a column vector
+end
+
+function S = chmc(q,y,w,obs,sys,opt)
+% chmc simulation parameters
+    N = 12000;
+    S = zeros(length(q),N);
+    q0 = q;
+    % call the constraint equations at the starting parameter value
+    [c,cq,cqq] = constraints(q0,sys);
+    % create an operator to project onto cotangent of the manifold
+    P = speye(length(q)) - cq.'*( ( cq*cq.' ) \ cq );
+    p0 = P*randn(length(q),1); % draw a normal momentum sample and project it
+
+    % create an initial condition for the chmc simulation
+    p1 = p0;
+    q1 = q0;
+    p = p0;
+    lam = 0*c;
+    mu = 0*c;
+    n = length(p0);
+    m = length(c);
+    [H0, H0q, H0q_q, H0p, H0p_p] = hamiltonian(p0,q0,y,w,obs,sys,opt);
+    % simulate N chmc samples
+    x_initial = [p;p1;q1;lam;mu];
+    x0 = x_initial;
+    frac = 0;
+    for j = 1:N
+        % simulate for L steps
+        L = 1;
+        dt = 4e-4;
+        %figure(1);
+        %plot(sys.q(q0(2))*1e6,sys.q(q0(3))*1e6,'or'); hold on
+        %grid on
+        %drawnow
+        for i = 1:L
+            %fprintf('.');
+            x = newtn(x0,@(x) rat(x,m,p0,q0,dt,y,w,obs,sys,opt),1e-8);
+            %[f,g,H] =         rat(x,m,p0,q0,dt,y,w,obs,sys,opt);
+            %fprintf('H = %e\n',H);
+            p0 = x(n+1:2*n);
+            q0 = x(2*n+1:3*n);
+            x0 = x;
+            %plot(q0(2),q0(3),'*b'); drawnow
+        end
+        p = x(n+1:2*n);
+        q = x(2*n+1:3*n);
+        [HL, HLq, HLq_q, HLp, HLp_p] = hamiltonian(p,q,y,w,obs,sys,opt);
+        %fprintf('HL = %e\n',HL);
+        % Metropolis test
+        u = rand(1);
+        %fprintf(' u = %e exp(H0-HL) = %e \n', u, exp(H0-HL) );
+        if (u<=min(1,exp(H0-HL)))
+            %fprintf('*'); % accept
+            x0 = x;
+            frac = frac+1;
+        else
+            % fprintf('.');
+            x0 = x_initial; % reject
+        end
+        q0 = x0(2*n+1:3*n);
+        [c,cq,cqq] = constraints(q0,sys);
+        % create an operator to project onto cotangent of the manifold
+        P = speye(length(q)) - cq.'*( ( cq*cq.' ) \ cq );
+        p0 = P*randn(length(q0),1); % draw a normal momentum sample and project it
+        [H0, H0q, H0q_q, H0p, H0p_p] = hamiltonian(p,q,y,w,obs,sys,opt);
+        x_initial = [p0;p0;q0;lam;mu];
+        if (mod(j,100)==0)           
+            fprintf('%i frac = %f\n',j,frac/j);
+        end
+        S(:,j) = q0;
+    end
+    plot(sys.q(S(2,:))*1e6,sys.q(S(3,:))*1e6,'-o'); grid on; drawnow
+    keyboard
+end
+
+function [f,g,H] = rat(x,m,p0,q0,dt,y,w,obs,sys,opt)
+    n = length(p0);
+    % parse the state
+    p = x(1:n);
+    p1 = x(n+1:2*n);
+    q1 = x(2*n+1:3*n);
+    lam = x(3*n+1:3*n+m);
+    mu = x(3*n+m+1:3*n+2*m);
+    [g,f,H] = RATTLE(p1,q1,p,lam,mu,p0,q0,dt,y,w,obs,sys,opt);
+end
+function [g,f,H3] = RATTLE(p1,q1,p,lam,mu,p0,q0,dt,y,w,obs,sys,opt)
+    [H1, H1q, H1q_q, H1p, H1p_p] = hamiltonian(p,q0,y,w,obs,sys,opt);
+    [H2, H2q, H2q_q, H2p, H2p_p] = hamiltonian(p,q1,y,w,obs,sys,opt);
+    [H3, H3q, H3q_q, H3p, H3p_p] = hamiltonian(p1,q1,y,w,obs,sys,opt);
+    [c0,c0q,c0qq] = constraints(q0,sys);
+    [c1,c1q,c1qq] = constraints(q1,sys);
+    m = length(c0);
+    n = length(p1);
+    Z = sparse(n,n);
+    z = sparse(m,n);
+    z0 = sparse(m,m);
+    d0 = @(x) spdiags(x(:),0,length(x(:)),length(x(:)));
+    I = speye(n);
+
+    dt2 = dt/2;
+
+    f = [p0 - dt2 * ( H1q + c0q.' * lam ) - p;...
+         q0 + dt2 * ( H1p + H2p ) - q1;...
+         c1;
+         p - dt2 * ( H2q + c1q.' * mu ) - p1;...
+         c1q*H3p];
+
+    %                     p,        p1,                       q1,       lam,         mu 
+    g = [-I                ,         Z,                        Z, -dt2*c0q.',        z.';...
+          dt2*(H1p_p+H2p_p),         Z,                       -I,        z.',        z.';...
+         z                 ,         z,                      c1q,         z0,         z0;...
+         I                 ,        -I,  -dt2*(H2q_q+c1qq' * mu),        z.', -dt2*c1q.';...
+         z                 , c1q*H3p_p,             c1qq*d0(H3p),         z0,         z0];
+end
+
+function [H,Hq,Hq_q,Hp,Hp_p] = hamiltonian(p,q,y,w,obs,sys,opt)
+    [y,gy,ggy] = update_y(y,q,obs,sys,opt);
+    id = find(~isnan(y));
+    y = y(id).';
+    gy = gy(id,:);
+    ggy = ggy(id,:,:);
+    nv = length(q);
+    I = eye(nv);
+    PP = I(id,:);
+
+    m = 1;
+
+    % kinetic energy
+    K = p.'*p/(2*m);
+    Kp = p/m;
+    Kpp = speye(length(p));
+
+    % potential energy
+    e = PP*q - y;
+    ge = PP - gy;
+    W = diag(w(id));
+    U = 0.5 * e.' * W * e;
+    Uq = ge.' * W * e;
+    tmp = zeros(length(q));
+    eW = e.'*W;
+    for jj = 1:size(ggy,1)
+        tmp = tmp + eW(jj)*(squeeze(ggy(jj,:,:)));
+    end
+    Uqq = ge.'*W*ge - tmp;
+
+    % Hamiltonian
+    H = K + U;
+    Hq = Uq;
+    Hq_q = Uqq;
+    Hp = Kp;
+    Hp_p = Kpp;
+end
+
+function [c,cq,cqq] = constraints(q,sys)
+    d0 = @(x) spdiags(x(:),0,length(x(:)),length(x(:)));
+    c = [ sys.M * sys.q(q);...
+          sys.K * q ];
+    cq = [ sys.M * diag( sys.dqdx(q) );...
+           sys.K];
+    d2q = sys.d2qdx2( q );
+    cqq = [sys.M*d0(d2q);...
+           sparse(size(sys.K,1),size(sys.K,2))];
 end
 
 % -----------------------------------------------------------------------------------
