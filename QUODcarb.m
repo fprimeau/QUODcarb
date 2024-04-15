@@ -24,7 +24,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 %   obs.eTA         = alk_error;    (±sigma)        
 %   obs.tp(1).T     = temp;         (deg C)         
 %   obs.tp(1).eT    = temp_error;   (±sigma)        
-%   obs.tp(1).P     = pressure;     (dbar)          
+%   obs.tp(1).P     = pressure;     (dbar, 0 = surface)          
 %   obs.tp(1).eP    = pres_error;   (±sigma)     
 %   obs.tp(1).ph    = ph_meas;      
 %   obs.tp(1).eph   = ph_error;     (±sigma)
@@ -114,7 +114,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 
     for i = 1:nD % loop over the full data set
 
-        z0      = init(yobs(i,:),sys);       % initialize
+        z0      = init(opt,yobs(i,:),sys);       % initialize
         tol     = 2e-6;                      % tolerance
         % negative of the log of the posterior 
         % aka the log improbability (limp for short)
@@ -156,13 +156,14 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         % populate est
         [est(i)] = parse_output(zhat,sigx,sys);    
 
-        % calculate the Revelle factor if opt.Revelle = 1
+        % calculate the Revelle factor if opt.Revelle = 1 ('on')
         if opt.Revelle == 1
             for j = 1:length(sys.tp(:))
                 % Revelle
                 ifree   = sys.tp(j).ifree;
-                ei = zeros(length(ifree),1);
-                ei(1) = 1;
+
+                ei      = zeros(length(ifree),1);
+                ei(1)   = 1;
                 jac     = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
                 z       = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
                 est(i).tp(j).Revelle = z(2)/z(1);
@@ -170,7 +171,8 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
                 % dpfCO2dpTA (similar to Revelle but TC held fixed)
                 jfree   = sys.tp(j).jfree;
                 ej      = zeros(length(jfree),1);
-                ej(1) = 1;
+
+                ej(1)   = 1;
                 jac     = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
                 z       = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
                 est(i).tp(j).dpfco2dpTA = z(2)/z(1);
@@ -599,7 +601,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         pTCa = pT(4); epTCa = epT(4); % (see Ref's within calc_pTOT)
         % total borate
         if (~isfield(obs(i),'TB')) || (~isgood(obs(i).TB))
-            obs(i).TB        = nan;
+            obs(i).TB = nan;
             yobs(i,sys.ipTB) = pTB;
         else
             if ((obs(i).TB) == 0)
@@ -660,7 +662,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.ipTP)     = p(obs(i).TP*1e-6); % convt µmol/kg to mol/kg
         end
         if (~isfield(obs(i), 'eTP'))  || (~isgood(obs(i).eTP))
-            wobs(i,sys.ipTP)    = w(1e-3,1e-3); % mol/kg
+            wobs(i,sys.ipTP)    = w(1e-3,1e-3); 
             obs(i).eTP          = nan;
         else
             if ((obs(i).eTP) == 0)
@@ -1043,8 +1045,8 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.tp(ii).iP)   = obs(i).tp(ii).P;
             wobs(i,sys.tp(ii).iT)   = (obs(i).tp(ii).eT)^(-2);
             wobs(i,sys.tp(ii).iP)   = (obs(i).tp(ii).eP)^(-2);
-            [pK,~,epK]              = calc_pK(opt, obs(i).tp(ii).T, ...
-                                              obs(i).sal, obs(i).tp(ii).P );
+            [pK,~,epK]              = calc_pK(opt, obs(i).tp(ii).T, ...      % T,
+                                              obs(i).sal, obs(i).tp(ii).P ); % S, P
             pK0   = pK(1);      pK1  = pK(2);     pK2   = pK(3);  
             pKb   = pK(4);      pKw  = pK(5);     pKs   = pK(6);  
             pKf   = pK(7);      pKp1 = pK(8);     pKp2  = pK(9);  
@@ -1752,8 +1754,8 @@ end
 
 % ------------------------------------------------------------------------
 
-function z0 = init(yobs,sys)
-    q   = sys.q;
+function z0 = init(opt,yobs,sys)
+    q = sys.q;
     p = sys.p;
     
     y0  = yobs; 
@@ -1767,32 +1769,56 @@ function z0 = init(yobs,sys)
         alk         = 2200e-6;
         y0(sys.ipTA) = p(alk);
     end
-    
+
+    % calculate tp-independent vars
+    gam     = dic/alk;
+
+    TB = q(yobs(sys.ipTB));
+    y0(sys.ipTB) = p(TB);
+
+    TS      = q(yobs(sys.ipTS));
+    y0(sys.ipTS) = p(TS);
+
+    TF      = q(yobs(sys.ipTF));
+    y0(sys.ipTF) = p(TF);
+
+    TP      = q(yobs(sys.ipTP));
+    y0(sys.ipTP) = p(TP);
+
+    TSi     = q(yobs(sys.ipTSi));
+    y0(sys.ipTSi) = p(TSi);
+
+    TNH4    = q(yobs(sys.ipTNH4));
+    y0(sys.ipTNH4) = p(TNH4);
+
+    TH2S    = q(yobs(sys.ipTH2S));
+    y0(sys.ipTH2S) = p(TH2S);
+
+    TCa     = q(yobs(sys.ipTCa));
+    y0(sys.ipTCa) = p(TCa);
+
     nTP = length(sys.tp);
     for i = 1:nTP
         % solve for the [H+] using only the carbonate alkalinity
-        gam     = dic/alk;
         K0      = q(y0(sys.tp(i).ipK0));
         K1      = q(y0(sys.tp(i).ipK1));
         K2      = q(y0(sys.tp(i).ipK2));
         h       = 0.5*( ( gam - 1 ) * K1 + ( ( 1 - gam )^2 * ...
                                              K1^2 - 4 * K1 * K2 * ( 1 - 2 * gam ) ).^0.5 ) ;
-        hco3    =  h * alk / (h + 2 * K2 );
+        hco3    = h * alk / (h + 2 * K2 );
         co2st   = h * hco3 / K1 ;
         co3     = dic*K1*K2/(K1*h + h*h + K1*K2) ;
         fco2    = co2st/K0;
         
-        y0(sys.tp(i).iph)    = p(h);
+        y0(sys.tp(i).iph)     = p(h);
         y0(sys.tp(i).iphco3)  = p(hco3);
         y0(sys.tp(i).ipco2st) = p(co2st);
         y0(sys.tp(i).ipco3)   = p(co3);
         y0(sys.tp(i).ipfco2)  = p(fco2);
         
         Kb      = q(y0(sys.tp(i).ipKb));
-        TB      = q(yobs(sys.ipTB)); 
         boh4    = TB * Kb / (Kb + h) ;
         boh3    = TB - boh4;
-        y0(sys.ipTB)         = p(TB);
         y0(sys.tp(i).ipboh3) = p(boh3);
         y0(sys.tp(i).ipboh4) = p(boh4);
         
@@ -1801,62 +1827,49 @@ function z0 = init(yobs,sys)
         y0(sys.tp(i).ipoh)   = p(oh);
         
         Ks      = q(y0(sys.tp(i).ipKs));
-        TS      = q(yobs(sys.ipTS));
         
         h_tot = h * ( 1 + TS / Ks );
         h_free = h;
         hso4 = h_tot - h_free;
         so4     = Ks * hso4 / h;
-        y0(sys.ipTS)            = p(TS);
         y0(sys.tp(i).iphso4)    = p(hso4);
         y0(sys.tp(i).ipso4)     = p(so4);
         
         Kf      = q(y0(sys.tp(i).ipKf));
-        TF      = q(yobs(sys.ipTF));
         HF      = TF / ( 1 + Kf / h_free );
         F       = Kf * HF / h_free;
         h_sws = h_tot + HF;
-        y0(sys.ipTF)         = p(TF);
         y0(sys.tp(i).ipF)    = p(F);
         y0(sys.tp(i).ipHF)   = p(HF);
         
         Kp1     = q(y0(sys.tp(i).ipKp1));
         Kp2     = q(y0(sys.tp(i).ipKp2));
         Kp3     = q(y0(sys.tp(i).ipKp3));
-        TP      = q(yobs(sys.ipTP));
         d = ( h^3 + Kp1 * h^2 + Kp1 * Kp2 * h + Kp1 * Kp2 * Kp3);
         h3po4   = TP * h^3 / d;
         h2po4   = TP * Kp1 * h^2 / d;
         hpo4    = TP * Kp1 * Kp2 * h / d;
         po4     = TP * Kp1 * Kp2 * Kp3 / d;
-        y0(sys.ipTP)             = p(TP);
         y0(sys.tp(i).iph3po4)    = p(h3po4);
         y0(sys.tp(i).iph2po4)    = p(h2po4);
         y0(sys.tp(i).iphpo4)     = p(hpo4);
         y0(sys.tp(i).ippo4)      = p(po4);
         
         Ksi     = q(y0(sys.tp(i).ipKsi));
-        TSi     = q(yobs(sys.ipTSi));
         siooh3  = TSi / ( 1 + h / Ksi );
         sioh4   = TSi - siooh3;
-        y0(sys.ipTSi)            = p(TSi);
         y0(sys.tp(i).ipsiooh3)   = p(siooh3);
         y0(sys.tp(i).ipsioh4)    = p(sioh4);
         
-        
         Knh4    = q(y0(sys.tp(i).ipKnh4));
-        TNH4    = q(yobs(sys.ipTNH4));
         nh3     = TNH4 / ( 1 + h / Knh4 );
         nh4     = TNH4 - nh3 ;
-        y0(sys.ipTNH4)       = p(TNH4);
         y0(sys.tp(i).ipnh3)  = p(nh3);
         y0(sys.tp(i).ipnh4)  = p(nh4);
         
         Kh2s    = q(y0(sys.tp(i).ipKh2s));
-        TH2S    = q(yobs(sys.ipTH2S));
         hs      = TH2S / ( 1 + h / Kh2s );
         h2s     = TH2S - hs ;
-        y0(sys.ipTH2S)       = p(TH2S);
         y0(sys.tp(i).ipHS)   = p(hs);
         y0(sys.tp(i).ipH2S)  = p(h2s);
         
@@ -1865,16 +1878,13 @@ function z0 = init(yobs,sys)
         y0(sys.tp(i).ippco2)  = p(pco2);
         
         Kar     = q(y0(sys.tp(i).ipKar));
-        TCa     = q(yobs(sys.ipTCa));
         OmegaAr = co3 * TCa / Kar;
         Kca     = q(y0(sys.tp(i).ipKca));
         OmegaCa = co3 * TCa / Kca ;
-        y0(sys.ipTCa)           = p(TCa);
         y0(sys.tp(i).ipca)       = p(TCa);
         y0(sys.tp(i).ipOmegaAr)  = p(OmegaAr);
         y0(sys.tp(i).ipOmegaCa)  = p(OmegaCa);
-        
-        
+                
         y0(sys.tp(i).iph_tot) = p(h_tot);
         y0(sys.tp(i).iph_sws) = p(h_sws);
         y0(sys.tp(i).iph_free) = p(h_free);
