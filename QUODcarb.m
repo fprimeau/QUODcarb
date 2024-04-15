@@ -24,7 +24,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 %   obs.eTA         = alk_error;    (±sigma)        
 %   obs.tp(1).T     = temp;         (deg C)         
 %   obs.tp(1).eT    = temp_error;   (±sigma)        
-%   obs.tp(1).P     = pressure;     (dbar)          
+%   obs.tp(1).P     = pressure;     (dbar, 0 = surface)          
 %   obs.tp(1).eP    = pres_error;   (±sigma)     
 %   obs.tp(1).ph    = ph_meas;      
 %   obs.tp(1).eph   = ph_error;     (±sigma)
@@ -156,20 +156,21 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         % populate est
         [est(i)] = parse_output(zhat,sigx,sys);    
 
-        % calculate the Revelle factor if opt.Revelle = 1
+        % calculate the Revelle factor if opt.Revelle = 1 ('on')
         if opt.Revelle == 1
             for j = 1:length(sys.tp(:))
                 % Revelle
                 ifree   = sys.tp(j).ifree;
-                I_TA    = speye(length(ifree));
-                ei      = ones(length(ifree),1);
-                jfree   = sys.tp(j).jfree;
-                I_TC    = speye(length(jfree));
-                ej      = ones(length(jfree),1);
-                % dpfCO2dpTA (similar to Revelle but TC held fixed)
+                ei      = zeros(length(ifree),1);
+                ei(1)   = 1;
                 jac     = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
                 z       = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
                 est(i).tp(j).Revelle = z(2)/z(1);
+
+                % dpfCO2dpTA (similar to Revelle but TC held fixed)
+                jfree   = sys.tp(j).jfree;
+                ej      = zeros(length(jfree),1);
+                ej(1)   = 1;
                 jac     = sys.tp(j).dcdx_pTCfixed(zhat(jfree)) ;
                 z       = ej - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ej ) );
                 est(i).tp(j).dpfco2dpTA = z(2)/z(1);

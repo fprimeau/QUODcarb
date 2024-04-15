@@ -12,12 +12,12 @@ opt.KSO4 = 1;  % option for KSO4 formulation
 opt.KF   = 2;  % option for KF formulation
 opt.TB   = 2;  % option for TB formulation
 opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
-opt.printcsv = 0;  % print est to CSV? 1 = on , 0 = off
+opt.printcsv = 1;  % print est to CSV? 1 = on , 0 = off
 % opt.fname    = 'QUODcarb_output.csv'; % don't need it if printcsv is off
-opt.fname    = 'output_csv/Q5.csv';
+opt.fname    = 'output_csv/Q5v2.csv';
 opt.co2press = 1; % 1 = on, 0 = off
-opt.Revelle  = 0; % 1 = on, 0 = off 
-opt.printmes = 0; % 1 = on, 0 = off
+opt.Revelle  = 1; % 1 = on, 0 = off 
+opt.printmes = 1; % 1 = on, 0 = off
 
 
 % read in GOMECC data and put into obs structure
@@ -67,9 +67,9 @@ obs_backup = obs;
 % CT AT pH pCO2 CO3 (Q5) (fid5)
 
 % K04
-[est,~,~,~] = QUODcarb(obs,opt);
+[est,~,~,~] = QUODcarb(obs,opt); % [est, obs, sys, iflag]
 estK04 = est;
-fprintf('K04 done \n')
+% fprintf('K04 done \n')
 
 
 
