@@ -258,7 +258,8 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     % ---------------------------------------------------------------------
 
     function [pp2f,gpp2f,epp2f] = calc_p2f(opt,T,RT,RT_T,Pbar,Pbar_P)
-    % pCO2 to fCO2 conversion (Weiss 1974) valid to within 0.1% -----------
+    % pCO2 to fCO2 conversion, Weiss 1974 Marine Chemistry, 2: 203-215
+    % pg. 207 -> valid to within 0.1% (assuming 1 sigma -MF)
         TK = T + 273.15; % convert to Kelvin
         Pstd = 1.01325;
         delC = (57.7 - 0.118.*TK);
@@ -294,7 +295,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     end
     
     function [pK0,gpK0,epK0] = calc_pK0(opt,T,RT,RT_T,S,Pbar,Pbar_P)
-    % calculate K0 (Weiss 1974)--------------------------------------------
+    % calculate K0, Weiss 1974, Marine Chemistry, 2: 203-215
+    % "data show a root-mean-square deviation from the final fitted
+    % equation of1.4*10^-4 mols/l*atm in K0, or about 0.3%"
+    % (assuming 0.3% for 1 sigma -MF)
         TK = T + 273.15; % convert to Kelvin
         TK100 = TK./100;
         TK100_T = 1/100;
@@ -346,7 +350,8 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         % all calculated on free pH scale
         % stay on free pH scale (no conversion to SWS or total)
         if opt.KSO4 == 1
-            % calculate Ks (Dickson 1990a)---------------------------------
+            % calculate Ks (Dickson 1990a)------------------------------
+            % "goodness of fit: 0.021" (assuming 1 sigma -MF)
             a1 = [  -4276.1;  141.328; -23.093 ]; 
             a2 = [ -13856.0;   324.57; -47.986 ];
             a3 = [  35474.0;  -771.54; 114.723 ];
@@ -372,11 +377,13 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                    f(TK,a5) * IonS_S * 2.0 * IonS ) / ...
                     LOG10 - 0.001005 * dpdx(1 - 0.001005 * S );
         
-            elnKs = 0.021; % given in CO2SYS from Dickson 1990a
+            elnKs = 0.021; % from Dickson 1990a pg. 123
             my_abs = @(x) sqrt(x*x);
             epKs = my_abs( -elnKs/LOG10 ); % 0.021 on lnKs, -lnK/LOG10 converts to epK
         elseif opt.KSO4 == 2
-            % calculate Ks (Khoo et al 1977)-------------------------------
+            % calculate Ks (Khoo et al 1977)----------------------------
+            % pg. 33 "the standard deviation from regression is 0.0021 in
+            % log Beta_HSO4"
             a1 = [   647.59;  -6.3451;  0.0 ]; 
             a2 = [ 0.019085;  -0.5208;  0.0 ];
 
@@ -399,6 +406,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % log((K^(*)_HSO4)/(K^(.)_HSO4)) = logKSK0
             % KS = (10^logKSK0))*(10^logKS0)
             % (^ from Sharp's code)
+            % eKs = 0.007, assuming 95% confidence (2 sigma) -MF
             a1 = [  0.0         ;    562.69486;  -102.5154 ]; 
             a2 = [ -0.0001117033;    0.2477538;  -13273.76 ];
             a3 = [  4.24666     ;    -0.152671;  0.0267059 ];
@@ -433,9 +441,10 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pKs_T = (-logKS0_T - logKSK0_T) ;
             pKs_S = (-logKSK0_S) - 0.001005 * dpdx(1-0.001005*S);
 
-            elnKs = 0.007; % 0.007 on lnKs from Waters and Millero 2013
+            Ks = q(pKs);
+            eKs = 0.007/2; % QUODcarb uses 1sigma
             my_abs = @(x) sqrt(x*x);
-            epKs = my_abs( -elnKs/LOG10 ); % -/LOG10 converts to epK
+            epKs = my_abs( p(Ks + eKs) - pKs );
         end
         pKs_P = 0.0;
         gpKs = [pKs_T, pKs_S, pKs_P];
@@ -461,6 +470,8 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         elseif opt.KF == 2
         % calculate Perez and Fraga (1987)---------------------------------
         % (to be used for S: 10-40, T: 9-33) (from Sharp's code)
+        % "observed experimental error was not greater than pm 0.05 units
+        % of lnBeta_HF" pg. 163 (assume 1sigma -MF)
             a = 874;  b = -9.68;  c = 0.111;
 
             pKf = -( a/TK + b + c * sqrt(S) ) ./LOG10 ; % free pH scale
@@ -521,7 +532,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         end
         gpKb = [pKb_T, pKb_S, pKb_P];
 
-        elnKb = 0.004; % pg 764 Dickson (1990b)
+        elnKb = 0.004; % pg 764 Dickson (1990b) (assume 1 sigma -MF)
         my_abs = @(x) sqrt(x*x);
         epKb = my_abs( -elnKb/LOG10 ) ; % convert from lnKb to pKb with -/LOG10
         % none found in Li et al's paper
@@ -544,7 +555,9 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pKw_T = -( df(TK,a1) + df(TK,a2) * sqrt(S)       + df(TK,a3) * S ) / LOG10;
             pKw_S = -(              f(TK,a2) * 0.5 / sqrt(S) +  f(TK,a3)     ) / LOG10;
             pKw_P = 0;
-            elnKw = 0.034;
+
+            elnKw = 0.0214; % combine Harned and Owen (1958) 0.0014 (table 1)
+                            % plus Culberson and Pytkowicz (1973) 0.020 (table 3)
             my_abs = @(x) sqrt(x*x);
             epKw = my_abs( -elnKw/LOG10 ) ; % convert to epK with -/LOG10
         elseif opt.K1K2 == 8
@@ -559,7 +572,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pKw_T = -( df(TK,a1) ) / LOG10;
             pKw_S = -(   0   ) / LOG10;
             pKw_P = 0;
-            elnKw = 0.0014;
+            elnKw = 0.0014; % table 1
             my_abs = @(x) sqrt(x*x);
             epKw = my_abs( -elnKw/LOG10 ) ; % convert to epK with -/LOG10            
         else
@@ -582,6 +595,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                        f(TK,a3) ) ./ LOG10;
             % pKw_S = (  f(TK,a2)  );
             pKw_P = 0;
+
             elnKw = 0.01; % pg 670 Millero, 1995
             my_abs = @(x) sqrt(x*x);
             epKw = my_abs( -elnKw/LOG10 ) ; % convert to epK with -/LOG10
@@ -618,9 +632,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         end
         gpKp1 = [pKp1_T,pKp1_S,pKp1_P];
 
-        elnKp1 = 0.09; % pg 84 Yao and Millero, 1995
-        my_abs = @(x) sqrt(x*x);
-        epKp1 = my_abs( -elnKp1/LOG10 ) ; % convert to epK with -/LOG10
+        epKp1 = 0.09; % pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
     end
     
     function [pKp2,gpKp2,epKp2] = calc_pKp2(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
@@ -650,9 +662,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         end
         gpKp2 = [pKp2_T, pKp2_S,pKp2_P];
 
-        elnKp2 = 0.03; % pg 84 Yao and Millero, 1995
-        my_abs = @(x) sqrt(x*x);
-        epKp2 = my_abs( -elnKp2/LOG10 ) ; % convert to epK with -/LOG10 
+        epKp2 = 0.03; % pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
     end
     
     function [pKp3,gpKp3,epKp3] = calc_pKp3(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
@@ -682,9 +692,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         end
         gpKp3 = [pKp3_T, pKp3_S, pKp3_P]; 
 
-        elnKp3 = 0.02; % pg 84 Yao and Millero, 1995
-        my_abs = @(x) sqrt(x*x);
-        epKp3 = my_abs( -elnKp3/LOG10 ); % convert to epK with -/LOG10 
+        epKp3 = 0.2; % pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
     end
 
     
@@ -726,9 +734,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         end
         gpKsi = [pKsi_T, pKsi_S, pKsi_P];
 
-        elnKsi = 0.02; % pg 84 Yao and Millero, 1995
-        my_abs = @(x) sqrt(x*x);
-        epKsi = my_abs( -elnKsi/LOG10 ) ; % convert to epK with -/LOG10 
+        epKsi = 0.02; % pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
     end
     
     function [pK1,gpK1,epK1] = calc_pK1(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot)
@@ -772,9 +778,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_P = 0;
             % pass all pK1 out of this function as SWS scale
 
-            elnK1 = 0.004;
-            my_abs = @(x) sqrt(x*x);
-            epK1 = my_abs( -elnK1/LOG10 ) ; % convert lnK to epK with -/LOG10
+            epK1 = 0.004/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 2 
         % Goyet and Poisson, Deep-Sea Research, 36(11):1635-1654, 1989 ----
@@ -786,7 +790,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_T = - a ./ (TK.^2) + c .* S ./ TK ;
             pK1_S = c .* log(TK) + 2 .* d .* S ;
             pK1_P = 0;
-            epK1 = 0.011;
+            epK1 = 0.011/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 3
         % Hansson refit by Dickson and Millero, 1987 ----------------------
@@ -808,7 +812,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_T = - a ./ (TK.^2) ;
             pK1_S = c + 2 .* d .* S ;
             pK1_P = 0;
-            epK1 = 0.013;
+            epK1 = 0.013/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 4
         % Mehrbach refit by Dickson and Millero, 1987 ---------------------
@@ -826,7 +830,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_T = -a ./ TK^2     + c ./ TK;
             pK1_S = d + 2.*g.*S;
             pK1_P = 0;
-            epK1 = 0.11;
+            epK1 = 0.011/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 5
         % Hansson and Mehrbach refit by Dickson and Millero, 1987 ---------
@@ -847,7 +851,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_T = -a ./ (TK.^2) ;
             pK1_S = c + 2 .* d .* S ;
             pK1_P = 0;
-            epK1 = 0.017;
+            epK1 = 0.017/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 6 || opt.K1K2 == 7
         % GEOSECS and Peng et al use K1, K2 from Mehrbach et al, ----------
@@ -864,7 +868,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_T = ( b - c ./ (TK.^2) + d .* S ) - gpfH(1) ; % SWS scale
             pK1_S = ( d .* TK + 0.5 .* g ./ sqrt(S) ) - gpfH(2) ; % SWS scale
             pK1_P = 0;
-            epK1 = 0.005;
+            epK1 = 0.005/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 8
         % PURE WATER CASE -------------------------------------------------
@@ -873,8 +877,9 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % J American Chemical Society, 65:2030-2037, 1943.
             % K2 from refit data from Harned and Scholes,
             % J American Chemical Society, 43:1706-1709, 1941.
-	        % This is only to be used for Sal=0 water 
-            % (note the absence of S in the below formulations)
+	            % This is only to be used for Sal=0 water 
+                % (note the absence of S in the below formulations)
+            % (0-50 C)
             a = 290.9097; b = -14554.21; c = -45.0575;
             pK1 = - (a + b ./ TK + c .* log(TK) ) / LOG10;
             pK1_T = - ( -b ./ (TK.^2) + c ./ TK ) / LOG10;
@@ -910,6 +915,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % This is Mehrbach's data refit after conversion to the 
             % total scale, for comparison with their equilibrator work. 
             % Mar. Chem. 70 (2000) 105-119
+            % rms deviation is 0.0055 in pK1 and 0.0100 in pK2
             a = 3633.86; b = -61.2172; c = 9.6777;
             d = -0.011555; g = 0.0001152;
 
@@ -933,7 +939,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_T = -d ./ (TK.^2) + g ./ TK ;
             pK1_S = b + 2 .* c .* S ;
             pK1_P = 0;
-            epK1 = 0.056;
+            epK1 = 0.0056;
 
         elseif opt.K1K2 == 12
         % Millero et al, 2002 ---------------------------------------------
@@ -941,7 +947,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 	        % Calculated from overdetermined WOCE-era field measurements 
 	        % sigma for pK1 is reported to be 0.005
 	        % sigma for pK2 is reported to be 0.008
-	        % This is from page 1715
+	        % This is from page 1716
             a = 6.359; b = -0.00664; c = -0.01322; d = 4.989e-5;
             pK1 = a + b .* S + c .* T + d .* (T.^2) ; % tempC
             pK1_T = c + 2 .* d .* T ;
@@ -955,6 +961,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % Mar.Chem. 100 (2006) 80-94.
             % S=1 to 50, T=0 to 50. On seawater scale (SWS). 
             % From titrations in Gulf Stream seawater.
+            % sigma pK1 = 0.0054, sigma pK2 = 0.011, from abstract (-MF)
             a1 = [-126.34048;  13.4191; 0.0331; -5.33e-5] ;
             a2 = [  6320.813; -530.123; -6.103;    0.0  ] ;
             a3 = [ 19.568224; -2.06950;   0.0 ;    0.0  ] ;
@@ -966,7 +973,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK1_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
             pK1_P = 0;
-            epK1 = 0.0054; % from abstract
+            epK1 = 0.0054; 
 
         elseif opt.K1K2 == 14
         % Millero 2010, for estuarine use ---------------------------------
@@ -975,6 +982,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 	        % Mehrbach et al. (1973), Mojica-Prieto & Millero (2002), 
             % Millero et al. (2006)
 	        % Constants for K's on the SWS; This is from page 141
+            % sigma pK1 = 0.005 & sigma pK2 = 0.010 (-MF)
             a1 = [-126.34048;  13.4038; 0.03206; -5.242e-5] ; 
             a2 = [  6320.813; -530.659; -5.8210;    0.0   ] ;
             a3 = [ 19.568224;  -2.0664;   0.0  ;    0.0   ] ;
@@ -993,6 +1001,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % Mar. Chem., 165, 66-67, 2014
             % Corrigendum to "The free proton concentration scale for seawater pH".
 	        % Effectively, this is an update of Millero (2010) formulation (WhichKs==14)
+            % sigma pK1 = 0.0055 & sigma pK2 = 0.0110 (-MF)
             a1 = [-126.34048;  13.409160; 0.031646; -5.1895e-5] ;
             a2 = [  6320.813;  -531.3642;   -5.713;    0.0    ] ;
             a3 = [ 19.568224; -2.0669166;   0.0   ;    0.0    ] ;
@@ -1004,13 +1013,14 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK1_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
             pK1_P = 0;
-            epK1 = 0.005;
+            epK1 = 0.0055;
 
         elseif opt.K1K2 == 16
         % Sulpis et al, 2020 ----------------------------------------------
             % Ocean Science Discussions, 16, 847-862
             % This study uses overdeterminations of the carbonate system to
             % iteratively fit K1 and K2
+            % Relative overall uncertainties ~2.5% (sigK/K) for both
             a = 8510.63; b = -172.4493; c = 26.32996; 
             d = -0.011555; g = 0.0001152; 
 
@@ -1044,7 +1054,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK1_S = ( df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK) ) ...
                 - gpSWS2tot(2);
             pK1_P = 0;
-            epK1 = 0.005; % same as Waters and Millero formulation
+            epK1 = 0.0055; % same as Waters and Millero formulation
 
         end
 
@@ -1093,9 +1103,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2_P = 0;
             % pass all pK2 out of this function as SWS scale
 
-            elnK2 = 0.003;
-            my_abs = @(x) sqrt(x*x);
-            epK2 = my_abs( -elnK2/LOG10 ) ; % convert lnK to epK with -/LOG10
+            epK2 = 0.003/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 2 
         % Goyet and Poisson, Deep-Sea Research, 36(11):1635-1654, 1989 ----
@@ -1107,7 +1115,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2_T = - a ./ (TK.^2) + c .* S ./ TK ;
             pK2_S = c .* log(TK) + 2 .* d .* S ;
             pK2_P = 0;
-            epK2 = 0.02;
+            epK2 = 0.02/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 3
         % Hansson refit by Dickson and Millero, 1987 ----------------------
@@ -1132,7 +1140,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2_T = - a ./ (TK.^2) + c ./ TK ;
             pK2_S = d + 2 .* g .* S ;
             pK2_P = 0;
-            epK2 = 0.017;
+            epK2 = 0.017/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 4
         % Mehrbach refit by Dickson and Millero, 1987 ---------------------
@@ -1150,7 +1158,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2_T = -a ./ (TK.^2);
             pK2_S = c + 2 .* d .* S;
             pK2_P = 0;
-            epK2 = 0.020;
+            epK2 = 0.020/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 5
         % Hansson and Mehrbach refit by Dickson and Millero, 1987 ---------
@@ -1171,7 +1179,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2_T = -a ./ (TK.^2) ;
             pK2_S = c + 2 .* d .* S ;
             pK2_P = 0;
-            epK2 = 0.026;
+            epK2 = 0.026/2; % QUODcarb uses 1sigma
         
         elseif opt.K1K2 == 6 || opt.K1K2 == 7
         % GEOSECS and Peng et al use K1, K2 from Mehrbach et al, ----------
@@ -1194,7 +1202,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
                 b ./ (TK .* LOG10) ) - gpfH(1) ;
             pK2_S = ( f(TK,a2) + f(TK,a3) ./ (S .* LOG10) ) - gpfH(2) ;
             pK2_P = 0;
-            epK2 = 0.008;
+            epK2 = 0.008/2; % QUODcarb uses 1sigma
 
         elseif opt.K1K2 == 8
         % PURE WATER CASE -------------------------------------------------
@@ -1203,8 +1211,8 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % J American Chemical Society, 65:2030-2037, 1943.
             % K2 from refit data from Harned and Scholes,
             % J American Chemical Society, 43:1706-1709, 1941.
-	        % This is only to be used for Sal=0 water 
-            % (note the absence of S in the below formulations)
+	            % This is only to be used for Sal=0 water 
+                % (note the absence of S in the below formulations)
             a = 207.6548; b = -11843.79; c = -33.6485;
             pK2 = - (a + b ./ TK + c .* log(TK) ) / LOG10;
             pK2_T = - ( -b ./ (TK.^2) + c ./ TK ) / LOG10;
@@ -1241,6 +1249,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % This is Mehrbach's data refit after conversion to the 
             % total scale, for comparison with their equilibrator work. 
             % Mar. Chem. 70 (2000) 105-119
+            % rms deviation is 0.0055 in pK1 and 0.0100 in pK2 (-MF)
             a = 471.78; b = 25.929; c = -3.16967;
             d = -0.01781; g = 0.0001122;
 
@@ -1292,6 +1301,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % Mar.Chem. 100 (2006) 80-94.
             % S=1 to 50, T=0 to 50. On seawater scale (SWS). 
             % From titrations in Gulf Stream seawater.
+            % sigma pK1 = 0.0054, sigma pK2 = 0.011, from abstract (-MF)
             a1 = [ -90.18333;  21.0894;  0.1248; -3.687e-4 ] ;
             a2 = [  5143.692; -772.483; -20.051;    0.0    ] ;
             a3 = [ 14.613358;  -3.3336;    0.0 ;    0.0    ] ;
@@ -1304,7 +1314,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK2_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
             pK2_P = 0;
-            epK2 = 0.011; % from abstract
+            epK2 = 0.011;
 
         elseif opt.K1K2 == 14
         % Millero 2010, for estuarine use ---------------------------------
@@ -1313,6 +1323,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
 	        % Mehrbach et al. (1973), Mojica-Prieto & Millero (2002), 
             % Millero et al. (2006)
 	        % Constants for K's on the SWS; This is from page 141
+            % sigma pK1 = 0.005 & sigma pK2 = 0.010 (-MF)
             a1 = [ -90.18333;  21.3728;  0.1218; -3.688e-4] ; 
             a2 = [  5143.692; -788.289; -19.189;    0.0   ] ;
             a3 = [ 14.613358;   -3.374;   0.0  ;    0.0   ] ;
@@ -1331,6 +1342,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             % Mar. Chem., 165, 66-67, 2014
             % Corrigendum to "The free proton concentration scale for seawater pH".
 	        % Effectively, this is an update of Millero (2010) formulation (WhichKs==14)
+            % sigma pK1 = 0.0055 & sigma pK2 = 0.0110 (-MF)
             a1 = [  -90.18333;  21.225890; 0.12450870; -3.7243e-4] ;
             a2 = [  5143.692;  -779.3444;  -19.91739;    0.0    ] ;
             a3 = [ 14.613358; -3.3534679;     0.0   ;    0.0    ] ;
@@ -1342,13 +1354,14 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
             pK2_T = -f(S,a2) ./ (TK.^2) + f(S,a3) ./ TK ;
             pK2_S = df(S,a1) + df(S,a2) ./ TK + df(S,a3) .* log(TK);
             pK2_P = 0;
-            epK2 = 0.010;
+            epK2 = 0.0110;
 
         elseif opt.K1K2 == 16
         % Sulpis et al, 2020 ----------------------------------------------
             % Ocean Science Discussions, 16, 847-862
             % This study uses overdeterminations of the carbonate system to
             % iteratively fit K1 and K2
+            % Relative overall uncertainties ~2.5% (sigK/K) for both (-MF)
             a = 4226.23; b = -59.4636; c = 9.60817; 
             d = -0.01781; g = 0.0001122; 
 
@@ -1525,7 +1538,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         end
         gpKar = [pKar_T, pKar_S, pKar_P];
 
-        epKar = 0.039; % from Mucci bc can't find one from Berner
+        epKar = 0.009; % from Mucci table 7
     end
 
     function [pKca, gpKca,epKca] = calc_pKca(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
@@ -1586,7 +1599,7 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         end
         gpKca = [pKca_T, pKca_S, pKca_P];
 
-        epKca = 0.04; % from Mucci bc can't find one from Berner
+        epKca = 0.010; % from Mucci 1983, table 7
     end
     
     function [pSWS2tot,gpSWS2tot,pFREE2tot,gpFREE2tot] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf)
@@ -1654,9 +1667,11 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
         gpfH = [gpfH_T, gpfH_S, 0];
         % assumed independent of pressure
         
-        efH = 0.005; % ± 0.005 on fH from Culberson, Pytkowicz, ...
+        efH = 0.005; % ± 0.005 on fH from Culberson, Pytkowicz, 
+                     % and Hawley 1970 Journal of Marine Research
+                     % assume 1 sigma -MF
         my_abs = @(x) sqrt(x*x);
-        epfH = my_abs( p(fH + efH) - pfH ) ; %  and Hawley 1970 Journal of Marine Research
+        epfH = my_abs( p(fH + efH) - pfH ) ; 
     end 
     
 end

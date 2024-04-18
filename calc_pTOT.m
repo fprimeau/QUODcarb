@@ -54,8 +54,8 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             gpTB   = dpdx( TB )   *  0.0004157 / 35 ;
             ggpTB  = d2pdx2( TB ) * (0.0004157 / 35 ) ^ 2;
 
-            % std 5e-6 on avg 2.32e-4
-            TBu     = ( ( (2.32e-4 + 5e-6)/10.811) * S/1.80655 );
+            % std 5e-6 on avg 2.32e-4 for (B mg kg^-1)/(Cl o/oo)
+            TBu     = ( ( (2.32e-4 + 5e-6)/10.811) * S/1.80655 ); 
             TBl     = ( ( (2.32e-4 - 5e-6)/10.811) * S/1.80655 );
             eTB     = (TBu - TBl) /2 ;
             epTB    = my_abs( p(TB + eTB) - pTB ); % mol/kg
@@ -70,9 +70,9 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             gpTB    = dpdx( TB )   *   0.0004326 / 35;
             ggpTB   = d2pdx2( TB ) * ( 0.0004326 / 35 ) ^ 2;
             
-            % std 9e-6 on avg 2.414e-4
-            TBu     = ( ( (2.414e-4 + 9e-6)/10.811) * S/1.80655);
-            TBl     = ( ( (2.414e-4 - 9e-6)/10.811) * S/1.80655);
+            % std 9e-7 on avg 2.414e-4
+            TBu     = ( ( (2.414e-4 + 9e-7)/10.811) * S/1.80655);
+            TBl     = ( ( (2.414e-4 - 9e-7)/10.811) * S/1.80655);
             eTB     = (TBu - TBl) /2;
             epTB    = my_abs( p(TB + eTB) - pTB ); % mol/kg
             
@@ -86,7 +86,8 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             gpTB    = dpdx( TB )      *    0.0004106 / 35 ;
             ggpTB   = sys.d2pdx2( TB ) * ( 0.0004106 / 35 ) ^ 2;
 
-            % can't find paper, assume same as Uppstrom, std 5e-6 on avg 2.32e-4
+            % can't find paper, assume same as Uppstrom
+            % std 5e-6 on avg 2.32e-4
             TBu     = ( ( (2.32e-4 + 5e-6)/10.811) * S/1.80655 );
             TBl     = ( ( (2.32e-4 - 5e-6)/10.811) * S/1.80655 );
             eTB     = (TBu - TBl) /2 ;
@@ -141,7 +142,10 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             gpTCa   = dpdx( TCa )   *   ( 0.02128 / 40.087 ) / 1.80655 ; 
             ggpTCa  = d2pdx2( TCa ) * ( ( 0.02128 / 40.087 ) / 1.80655 ) ^ 2 ; 
         end
-        eTCa    = (6e-5); % mol/kg, from Riley and Tongdui 1967
+        % mean 0.02128 ± 0.00006 Ca/Cl ratio (g/kg)/(o/oo)
+        TCau    = ( (0.02128 + 6e-5)/ 40.087 * ( S / 1.80655 ) );
+        TCal    = ( (0.02128 - 6e-5)/ 40.087 * ( S / 1.80655 ) );
+        eTCa    = (TCau - TCal) / 2;
         my_abs  = @(x) sqrt(x*x);
         epTCa   = my_abs( p(TCa + eTCa) - pTCa );
     end

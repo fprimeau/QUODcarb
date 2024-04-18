@@ -125,23 +125,8 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         if (iflag(i) ~=0) && (opt.printmes ~= 0)
             fprintf('Newton''s method iflag = %i at i = %i \n',iflag(i),i);
         end
-        
-        % if (0)
-        %     % check derivatives
-        %     n = length(zhat);
-        %     I = eye(n);
-        %     e = sqrt(eps);
-        %     Htest = zeros(n,n);
-        %     for ii = 1:n
-        %         gp = fun(zhat+I(:,ii)*e);
-        %         gm = fun(shat-I(:,ii)*e);
-        %         H(:,ii) = (gp-gm)/(2*e);
-        %     end
-        %     [ii,jj,iv] = find(H);
-        %     [iii,jjj,iiv] = find(J);
-        %     keyboard
-        %     re = abs(iv - iiv)./iiv; % 1e-3
-        % end
+        [~,~,f] = limp(zhat,yobs(i,:),wobs(i,:),obs(i),sys,opt);
+        % residual f value, to tack onto est
 
         % calculate the marginalized posterior uncertainty using Laplace's approximation
         C = inv(J);
@@ -154,8 +139,8 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         end
 
         % populate est
-        [est(i)] = parse_output(zhat,sigx,sys);    
-
+        [est(i)] = parse_output(zhat,sigx,sys,f);    
+        
         % calculate the Revelle factor if opt.Revelle = 1 ('on')
         if opt.Revelle == 1
             for j = 1:length(sys.tp(:))
@@ -1736,7 +1721,7 @@ end
 
 % ------------------------------------------------------------------------
 
-function [est] = parse_output(z,sigx,sys)
+function [est] = parse_output(z,sigx,sys,f)
     % populate est, output structure with best estimates
     %
     % INPUT:
@@ -1756,6 +1741,8 @@ function [est] = parse_output(z,sigx,sys)
     %   3. upper and lower bounds in 'q' space, not symmetric
     %           about the value in 'q' space
 
+    est.f       = f; % residual f value, from limp
+    
     est.sal     = z(sys.isal);
     est.esal    = sigx(sys.isal);
     
