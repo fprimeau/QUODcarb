@@ -598,7 +598,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             obs(i).eTB       = nan;
             wobs(i,sys.ipTB) = (epTB)^(-2); % convert to precision
         else
-            wobs(i,sys.ipTB) = w(obs(i).TB,obs(i).eTB); % mol/kg
+            wobs(i,sys.ipTB) = w(obs(i).TB,obs(i).eTB); % µmol/kg
         end
         
         % total sulfate
@@ -632,7 +632,8 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             obs(i).eTF       = nan;
             wobs(i,sys.ipTF) = (epTF)^(-2);
         else
-            TF = (6.7e-5/18.998)*obs(i).sal/1.80655;
+            % TF = (6.7e-5/18.998)*obs(i).sal/1.80655; % not needed -MF
+            TF                  = q(pTF)*1e-6;
             wobs(i,sys.ipTF)    = w(TF,obs(i).eTF);
         end        
         

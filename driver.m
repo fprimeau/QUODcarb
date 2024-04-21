@@ -7,7 +7,7 @@ load data.mat; % NEW as of Nov.11
 nD = length(in);
 
 % choose options for opt structure
-opt.K1K2 = 4; % option for K1K2 formulation
+opt.K1K2 = 16; % option for K1K2 formulation
 opt.KSO4 = 1;  % option for KSO4 formulation
 opt.KF   = 2;  % option for KF formulation
 opt.TB   = 2;  % option for TB formulation
@@ -68,6 +68,7 @@ obs_backup = obs;
 
 % K04
 tic
+opt.K1K2 = 4;
 [est,~,~,~] = QUODcarb(obs,opt); % [est, obs, sys, iflag]
 estK04 = est;
 % fprintf('K04 done \n')

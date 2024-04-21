@@ -135,7 +135,7 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             gpTCa   = dpdx( TCa )   *   0.01026 / 35 ;
             ggpTCa  = d2pdx2( TCa ) * ( 0.01026 / 35 ) ^ 2 ;
         else
-            % Calculate Ca, Riley and Tongdui 1967
+            % Calculate Ca, Riley and Tongudai 1967
             % this is 0.010285.*obs.sal./35;
             TCa     = ( 0.02128 / 40.087 * ( S / 1.80655 ) );
             pTCa    = p( TCa ); 
