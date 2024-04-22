@@ -4,7 +4,7 @@
 
 load data.mat; % NEW as of Nov.11
 [in] = data;
-nD = length(in);
+nD = 25; %length(in);
 
 % choose options for opt structure
 opt.K1K2 = 16; % option for K1K2 formulation
