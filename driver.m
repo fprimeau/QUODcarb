@@ -1,25 +1,27 @@
+
+
 % driver to go with QUODcarb
 
 load data.mat; % NEW as of Nov.11
 [in] = data;
-nD = 10; %length(in);
+nD = 25; %length(in);
 
 % choose options for opt structure
-opt.K1K2 = 4; % option for K1K2 formulation
+opt.K1K2 = 16; % option for K1K2 formulation
 opt.KSO4 = 1;  % option for KSO4 formulation
 opt.KF   = 2;  % option for KF formulation
 opt.TB   = 2;  % option for TB formulation
 opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
-opt.printcsv = 1;  % print est to CSV? 1 = on , 0 = off
+opt.printcsv = 0;  % print est to CSV? 1 = on , 0 = off
 % opt.fname    = 'QUODcarb_output.csv'; % don't need it if printcsv is off
-opt.fname    = 'output_csv/Q5v2.csv';
+opt.fname    = 'output_csv/Q5K4.csv';
 opt.co2press = 1; % 1 = on, 0 = off
-opt.Revelle  = 1; % 1 = on, 0 = off 
+opt.Revelle  = 0; % 1 = on, 0 = off 
 opt.printmes = 0; % 1 = on, 0 = off
 
 
 % read in GOMECC data and put into obs structure
-for i = 1:10
+for i = 1:nD
     
     % measurements that are independent of (T,P)
     obs(i).TC    = in(5,i); % (umol/kg)
@@ -27,12 +29,12 @@ for i = 1:10
     obs(i).TA    = in(6,i);
     obs(i).eTA   = 1.78; % TA error ±2.01 umol/kg
     obs(i).sal   = in(1,i); % PSU
-    obs(i).esal  = 0.001; % 1 new of 1/23 old = 0.002
+    obs(i).esal  = 0.001; % 1 new as of 1/23 old = 0.002
     % nutrients P and Si also independent of (T,P)
     obs(i).TP    = in(7,i);
-    obs(i).eTP   = in(7,i)*0.001; % 0.1% meas uncertainty
+    obs(i).eTP   = in(7,i)*0.003; % 0.30% meas precision NEW 4/17/24
     obs(i).TSi   = in(8,i);
-    obs(i).eTSi  = in(8,i)*0.02; % 2% meas uncertainty NEW 1/25/24
+    obs(i).eTSi  = in(8,i)*0.0031; % 0.31% meas uncertainty NEW 4/17/24
 
     % first (T,P)-dependent measurement
     obs(i).tp(1).T  = in(2,i); % deg C, CTD temp
@@ -44,7 +46,7 @@ for i = 1:10
     obs(i).tp(2).T    = 25 ; % degC
     obs(i).tp(2).eT   = 0.05 ; % from cruise report
     obs(i).tp(2).P    = 0.0 ; %in(i+ad,1); % NOT in situ
-    obs(i).tp(2).eP   = 0.63 ;
+    obs(i).tp(2).eP   = 0.07 ;
     obs(i).tp(2).ph   = in(9,i); % total scale
     obs(i).tp(2).eph  = 0.0004 ;
     obs(i).tp(2).co3  = in(11,i); % (µmol/kg)
@@ -54,7 +56,7 @@ for i = 1:10
     obs(i).tp(3).T     = 20 ; %degC
     obs(i).tp(3).eT    = 0.03 ; % from cruise report
     obs(i).tp(3).P     = 0.0 ; % dbar (surface pressure for pco2)
-    obs(i).tp(3).eP    = 0.63 ;
+    obs(i).tp(3).eP    = 0.07 ;
     obs(i).tp(3).pco2  = in(10,i); % (µatm)
     obs(i).tp(3).epco2 = in(10,i)*0.0021; % 0.21% relative std error (avg)
 end
@@ -65,11 +67,74 @@ obs_backup = obs;
 % CT AT pH pCO2 CO3 (Q5) (fid5)
 
 % K04
+tic
+opt.K1K2 = 4;
 [est,~,~,~] = QUODcarb(obs,opt); % [est, obs, sys, iflag]
 estK04 = est;
 % fprintf('K04 done \n')
+toc
 
+% K10
+opt.K1K2 = 10;
+[est,~,~,~] = QUODcarb(obs,opt);
+estK10 = est;
 
+% K11
+opt.K1K2 = 11;
+[est,~,~,~] = QUODcarb(obs,opt);
+estK11 = est;
+
+% K12
+opt.K1K2 = 12;
+[est,~,~,~] = QUODcarb(obs,opt);
+estK12 = est;
+
+% K13
+opt.K1K3 = 13;
+[est,~,~,~] = QUODcarb(obs,opt);
+estK13 = est;
+
+% K14
+opt.K1K2 = 14;
+[est,~,~,~] = QUODcarb(obs,opt);
+estK14 = est;
+
+% K15
+opt.K1K2 = 15;
+[est,~,~,~] = QUODcarb(obs,opt);
+estK15 = est;
+
+% K16
+opt.K1K2 = 16;
+[est,~,~,~] = QUODcarb(obs,opt);
+estK16 = est;
+
+% K17
+opt.K1K2 = 17;
+[est,~,~,~] = QUODcarb(obs,opt);
+estK17 = est;
+
+for i = 1:nD
+    fK04(i) = estK04(i).f;
+    fK10(i) = estK10(i).f;
+    fK11(i) = estK11(i).f;
+    fK12(i) = estK12(i).f;
+    fK13(i) = estK13(i).f;
+    fK14(i) = estK14(i).f;
+    fK15(i) = estK15(i).f;
+    fK16(i) = estK16(i).f;
+    fK17(i) = estK17(i).f;
+end
+
+save output_mat_files/new_pK/fK04.mat fK04;
+save output_mat_files/new_pK/fK10.mat fK10;
+save output_mat_files/new_pK/fK11.mat fK11;
+save output_mat_files/new_pK/fK12.mat fK12;
+save output_mat_files/new_pK/fK13.mat fK13;
+save output_mat_files/new_pK/fK14.mat fK14;
+save output_mat_files/new_pK/fK15.mat fK15;
+save output_mat_files/new_pK/fK16.mat fK16;
+save output_mat_files/new_pK/fK17.mat fK17;
 
 % get other stuff from driver_all.m, updated 1/25/24
 
