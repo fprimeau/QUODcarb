@@ -1,5 +1,3 @@
-
-
 % driver to go with QUODcarb
 
 load data.mat; % NEW as of Nov.11
@@ -280,10 +278,3 @@ save output_mat_files/new_pK/fK17.mat fK17;
 % [est,~,~,~] = QUODcarb(obs,opt);
 % est10   = est;
 % % % NO compare! Wrong tp's
-
-
-
-
-
-
-
