@@ -166,7 +166,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
                 jac     = sys.tp(j).dcdx_pTAfixed(zhat(ifree));
                 z       = ei - ( jac.' ) * ( ( jac * jac.' ) \ ( jac*ei ) );
                 est(i).tp(j).Revelle = z(2)/z(1);
-
+                keyboard
                 % dpfCO2dpTA (similar to Revelle but TC held fixed)
                 jfree   = sys.tp(j).jfree;
                 ej      = zeros(length(jfree),1);
