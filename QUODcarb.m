@@ -2172,91 +2172,89 @@ function sys = mksys(obs,phscale)
         i = i + 1;    iP = i;     tp(j).iP = iP;  % pressure
             
         % K0 = [co2st]/fco2   
+        nrk = 1;              i = i + 1; 
+        tp(j).ipK0      = i;  i = i + 1; 
+        tp(j).ipco2st   = i;  i = i + 1;
+        tp(j).ipfco2    = i;  i = i + 1; % fco2 = pco2 * p2f;
+        %nrk = nrk + 1;        i = i + 1; % do we need this??
+        tp(j).ipp2f     = i;  i = i + 1;
+        tp(j).ippco2    = i;  
+
         % K1 = [h][hco3]/[co2st]
         % K2 = [h][co3]/[hco3]
-        nrk = 3;              i = i + 1; 
-        tp(j).ipK0      = i;  i = i + 1; 
-        tp(j).ipK1      = i;  i = i + 1;
-        tp(j).ipK2      = i;  i = i + 1;
-        tp(j).ipfco2    = i;  i = i + 1;
-        tp(j).ipco2st   = i;  i = i + 1;
-        tp(j).iphco3    = i;  i = i + 1;
-        tp(j).ipco3     = i;  i = i + 1;
-        tp(j).iph       = i; 
-        
-        % Kb = [h][boh4]/[boh3]
-        nrk = nrk + 1;        i = i + 1;
-        tp(j).ipKb   = i;     i = i + 1;
-        tp(j).ipboh4 = i;     i = i + 1;
-        tp(j).ipboh3 = i;
+        nrk = nrk + 2;
+        tp(j).ipK1      = i;    i = i + 1;
+        tp(j).ipK2      = i;    i = i + 1;
+        tp(j).iphco3    = i;    i = i + 1;
+        tp(j).ipco3     = i;    i = i + 1;
+        tp(j).iph       = i;    i = i + 1;
+        tp(j).iph_tot   = i;    i = i + 1;
+        tp(j).iph_free  = i;    i = i + 1;
+        tp(j).iph_sws   = i;    i = i + 1;
+        tp(j).iph_nbs   = i;    i = i + 1;
+        tp(j).ipfH      = i; 
 
         % Kw = [h][oh] 
-        nrk = nrk + 1;       i = i + 1;
-        tp(j).ipKw = i;      i = i + 1;
-        tp(j).ipoh = i;      
+        nrk = nrk + 1;          i = i + 1;
+        tp(j).ipKw = i;         i = i + 1;
+        tp(j).ipoh = i;     
+
+        % Kb = [h][boh4]/[boh3]
+        nrk = nrk + 1;          i = i + 1;
+        tp(j).ipKb   = i;       i = i + 1;
+        tp(j).ipboh3 = i;       i = i + 1;
+        tp(j).ipboh4 = i; 
      
         % Ks  = [hf][so4]/[hso4]
-        nrk = nrk + 1;        i = i + 1;
-        tp(j).ipKs     = i;   i = i + 1;
-        tp(j).ipso4    = i;   i = i + 1;
-        tp(j).iphso4   = i;
+        nrk = nrk + 1;          i = i + 1;
+        tp(j).ipKs     = i;     i = i + 1;
+        tp(j).iphso4   = i;     i = i + 1;
+        tp(j).ipso4    = i;
         
         % Kf = [h][F]/[HF]
-        nrk = nrk + 1;        i = i + 1;
-        tp(j).ipKf = i;       i = i + 1;
-        tp(j).ipF  = i;       i = i + 1;
-        tp(j).ipHF = i;
+        nrk = nrk + 1;          i = i + 1;
+        tp(j).ipKf = i;         i = i + 1;
+        tp(j).ipHF = i;         i = i + 1;
+        tp(j).ipF  = i;
+
         % Kp1 = [h][h2po4]/[h3po4]
         % Kp2 = [h][hpo4]/[h2po4]
         % Kp3 = [h][po4]/[hpo4]
-        nrk = nrk + 3;        i = i + 1;
-        tp(j).ipKp1   = i;    i = i + 1;
-        tp(j).ipKp2   = i;    i = i + 1;
-        tp(j).ipKp3   = i;    i = i + 1;
-        tp(j).iph3po4 = i;    i = i + 1;
-        tp(j).iph2po4 = i;    i = i + 1;
-        tp(j).iphpo4  = i;    i = i + 1;
+        nrk = nrk + 3;          i = i + 1;
+        tp(j).ipKp1   = i;      i = i + 1;
+        tp(j).ipKp2   = i;      i = i + 1;
+        tp(j).ipKp3   = i;      i = i + 1;
+        tp(j).iph3po4 = i;      i = i + 1;
+        tp(j).iph2po4 = i;      i = i + 1;
+        tp(j).iphpo4  = i;      i = i + 1;
         tp(j).ippo4   = i;
         
         % KSi = [h][siooh3]/[sioh4]
-        nrk = nrk + 1;        i = i + 1;
-        tp(j).ipKsi    = i;   i = i + 1;
-        tp(j).ipsiooh3 = i;   i = i + 1;
+        nrk = nrk + 1;          i = i + 1;
+        tp(j).ipKsi    = i;     i = i + 1;
+        tp(j).ipsiooh3 = i;     i = i + 1;
         tp(j).ipsioh4  = i;
         
         % Knh4 = [h][nh3]/[nh4]
-        nrk = nrk + 1;        i = i + 1;
-        tp(j).ipKnh4 = i;     i = i + 1;
-        tp(j).ipnh3  = i;     i = i + 1;
-        tp(j).ipnh4  = i;
+        nrk = nrk + 1;          i = i + 1;
+        tp(j).ipKnh4 = i;       i = i + 1;
+        tp(j).ipnh4  = i;       i = i + 1;
+        tp(j).ipnh3  = i;
         
         % Kh2s = [h][hs]/[h2s]
-        nrk = nrk + 1;        i = i + 1;
-        tp(j).ipKh2s = i;     i = i + 1;
-        tp(j).ipHS   = i;     i = i + 1;
-        tp(j).ipH2S  = i;    
+        nrk = nrk + 1;          i = i + 1;
+        tp(j).ipKh2s = i;       i = i + 1;
+        tp(j).ipH2S  = i;       i = i + 1;
+        tp(j).ipHS   = i;    
 
-        % fco2 = pco2 * p2f;
-        nrk = nrk + 1;        i = i + 1;
-        tp(j).ipp2f     = i;  i = i + 1;
-        tp(j).ippco2    = i;  
-        
         % Kar = [co3][ca]/OmegaAr
         % Kca = [co3][ca]/OmegaCa
-        nrk = nrk + 1;        i = i + 1;
-        tp(j).ipKar     = i;  i = i + 1;
-        tp(j).ipca      = i;  i = i + 1;
-        tp(j).ipOmegaAr = i;
-        nrk = nrk + 1;        i = i + 1;
-        tp(j).ipKca     = i;  i = i + 1;
-        tp(j).ipOmegaCa = i;  i = i+1;
-        tp(j).ipfH      = i; i = i + 1;
-        
-        %  ph scales 
-        tp(j).iph_tot  = i;   i = i + 1;
-        tp(j).iph_free = i;   i = i + 1;
-        tp(j).iph_sws  = i;   i = i + 1;
-        tp(j).iph_nbs  = i;
+        nrk = nrk + 2;          i = i + 1;
+        tp(j).ipKar     = i;    i = i + 1;
+        tp(j).ipKca     = i;    i = i + 1;
+        tp(j).ipOmegaAr = i;    i = i + 1;
+        tp(j).ipOmegaCa = i;    i = i + 1;
+        tp(j).ipca      = i;  
     end
     nv = i;
     K = sparse(nTP*(nrk+2),nv);
