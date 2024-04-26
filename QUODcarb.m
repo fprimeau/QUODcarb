@@ -2176,7 +2176,6 @@ function sys = mksys(obs,phscale)
         tp(j).ipK0      = i;  i = i + 1; 
         tp(j).ipco2st   = i;  i = i + 1;
         tp(j).ipfco2    = i;  i = i + 1; % fco2 = pco2 * p2f;
-        %nrk = nrk + 1;        i = i + 1; % do we need this??
         tp(j).ipp2f     = i;  i = i + 1;
         tp(j).ippco2    = i;  
 
@@ -2867,7 +2866,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.ipTCa)   = w(obs(i).TCa,obs(i).eTCa);
         end
 
-                for j = 1:nTP % loop over (T,P) systems
+        for j = 1:nTP % loop over (T,P) systems
             yobs(i,sys.tp(j).iT)   = obs(i).tp(j).T;
             yobs(i,sys.tp(j).iP)   = obs(i).tp(j).P;
             wobs(i,sys.tp(j).iT)   = (obs(i).tp(j).eT)^(-2);
@@ -3480,8 +3479,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
         end
     end
 end
-    
-        
+   
 
 % ----------------------------------------------------------------------
 % update_y
@@ -4288,7 +4286,7 @@ function [x,J,iflag] = newtn(x0,F,tol)
 % iflag: 0 ==> Newton's method converged to the desired
 %                      tolerance
 %        1 ==> Newton's method did not converge 
-    iprint = 0;
+    iprint = 1;
     MAXIT = 50;
     x = x0;
     if (nargin==4)
