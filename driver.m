@@ -12,7 +12,7 @@ opt.TB   = 2;  % option for TB formulation
 opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
 opt.printcsv = 0;  % print est to CSV? 1 = on , 0 = off
 % opt.fname    = 'QUODcarb_output.csv'; % don't need it if printcsv is off
-opt.fname    = 'output_csv/Q5K4.csv';
+opt.fname    = 'output_csv/Q5K16.csv';
 opt.co2press = 1; % 1 = on, 0 = off
 opt.Revelle  = 0; % 1 = on, 0 = off 
 opt.printmes = 0; % 1 = on, 0 = off
@@ -71,6 +71,7 @@ opt.K1K2 = 4;
 estK04 = est;
 % fprintf('K04 done \n')
 toc
+keyboard
 
 % K10
 opt.K1K2 = 10;
