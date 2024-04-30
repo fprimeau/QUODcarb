@@ -4,7 +4,7 @@
 # format long
 
 #from compare.m import compare
-import scipy.io
+import scipy
 import numpy as np
 import copy
 import mksys
