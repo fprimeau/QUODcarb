@@ -10,7 +10,7 @@ import copy
 import mksys
 #import QUODcarb
 
-data = scipy.io.loadmat('datag.mat')
+data = scipy.io.loadmat('data.mat')
 nD = len(data)
 
 #   choose options for opt structure
@@ -34,18 +34,18 @@ obs = []
 for i in range(nD):
     obs.append({})
     # measurements independent of (T,P)
-    obs[i]['TC'] = data['datag'][i][4]     # (umol/kg)
+    obs[i]['TC'] = data['data'][i][4]     # (umol/kg)
     obs[i]['eTC'] =  2.01                   # TC error ±2.01 umol/kg
-    obs[i]['TA'] = data['datag'][i][6]
+    obs[i]['TA'] = data['data'][i][6]
     obs[i]['TC'] = 1.78                    # TA error ±2.01 umol/kg
-    obs[i]['sal'] = data['datag'][i][2]    # PSU
+    obs[i]['sal'] = data['data'][i][2]    # PSU
     obs[i]['esal'] = 0.002                 # new = 0.001
 
     # nutrients P and Si also independent of (T,P)
-    obs[i]['TP'] = data['datag'][i][23]
-    obs[i]['eTP'] = data['datag'][i][23] * 0.001    # 0.01% meas uncertainty
-    obs[i]['TSi'] = data['datag'][i][17]
-    obs[i]['eTSi'] = data['datag'][i][17] * 0.001   # 0.01% meas uncertainty
+    obs[i]['TP'] = data['data'][i][23]
+    obs[i]['eTP'] = data['data'][i][23] * 0.001    # 0.01% meas uncertainty
+    obs[i]['TSi'] = data['data'][i][17]
+    obs[i]['eTSi'] = data['data'][i][17] * 0.001   # 0.01% meas uncertainty
     obs[i]['tp'] = []
     # first(T,P)-dependent measurement
     """
@@ -55,7 +55,7 @@ for i in range(nD):
     'eP': (max) ± 0.63 dbar 
     """
 
-    first_dep_meas = {'T': data['datag'][i][1], 'eT': 0.02, 'P': data['datag'][i][0], 'eP': 0.63}
+    first_dep_meas = {'T': data['data'][i][1], 'eT': 0.02, 'P': data['data'][i][0], 'eP': 0.63}
     obs[i]['tp'] = first_dep_meas
     # second(T,P)-dependent measurement
     """
@@ -66,7 +66,7 @@ for i in range(nD):
     'co3':(µmol/kg)
     'eco3':std ±2µmol/kg
     """
-    second_dep_meas = {'T': 25, 'eT': 0.05, 'P': 0.0, 'eP': 0.63, 'ph': data['datag'][i][8], 'eph': 0.0004, 'co3': data['datag'][i][13], 'eco3': 2.0}
+    second_dep_meas = {'T': 25, 'eT': 0.05, 'P': 0.0, 'eP': 0.63, 'ph': data['data'][i][8], 'eph': 0.0004, 'co3': data['data'][i][13], 'eco3': 2.0}
     obs[i]['tp'] = second_dep_meas
     # third (T,P)-dependent measurement
     """
@@ -77,7 +77,7 @@ for i in range(nD):
     'epco2':   0.21% relative std error (avg)
     """
 
-    third_dep_meas = {'T': 20, 'eT': 0.03, 'P': 0.0, 'eP': 0.63, 'pco2': data['datag'][i, 10], 'epco2': data['datag'][i][10] * 0.0021}
+    third_dep_meas = {'T': 20, 'eT': 0.03, 'P': 0.0, 'eP': 0.63, 'pco2': data['data'][i, 10], 'epco2': data['data'][i][10] * 0.0021}
     obs[i]['tp'] = third_dep_meas
 
 obs = np.array(obs)
@@ -122,7 +122,6 @@ for i in range(nD):
     obs[i]['tp']['epco2'] = np.nan
     obs[i]['tp']['co3'] = np.nan
     obs[i]['tp']['eco3'] = np.nan
-print(obs)
 
 # est, obs, _, _ = QUODcarb(obs, opt)
 #est03 = est
