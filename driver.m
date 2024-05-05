@@ -1,3 +1,4 @@
+
 % driver to go with QUODcarb
 
 load data.mat; % NEW as of Nov.11
@@ -71,7 +72,7 @@ opt.K1K2 = 4;
 estK04 = est;
 % fprintf('K04 done \n')
 toc
-keyboard
+% keyboard
 
 % K10
 opt.K1K2 = 10;
