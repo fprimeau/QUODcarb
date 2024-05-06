@@ -282,10 +282,3 @@ estK13 = est;
 % [est,~,~,~] = QUODcarb(obs,opt);
 % est10   = est;
 % % % NO compare! Wrong tp's
-
-
-
-
-
-
-
