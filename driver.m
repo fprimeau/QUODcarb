@@ -92,9 +92,9 @@ obs_backup = obs;
 % estK12 = est;
 
 % K13
-opt.K1K3 = 13;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK13 = est;
+% opt.K1K3 = 13;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK13 = est;
 
 % K14
 % opt.K1K2 = 14;
