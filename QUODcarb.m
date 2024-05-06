@@ -2171,7 +2171,7 @@ function sys = mksys(obs,phscale)
         i = i + 1;    iT = i;     tp(j).iT = iT;  % temperature
         i = i + 1;    iP = i;     tp(j).iP = iP;  % pressure
             
-        % K0 = [co2st]/fco2   
+        % K0 = [co2st]/fco2  
         % K1 = [h][hco3]/[co2st]
         % K2 = [h][co3]/[hco3]
         nrk = 3;              i = i + 1; 
