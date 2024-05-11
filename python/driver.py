@@ -130,4 +130,3 @@ tp      = 2
 # [A]     = compare(obs,est,opt,tp,3,fid3)
 
 sys = mksys.mksys(obs[0], opt['phscale'])
-print(sys)

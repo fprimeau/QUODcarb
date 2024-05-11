@@ -408,5 +408,27 @@ def parse_input(obs, sys, opt, nD):
             wobs[i, sys['ipTA']] = w(obs[i]['TA'], obs[i]['eTA']) #std e -> w
 
         # calculate totals that are a function of salinity
-                 
-# stopped at line 433
+        pT, _, _, epT = calc_pTOT(opt, obs[i]['sal'])
+        pTB, epTB = pT[0], epT[0]
+        pTS, epTS = pT[1], epT[1]
+        pTF, epTF = pT[2], epT[2]
+        pTCa, epTCa = pT[3], epT[3]  # (see Ref's within calc_pTOT)
+        #total borate
+        if 'TB' not in obs[i] or not isgood(obs[i]['TB']):
+            obs[i]['TB'] = np.nan
+            yobs[i, sys['ipTB']] = pTB
+        else:
+            if obs[i]['TB'] == 0:
+                obs[i]['TB'] = 1e-3 # umol/kg, reset minimum to 1 nanomolar
+            yobs[i, sys['ipTB']] = p(obs[i]['TB'] * 1e-6) # convt µmol/kg to mol/kg
+        
+        if 'eTB' not in obs[i] or not isgood(obs[i]['eTB']):
+            obs[i]['eTB'] = np.nan
+            wobs[i, sys['ipTB']] = (epTB)^(-2) # convert to precision
+        else:
+            wobs[i, sys['ipTB']] = w(obs[i]['TB'], obs[i]['eTB']) #mol/kg
+
+        # total sulfate
+        
+                        
+# stopped at line 455

@@ -243,13 +243,13 @@ def mksys(obs,phscale):
         obs['tp'][j]['iph_nbs'] = i
 
     nv = i
-    K = sparse.lil_matrix((nTP * (nrk + 2), nv))
-    row = 0        
-    
-    for j in range(1, nTP + 1):
+    # TODO: Maybe edit indices?
+    K = sparse.lil_matrix(((nTP * (nrk + 2)) + 1, nv + 1))
+    row = 0
+
+    for j in range(nTP):
         kr = []
         kc = []
-
         # K0 = [CO2*]/fCO2 ==> -pK0 + pco2st - pfco2 = 0
         row += 1
         K[row, [obs['tp'][j]['ipK0'], obs['tp'][j]['ipco2st'], obs['tp'][j]['ipfco2']]] = [-1, 1, -1]
@@ -374,7 +374,7 @@ def mksys(obs,phscale):
 
 
     # mass conservation equations
-    M = sparse(nTP*nr, nv)
+    M = sparse.lil_matrix(((nTP*nr) + 1, nv + 1))
     row = 0
 
     for j in range(nTP):
@@ -385,7 +385,6 @@ def mksys(obs,phscale):
         row += 1
         row_alk = row
         mr.append(row)
-
         # carbonate
         M[row_alk, [ipTA, obs['tp'][j]['iphco3'], obs['tp'][j]['ipco3']]] = [1, -1, -2]
         mc += [ipTA, obs['tp'][j]['iphco3'], obs['tp'][j]['ipco3']]
@@ -526,5 +525,5 @@ def mksys(obs,phscale):
     sys['M'] = M
     sys['K'] = K
     sys['tp'] = obs['tp']
-
-
+    
+    return sys
