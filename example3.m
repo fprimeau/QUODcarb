@@ -23,12 +23,12 @@ nD = length(data); % number of datapoints
 
 for i = 1:nD
     % temperature and pressure INdependent
-    obs(i).sal  = data(i,1); % salinity (PSU) 5th column
-    obs(i).esal = data(i,1); % salinity error 6th column, 1 sigma
-    obs(i).TC   = data(i,3); % TC (umol/kg) is the first column
-    obs(i).eTC  = data(i,4); % TC error is in the 2nd column, 1 sigma
-    obs(i).TA   = data(i,5); % TA (umol/kg) is in the 3rd column
-    obs(i).eTA  = data(i,6); % TA error is in the 4th column, 1 sigma
+    obs(i).sal  = data(i,1); % salinity (PSU) 1st column of data.mat
+    obs(i).esal = data(i,2); % salinity error 2nd, 1 sigma
+    obs(i).TC   = data(i,3); % TC (umol/kg) 3rd column of data.mat
+    obs(i).eTC  = data(i,4); % TC error is in the 4th column, 1 sigma
+    obs(i).TA   = data(i,5); % TA (umol/kg) is in the 5th column
+    obs(i).eTA  = data(i,6); % TA error is in the 6th column, 1 sigma
     obs(i).TP   = data(i,7); % total phosphate (umol/kg)
     obs(i).eTP  = data(i,8); % error TP, 1 sigma
     obs(i).TSi  = data(i,9); % total silicate (umol/kg)

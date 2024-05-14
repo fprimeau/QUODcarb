@@ -64,77 +64,79 @@ obs_backup = obs;
 
 %% Q5: All five input
 % CT AT pH pCO2 CO3 (Q5) (fid5)
+[est,obs,sys,iflag] = QUODcarb(obs,opt); 
+
 
 % K04
-tic
-opt.K1K2 = 4;
-[est,~,~,~] = QUODcarb(obs,opt); % [est, obs, sys, iflag]
-estK04 = est;
+% tic
+% opt.K1K2 = 4;
+% [est,~,~,~] = QUODcarb(obs,opt); % [est, obs, sys, iflag]
+% estK04 = est;
 % fprintf('K04 done \n')
-toc
+% toc
 % keyboard
 
 % K10
-opt.K1K2 = 10;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK10 = est;
+% opt.K1K2 = 10;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK10 = est;
 
 % K11
-opt.K1K2 = 11;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK11 = est;
+% opt.K1K2 = 11;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK11 = est;
 
 % K12
-opt.K1K2 = 12;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK12 = est;
+% opt.K1K2 = 12;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK12 = est;
 
 % K13
-opt.K1K3 = 13;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK13 = est;
+% opt.K1K3 = 13;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK13 = est;
 
 % K14
-opt.K1K2 = 14;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK14 = est;
+% opt.K1K2 = 14;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK14 = est;
 
 % K15
-opt.K1K2 = 15;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK15 = est;
+% opt.K1K2 = 15;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK15 = est;
 
 % K16
-opt.K1K2 = 16;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK16 = est;
+% opt.K1K2 = 16;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK16 = est;
 
 % K17
-opt.K1K2 = 17;
-[est,~,~,~] = QUODcarb(obs,opt);
-estK17 = est;
+% opt.K1K2 = 17;
+% [est,~,~,~] = QUODcarb(obs,opt);
+% estK17 = est;
 
-for i = 1:nD
-    fK04(i) = estK04(i).f;
-    fK10(i) = estK10(i).f;
-    fK11(i) = estK11(i).f;
-    fK12(i) = estK12(i).f;
-    fK13(i) = estK13(i).f;
-    fK14(i) = estK14(i).f;
-    fK15(i) = estK15(i).f;
-    fK16(i) = estK16(i).f;
-    fK17(i) = estK17(i).f;
-end
+% for i = 1:nD
+%     fK04(i) = estK04(i).f;
+%     fK10(i) = estK10(i).f;
+%     fK11(i) = estK11(i).f;
+%     fK12(i) = estK12(i).f;
+%     fK13(i) = estK13(i).f;
+%     fK14(i) = estK14(i).f;
+%     fK15(i) = estK15(i).f;
+%     fK16(i) = estK16(i).f;
+%     fK17(i) = estK17(i).f;
+% end
 
-save output_mat_files/new_pK/fK04.mat fK04;
-save output_mat_files/new_pK/fK10.mat fK10;
-save output_mat_files/new_pK/fK11.mat fK11;
-save output_mat_files/new_pK/fK12.mat fK12;
-save output_mat_files/new_pK/fK13.mat fK13;
-save output_mat_files/new_pK/fK14.mat fK14;
-save output_mat_files/new_pK/fK15.mat fK15;
-save output_mat_files/new_pK/fK16.mat fK16;
-save output_mat_files/new_pK/fK17.mat fK17;
+% save output_mat_files/new_pK/fK04.mat fK04;
+% save output_mat_files/new_pK/fK10.mat fK10;
+% save output_mat_files/new_pK/fK11.mat fK11;
+% save output_mat_files/new_pK/fK12.mat fK12;
+% save output_mat_files/new_pK/fK13.mat fK13;
+% save output_mat_files/new_pK/fK14.mat fK14;
+% save output_mat_files/new_pK/fK15.mat fK15;
+% save output_mat_files/new_pK/fK16.mat fK16;
+% save output_mat_files/new_pK/fK17.mat fK17;
 
 % get other stuff from driver_all.m, updated 1/25/24
 
