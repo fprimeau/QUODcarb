@@ -1,4 +1,4 @@
-function [est,obs,sys,iflag] = QUODcarb(obs,opt)
+function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %
 % OUTPUT:
 %   est := posterior estimates of co2-system variables, equilibrium constants, and precisions
@@ -114,8 +114,12 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
 
     for i = 1:nD % loop over the full data set
 
-        z0      = init(opt,yobs(i,:),sys);       % initialize
-        tol     = 1e-6;                          % tolerance
+        z0 = init(opt,yobs(i,:),sys);       % initialize
+        if ~isfield(opt,'tol')
+            tol = 1e-6;                          % tolerance
+        else
+            tol = opt.tol;
+        end
         % negative of the log of the posterior 
         % aka the log improbability (limp for short)
         fun = @(z) limp(z,yobs(i,:),wobs(i,:),obs(i),sys,opt);
@@ -139,7 +143,7 @@ function [est,obs,sys,iflag] = QUODcarb(obs,opt)
         end
 
         % populate est
-        [est(i)] = parse_output(zhat,sigx,sys,f);    
+        [est(i)] = parse_output(zhat,sigx,sys,f,C);    
         
         % calculate the Revelle factor if opt.Revelle = 1 ('on')
         if opt.Revelle == 1
@@ -500,10 +504,18 @@ function [pK,gpK,epK] = calc_pK(opt,T,S,P)
     % ---------------------------------------------------------------------
     pK   = [  pK0;   pK1;   pK2;    pKb;    pKw;   pKs;   pKf;  pKp1; ...
              pKp2;  pKp3;  pKsi;  pKnh4;  pKh2s;  pp2f;  pKar;  pKca; pfH];
+
+    pK = pK .* opt.mpk(T,S,P);
+    
     gpK  = [ gpK0;  gpK1;  gpK2;   gpKb;   gpKw;  gpKs;  gpKf; gpKp1; ...
             gpKp2; gpKp3; gpKsi; gpKnh4; gpKh2s; gpp2f; gpKar; gpKca; gpfH];
+
+    gpK = pK .* opt.gmpk(T,S,P) + gpK.*opt.mpk(T,S,P);
+    
     epK  = [ epK0;  epK1;  epK2;   epKb;   epKw;  epKs;  epKf; epKp1; ...
             epKp2; epKp3; epKsi; epKnh4; epKh2s; epp2f; epKar; epKca; epfH];
+    epK = epK.*opt.empk;
+    
     % pK0   = 1,  pK1  = 2,  pK2  = 3,  pKb  = 4,  pKw  = 5,  pKs   = 6, 
     % pKf   = 7,  pKp1 = 8,  pKp2 = 9,  pKp3 = 10, pKsi = 11, pKnh4 = 12, 
     % pKh2s = 13, pp2f = 14, pKar = 15, pKca = 16, pfH  = 17 
@@ -2640,6 +2652,43 @@ function [opt] = check_opt(opt)
             fprintf('No opt.Revelle chosen. Assuming opt.Revelle = 0 (off). \n');
         end
     end
+    if ~isfield(opt,'mpk')
+        mpk0 = @(T,S,P) 1;
+        mpk1 = @(T,S,P) 1;
+        mpk2 = @(T,S,P) 1;
+        mpk = @(T,S,P) [mpk0(T,S,P);mpk1(T,S,P);mpk2(T,S,P);1;1;1;1;1;1;1;1;1;1;1;1;1;1];
+        opt.mpk = mpk;
+    end
+    if ~isfield(opt,'gmpk')        
+        gmpk0 = @(T,S,P) [0 0 0];
+        gmpk1 = @(T,S,P) [0 0 0];
+        gmpk2 = @(T,S,P) [0 0 0];
+        gmpk = @(T,S,P) [gmpk0(T,S,P);...
+                         gmpk1(T,S,P);...
+                         gmpk2(T,S,P);...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0;...
+                         0,0,0];
+        opt.gmpk = gmpk;
+    end
+    if ~isfield(opt,'empk')
+        empk0 = 1;
+        empk1 = 1;
+        empk2 = 1;
+        empk = [empk0;empk1;empk2;1;1;1;1;1;1;1;1;1;1;1;1;1;1];
+        opt.empk = empk;
+    end
     % opt.turnoff
 end
 
@@ -3162,7 +3211,7 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.tp(ii).iT)   = (obs(i).tp(ii).eT)^(-2);
             wobs(i,sys.tp(ii).iP)   = (obs(i).tp(ii).eP)^(-2);
             [pK,~,epK]              = calc_pK(opt, obs(i).tp(ii).T, ...      % T,
-                                              obs(i).sal, obs(i).tp(ii).P ); % S, P
+                                              obs(i).sal, obs(i).tp(ii).P); % S, P
             pK0   = pK(1);      pK1  = pK(2);     pK2   = pK(3);  
             pKb   = pK(4);      pKw  = pK(5);     pKs   = pK(6);  
             pKf   = pK(7);      pKp1 = pK(8);     pKp2  = pK(9);  
@@ -3778,10 +3827,10 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
     for i = 1:nTP
         % use complex step method to get ∂T, ∂S, ∂P
         [pK,gpK] = calc_pK(opt,x(sys.tp(i).iT), x(sys.isal), x(sys.tp(i).iP));
-
-        [pK_T,gpK_T] = calc_pK(opt, x(sys.tp(i).iT) + ie3  , x(sys.isal)       , x(sys.tp(i).iP)       );
-        [pK_S,gpK_S] = calc_pK(opt, x(sys.tp(i).iT)        , x(sys.isal) + ie3 , x(sys.tp(i).iP)       );
-        [pK_P,gpK_P] = calc_pK(opt, x(sys.tp(i).iT)        , x(sys.isal)       , x(sys.tp(i).iP) + ie3 );
+        
+        [pK_T,gpK_T] = calc_pK(opt, x(sys.tp(i).iT) + ie3  , x(sys.isal)       , x(sys.tp(i).iP));
+        [pK_S,gpK_S] = calc_pK(opt, x(sys.tp(i).iT)        , x(sys.isal) + ie3 , x(sys.tp(i).iP));
+        [pK_P,gpK_P] = calc_pK(opt, x(sys.tp(i).iT)        , x(sys.isal)       , x(sys.tp(i).iP) + ie3);
         %
         ggpK = zeros(length(pK),3,3);
         ggpK(:,1,:) = imag(gpK_T)/e3;
@@ -4021,7 +4070,7 @@ end
 % parse_output
 % ----------------------------------------------------------------------
 
-function [est] = parse_output(z,sigx,sys,f)
+function [est] = parse_output(z,sigx,sys,f,C)
     % populate est, output structure with best estimates
     %
     % INPUT:
@@ -4042,7 +4091,7 @@ function [est] = parse_output(z,sigx,sys,f)
     %           about the value in 'q' space
 
     est.f       = f; % residual f value, from limp
-    
+    est.C       = C;
     est.sal     = z(sys.isal);
     est.esal    = sigx(sys.isal);
     
@@ -4564,8 +4613,8 @@ function [x,J,iflag] = newtn(x0,F,tol)
     if (itno>=MAXIT)
         if norm(F0(1:end-1)) < tol*1e1
             iflag = 2;
-            fprintf('Warniing Newton''s Method did not converge.\n ')
-            fprintf('At max iteration, value was one order of magnitude more than tolerance...\n')
+            fprintf('Warning Newton''s Method did not converge.\n ')
+            fprintf('At max iteration, value was one order of magnitude more than tolerance...')
             fprintf('Consider keeping. \n')
         else
             iflag = 1;
