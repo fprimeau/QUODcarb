@@ -40,7 +40,7 @@ def mksys(obs,phscale):
 
     if 'tp' not in obs:
         raise ValueError('Need to provide temperature and pressure measurement.')
-    field_names = set(obs.keys()).union(obs['tp'].keys())
+    field_names = set(obs.keys()).union(obs['tp'])
     if 'sal' not in field_names:
         raise ValueError('Error: no salinity specified (obs["sal"] is missing).')
     if 'T' not in field_names:
@@ -100,8 +100,10 @@ def mksys(obs,phscale):
     sys['ipTCa'] = ipTCa  # p(total calcium)
 
     tp = []
+    print(obs[0]['tp'])
     nTP = len(obs['tp'])  # number of different (T,P) sub systems
     for j in range(nTP):  # loop over (T,P) sub systems
+        print(j)
         tp.append({})
         i += 1
         tp[j]['iT'] = i  # temperature
@@ -255,7 +257,6 @@ def mksys(obs,phscale):
         K[row, [tp[j]['ipK0'], tp[j]['ipco2st'], tp[j]['ipfco2']]] = [-1, 1, -1]
         kc = list(set().union(kc, [tp[j]['ipK0'], tp[j]['ipco2st'], tp[j]['ipfco2']]))
         kr.append(row)
-
         # K1 = [HCO3][H]/[CO2*] ==> -pK1 + phco3 + ph - pco2st = 0
         row += 1
         K[row, [tp[j]['ipK1'], tp[j]['iph'], tp[j]['iphco3'], tp[j]['ipco2st']]] = [-1, 1, 1, -1]
@@ -386,14 +387,15 @@ def mksys(obs,phscale):
         row += 1
         row_alk = row
         mr.append(row)
+
         # carbonate
         M[row_alk, [ipTA, tp[j]['iphco3'], tp[j]['ipco3']]] = [1, -1, -2]
-        mc += [ipTA, tp[j]['iphco3'], tp[j]['ipco3']]
+        mc = list(set().union(mc, [ipTA, tp[j]['iphco3'], tp[j]['ipco3']]))
 
         # Total carbonate: TC - [CO2*] - [HCO3] - [CO3] = 0
         row += 1
         M[row, [ipTC, tp[j]['ipco2st'], tp[j]['iphco3'], tp[j]['ipco3']]] = [1, -1, -1, -1]
-        mc += [ipTC, tp[j]['ipco2st'], tp[j]['iphco3'],tp[j]['ipco3']]
+        mc = list(set().union(mc, [ipTC, tp[j]['ipco2st'], tp[j]['iphco3'],tp[j]['ipco3']]))
         mr.append(row)
         # rescale row
         M[row, :] *= 1e2
@@ -401,7 +403,7 @@ def mksys(obs,phscale):
         # Total borate
         row += 1
         M[row, [ipTB, tp[j]['ipboh3'], tp[j]['ipboh4']]] = [1, -1, -1]
-        mc += [ipTB, tp[j]['ipboh3'], tp[j]['ipboh4']]
+        mc = list(set().union(mc, [ipTB, tp[j]['ipboh3'], tp[j]['ipboh4']]))
         M[row_alk, tp[j]['ipboh4']] = -1
         M[row_alk, tp[j]['ipoh']] = -1
         mr.append(row)
@@ -412,7 +414,7 @@ def mksys(obs,phscale):
         row += 1
         M[row, [ipTS,tp[j]['iphso4'], tp[j]['ipso4']]] = [1, -1, -1]
         M[row_alk, [tp[j]['iph_free'], tp[j]['iphso4']]] = [1, 1]
-        mc += [ipTS, tp[j]['iphso4'], tp[j]['ipso4']]
+        mc = list(set().union(mc, [ipTS, tp[j]['iphso4'], tp[j]['ipso4']]))
         mr.append(row)
         # rescale row
         M[row, :] *= 1e1
@@ -420,7 +422,7 @@ def mksys(obs,phscale):
         # Total fluoride
         row += 1
         M[row, [ipTF, tp[j]['ipHF'], tp[j]['ipF']]] = [1, -1, -1]
-        mc += [ipTF, tp[j]['ipHF'], tp[j]['ipF']]
+        mc = list(set().union(mc, [ipTF, tp[j]['ipHF'], tp[j]['ipF']]))
         M[row_alk, tp[j]['ipHF']] = 1
         mr.append(row)
         # rescale row
@@ -429,7 +431,7 @@ def mksys(obs,phscale):
         # Total phosphate
         row += 1
         M[row, [ipTP, tp[j]['iph3po4'], tp[j]['iph2po4'], tp[j]['iphpo4'], tp[j]['ippo4']]] = [1, -1, -1, -1, -1]
-        mc += [ipTP, tp[j]['iph3po4'], tp[j]['iph2po4'], tp[j]['iphpo4'], tp[j]['ippo4']]
+        mc = list(set().union(mc, [ipTP, tp[j]['iph3po4'], tp[j]['iph2po4'], tp[j]['iphpo4'], tp[j]['ippo4']]))
         M[row_alk, [tp[j]['iphpo4'], tp[j]['ippo4'], tp[j]['iph3po4']]] = [-1, -2, 1]
         mr.append(row)
         # rescale row
@@ -438,7 +440,7 @@ def mksys(obs,phscale):
         # Total silicate
         row += 1
         M[row, [ipTSi, tp[j]['ipsioh4'], tp[j]['ipsiooh3']]] = [1, -1, -1]
-        mc += [ipTSi, tp[j]['ipsioh4'], tp[j]['ipsiooh3']]
+        mc = list(set().union(mc, [ipTSi, tp[j]['ipsioh4'], tp[j]['ipsiooh3']]))
         M[row_alk, tp[j]['ipsiooh3']] = -1
         mr.append(row)
         # rescale row
@@ -447,7 +449,7 @@ def mksys(obs,phscale):
         # Total ammonia
         row += 1
         M[row, [ipTNH4, tp[j]['ipnh4'], tp[j]['ipnh3']]] = [1, -1, -1]
-        mc += [ipTNH4, tp[j]['ipnh4'], tp[j]['ipnh3']]
+        mc = list(set().union(mc, [ipTNH4, tp[j]['ipnh4'], tp[j]['ipnh3']]))
         M[row_alk,tp[j]['ipnh3']] = -1
         mr.append(row)
         # rescale row
@@ -456,7 +458,7 @@ def mksys(obs,phscale):
         # Total sulfide
         row += 1
         M[row, [ipTH2S, tp[j]['ipH2S'], tp[j]['ipHS']]] = [1, -1, -1]
-        mc += [ipTH2S, tp[j]['ipH2S'], tp[j]['ipHS']]
+        mc = list(set().union(mc, [ipTH2S, tp[j]['ipH2S'], tp[j]['ipHS']]))
         M[row_alk, tp[j]['ipHS']] = -1
         mr.append(row)
         # rescale row
@@ -466,7 +468,7 @@ def mksys(obs,phscale):
         # Total Ca
         row += 1
         M[row, [ipTCa, tp[j]['ipca']]] = [1, -1]
-        mc += [ipTCa, tp[j]['ipca']]
+        mc = list(set().union(mc, [ipTCa, tp[j]['ipca']]))
         mr.append(row)
         # rescale row
         M[row, :] *= 1e2
@@ -474,7 +476,7 @@ def mksys(obs,phscale):
         # ph_tot and ph_free relationship
         row += 1
         M[row, [tp[j]['iph_tot'], tp[j]['iph_free'], tp[j]['iphso4']]] = [1, -1, -1]
-        mc += [tp[j]['iph_tot'], tp[j]['iph_free'], tp[j]['iphso4']]
+        mc = list(set().union(mc, [tp[j]['iph_tot'], tp[j]['iph_free'], tp[j]['iphso4']]))
         mr.append(row)
         # rescale row
         M[row, :] *= 1e8
@@ -482,7 +484,7 @@ def mksys(obs,phscale):
         # ph_sws and ph_free relationship
         row += 1
         M[row, [tp[j]['iph_sws'], tp[j]['iph_free'], tp[j]['iphso4'], tp[j]['ipHF']]] = [1, -1, -1, -1]
-        mc += [tp[j]['iph_sws'], tp[j]['iph_free'], tp[j]['iphso4'], tp[j]['ipHF']]
+        mc = list(set().union(mc, [tp[j]['iph_sws'], tp[j]['iph_free'], tp[j]['iphso4'], tp[j]['ipHF']]))
         mr.append(row)
         tp[j]['mr'] = mr
         tp[j]['mc'] = mc
@@ -494,7 +496,8 @@ def mksys(obs,phscale):
         # STUFF needed to compute the Revelle buffer factor
         ifixed = [ipTA, ipTB, ipTS, ipTF, ipTP, ipTSi, ipTNH4, ipTH2S, ipTCa, isal]
         ifixed += [tp[j]['ipK0'], tp[j]['ipK1'], tp[j]['ipK2'], tp[j]['ipKb'], tp[j]['ipKw'], tp[j]['ipKs'], tp[j]['ipKf'],
-                tp[j]['ipKp1'], tp[j]['ipKar'], tp[j]['ipKca'], tp[j]['ipfH'], tp[j]['iP'], tp[j]['iT']]
+                tp[j]['ipKp1'], tp[j]['ipKp2'], tp[j]['ipKp3'], tp[j]['ipKsi'], tp[j]['ipKnh4'], tp[j]['ipKh2s'], 
+                tp[j]['ipp2f'], tp[j]['ipKar'], tp[j]['ipKca'], tp[j]['ipfH'], tp[j]['iP'], tp[j]['iT']]
         tp[j]['ifixed'] = ifixed
         tp[j]['ifree'] = list(set().union(tp[j]['mc'], tp[j]['kc']).difference(ifixed))
 
