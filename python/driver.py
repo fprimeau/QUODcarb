@@ -143,6 +143,3 @@ obs_backup = copy.deepcopy(obs)
 # [A]     = compare(obs,est,opt,tp,3,fid3)
 
 sys = mksys.mksys(obs[0], opt['phscale'])
-# print(sys['M'])
-# for i in sys['K']:
-#     print(i)

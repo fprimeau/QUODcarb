@@ -40,7 +40,7 @@ def mksys(obs,phscale):
 
     if 'tp' not in obs:
         raise ValueError('Need to provide temperature and pressure measurement.')
-    field_names = set(obs.keys()).union(obs['tp'])
+    field_names = set(obs.keys()).union(obs['tp'][0])
     if 'sal' not in field_names:
         raise ValueError('Error: no salinity specified (obs["sal"] is missing).')
     if 'T' not in field_names:
@@ -100,10 +100,8 @@ def mksys(obs,phscale):
     sys['ipTCa'] = ipTCa  # p(total calcium)
 
     tp = []
-    print(obs[0]['tp'])
     nTP = len(obs['tp'])  # number of different (T,P) sub systems
     for j in range(nTP):  # loop over (T,P) sub systems
-        print(j)
         tp.append({})
         i += 1
         tp[j]['iT'] = i  # temperature
