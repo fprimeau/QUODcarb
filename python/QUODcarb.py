@@ -21,34 +21,34 @@ def QUODcarb(obs, opt):         #returns [est,obs,sys,iflag]
     -------------------------------------------------------------------------
 
     SYNTAX example:
-    obs.sal         = salinity;     (PSU)           
-    obs.esal        = sal_error;    (±sigma)        
-    obs.TC          = total_c;      (umol/kg-SW)    
-    obs.eTC         = TC_error;     (±sigma)        
-    obs.TA          = total_alk;    (umol/kg-SW)    
-    obs.eTA         = alk_error;    (±sigma)        
-    obs.tp(1).T     = temp;         (deg C)         
-    obs.tp(1).eT    = temp_error;   (±sigma)        
-    obs.tp(1).P     = pressure;     (dbar)          
-    obs.tp(1).eP    = pres_error;   (±sigma)     
-    obs.tp(1).ph    = ph_meas;      
-    obs.tp(1).eph   = ph_error;     (±sigma)
+    obs['sal']         = salinity;     (PSU)           
+    obs['esal']        = sal_error;    (±sigma)        
+    obs['TC']          = total_c;      (umol/kg-SW)    
+    obs['eTC']         = TC_error;     (±sigma)        
+    obs['TA']          = total_alk;    (umol/kg-SW)    
+    obs['eTA']         = alk_error;    (±sigma)        
+    obs['tp'][0]['T']     = temp;         (deg C)         
+    obs['tp'][0]['eT']    = temp_error;   (±sigma)        
+    obs['tp'][0]['P']     = pressure;     (dbar)          
+    obs['tp'][1]['eP']    = pres_error;   (±sigma)     
+    obs['tp'][0]['ph']    = ph_meas;      
+    obs['tp'][0]['eph']   = ph_error;     (±sigma)
 
-    opt.K1K2        = 10;           % (Lueker et al 2000)
-    opt.KSO4        = 1;            % (Dickson et al 1990a) 
-    opt.KF          = 2;            % (Perez and Fraga 1987
-    opt.TB          = 2;            % (Lee et al. 2010)
-    opt.phscale     = 1;            % (1=tot, 2=free, 3=sws, 4=nbs)
-    opt.printcsv    = 1;            % (1=on, 0=off)
-    opt.fname       = 'output.csv'; % (CSV filename)
-    opt.printmes    = 1;            % (1=on, 0=off)
-    opt.co2press    = 1;            % (1=on, 0=off)
-    opt.Revelle     = 1;            % (1=on, 0=off)
+    opt['K1K2']        = 10;           % (Lueker et al 2000)
+    opt['KSO4']        = 1;            % (Dickson et al 1990a) 
+    opt['KF']          = 2;            % (Perez and Fraga 1987
+    opt['TB']          = 2;            % (Lee et al. 2010)
+    opt['phscale']     = 1;            % (1=tot, 2=free, 3=sws, 4=nbs)
+    opt['printcsv']    = 1;            % (1=on, 0=off)
+    opt['fname']       = 'output.csv'; % (CSV filename)
+    opt['printmes']    = 1;            % (1=on, 0=off)
+    opt['co2press']    = 1;            % (1=on, 0=off)
+    opt['Revelle']     = 1;            % (1=on, 0=off)
 
     --------------------------------------------------------------------------
 
     INPUT OPTIONS:
-    opt.K1K2  -> choice of K1 and K2 formulation
+    opt['K1K2']  -> choice of K1 and K2 formulation
             1 = Roy et al, 1993
             2 = Goyet & Poisson, 1989
             3 = Hansson, 1973          REFIT by Dickson and Millero, 1987
@@ -68,20 +68,20 @@ def QUODcarb(obs, opt):         #returns [est,obs,sys,iflag]
             16 = Sulpis et al., 2020
             17 = Schockman and Byrne, 2021
 
-    opt.KSO4  -> choice of KSO4 formulation
+    opt['KSO4']  -> choice of KSO4 formulation
             1 = Dickson (1990a)         (DEFAULT)
             2 = Khoo et al., 1977
             3 = Waters and Millero, 2013
 
-    opt.KF    -> choice of KF formulation
+    opt['KF']    -> choice of KF formulation
             1 = Dickson and Riley, 1979
             2 = Perez and Fraga, 1987   (DEFAULT)
 
-    opt.TB    -> choice of total borate formulation
+    opt['TB']    -> choice of total borate formulation
             1 = Uppstrom, 1979
             2 = Lee et al., 2010        (DEFAULT)
 
-    opt.co2press -> turn on or off the pressure dependencies for K0 and
+    opt['co2press'] -> turn on or off the pressure dependencies for K0 and
             pCO2 to fCO2 fugacity factor (p2f)
             1 = on                      (DEFAULT)
             2 = off
