@@ -277,3 +277,6 @@ TSWLatexianTemp*
 
 # virtual environment
 venv/
+
+# emacs temporary files
+*~
