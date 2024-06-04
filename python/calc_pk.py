@@ -792,10 +792,7 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK1 is .011, or 2.5% in K1.
             # The 2s precision in pK2 is .02, or 4.5% in K2.
             # This is in Table 5 on p. 1652 and what they use in the abstract:
-            a = 812.27
-            b = 3.356
-            c = -0.00171
-            d = 0.000091
+            a, b, c, d = 812.27, 3.356, -0.00171, 0.000091
 
             # Calculate pK1
             pK1 = a / TK + b + c * S * np.log(TK) + d * (S**2)  # SWS scale
@@ -823,10 +820,7 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK1 is .013, or 3% in K1.
             # The 2s precision in pK2 is .017, or 4.1% in K2.
             # This is from Table 4 on p. 1739.
-            a = 851.4
-            b = 3.237
-            c = -0.0106
-            d = 0.000105
+            a, b, c, d = 851.4, 3.237, -0.0106, 0.000105
 
             # Calculate pK1
             pK1 = a / TK + b + c * S + d * (S**2)  # SWS scale
@@ -850,11 +844,7 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK2 is .020, or 4.6% in K2.
 	        # Valid for salinity 20-40.
             # This is in Table 4 on p. 1739.
-            a = 3670.7
-            b = -62.008
-            c = 9.7944
-            d = -0.0118
-            g = 0.000116
+            a, b, c, d, g = 3670.7, -62.008, 9.7944, -0.0118, 0.000116
 
             # Calculate pK1
             pK1 = a / TK + b + c * np.log(TK) + d * S + g * (S**2)
@@ -881,10 +871,7 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK2 is .026, or 6% in K2.
 	        # Valid for salinity 20-40.
             # This is in Table 5 on p. 1740.    
-            a = 845
-            b = 3.248
-            c = -0.0098
-            d = 0.000087
+            a, b, c, d = 845, 3.248, -0.0098, 0.000087
 
             # Calculate pK1
             pK1 = a / TK + b + c * S + d * (S**2)
@@ -904,11 +891,7 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK1 is .005, or 1.2% in K1.
             # The 2s precision in pK2 is .008, or 2% in K2.
 
-            a = -13.7201
-            b = 0.031334
-            c = 3235.76
-            d = 1.3e-5
-            g = -0.1032
+            a, b, c, d, g = -13.7201, 0.031334, 3235.76, 1.3e-5, -0.1032
 
             # Calculate pK1 (NBS scale)
             pK1 = a + b * TK + c / TK + d * S * TK + g * np.sqrt(S)
@@ -934,9 +917,7 @@ def calc_pK(opt,T,S,P):
 	            # This is only to be used for Sal=0 water 
                 # (note the absence of S in the below formulations)
             # (0-50 C)
-            a = 290.9097
-            b = -14554.21
-            c = -45.0575
+            a, b, c = 290.9097, -14554.21, -45.0575
             LOG10 = np.log(10)
 
             # Calculate pK1
@@ -960,13 +941,7 @@ def calc_pK(opt,T,S,P):
             # +0.040 for K1 and K2, respectively.
 	        # Sal 0-40, Temp 0.2-30
             # Limnol. Oceanogr. 43(4) (1998) 657-668    
-            a = 3404.71
-            b = 0.032786
-            c = -14.8435
-            d = -0.071692
-            g = 0.0021487
-            h = 200.1
-            l = 0.3220
+            a, b, c, d, g, h, l = 3404.71, 0.032786, -14.8435, -0.071692, 0.0021487, 200.1, 0.3220
             LOG10 = np.log(10)
 
             # Calculate intermediate value f1
@@ -990,11 +965,7 @@ def calc_pK(opt,T,S,P):
             # total scale, for comparison with their equilibrator work. 
             # Mar. Chem. 70 (2000) 105-119
             # rms deviation is 0.0055 in pK1 and 0.0100 in pK2
-            a = 3633.86
-            b = -61.2172
-            c = 9.6777
-            d = -0.011555
-            g = 0.0001152
+            a, b, c, d, g = 3633.86, -61.2172, 9.6777, -0.011555, 0.0001152
             LOG10 = np.log(10)
 
             # Calculate pK1
@@ -1014,11 +985,7 @@ def calc_pK(opt,T,S,P):
             # sigma for pK1 is reported to be 0.0056
 	        # sigma for pK2 is reported to be 0.010
 	        # This is from the abstract and pages 2536-2537
-            a = -43.6977
-            b = -0.0129037
-            c = 1.364e-4
-            d = 2885.378
-            g = 7.045159
+            a, b, c, d, g = -43.6977,  -0.0129037, 1.364e-4, 2885.378, 7.045159
             LOG10 = np.log(10)
 
             # Calculate pK1
@@ -1037,10 +1004,7 @@ def calc_pK(opt,T,S,P):
 	        # sigma for pK1 is reported to be 0.005
 	        # sigma for pK2 is reported to be 0.008
 	        # This is from page 1716
-            a = 6.359
-            b = -0.00664
-            c = -0.01322
-            d = 4.989e-5
+            a, b, c, d = 6.359, -0.00664, -0.01322, 4.989e-5
 
             # Calculate pK1
             pK1 = a + b * S + c * T + d * (T ** 2)
@@ -1230,14 +1194,11 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK1 is .011, or 2.5% in K1.
             # The 2s precision in pK2 is .02, or 4.5% in K2.
             # This is in Table 5 on p. 1652 and what they use in the abstract:
-            a = 1450.87
-            b = 4.604
-            c = -0.00385
-            d = 0.000182
+            a, b, c, d = 1450.87, 4.604, -0.00385, 0.000182
 
-            pK2 = a / TK + b + c * S * log(TK) + d * (S ** 2)  # SWS scale
+            pK2 = a / TK + b + c * S * np.log(TK) + d * (S ** 2)  # SWS scale
             pK2_T = -a / (TK ** 2) + c * S / TK
-            pK2_S = c * log(TK) + 2 * d * S
+            pK2_S = c * np.log(TK) + 2 * d * S
             pK2_P = 0
             epK2 = 0.02 / 2  # QUODcarb uses 1sigma
 
@@ -1257,13 +1218,9 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK1 is .013, or 3% in K1.
             # The 2s precision in pK2 is .017, or 4.1% in K2.
             # This is from Table 4 on p. 1739.
-            a = -3885.4
-            b = 125.844
-            c = -18.141
-            d = -0.0192
-            g = 0.000132
+            a, b, c, d, g = -3885.4, 125.844, -18.141, -0.0192, 0.000132
 
-            pK2 = a / TK + b + c * log(TK) + d * S + g * (S ** 2)  # SWS scale
+            pK2 = a / TK + b + c * np.log(TK) + d * S + g * (S ** 2)  # SWS scale
 
             pK2_T = -a / (TK ** 2) + c / TK
             pK2_S = d + 2 * g * S
@@ -1282,10 +1239,7 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK2 is .020, or 4.6% in K2.
 	        # Valid for salinity 20-40.
             # This is in Table 4 on p. 1739.
-            a = 1394.7
-            b = 4.777
-            c = -0.0184
-            d = 0.000118
+            a, b, c, d = 1394.7, 4.777, -0.0184, 0.000118
 
             pK2 = a / TK + b + c * S + d * (S ** 2)
             pK2_T = -a / (TK ** 2)
@@ -1307,10 +1261,7 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK2 is .026, or 6% in K2.
 	        # Valid for salinity 20-40.
             # This is in Table 5 on p. 1740.    
-            a = 1377.3
-            b = 4.824
-            c = -0.0185
-            d = 0.000122
+            a, b, c, d = 1377.3, 4.824, -0.0185, 0.000122
 
             pK2 = a / TK + b + c * S + d * (S ** 2)
             pK2_T = -a / (TK ** 2)
@@ -1348,9 +1299,7 @@ def calc_pK(opt,T,S,P):
             # J American Chemical Society, 43:1706-1709, 1941.
 	            # This is only to be used for Sal=0 water 
                 # (note the absence of S in the below formulations)
-            a = 207.6548
-            b = -11843.79
-            c = -33.6485
+            a, b, c = 207.6548, -11843.79, -33.6485
 
             pK2 = - (a + b / TK + c * np.log(TK)) / LOG10
             pK2_T = - (-b / (TK ** 2) + c / TK) / LOG10
@@ -1517,11 +1466,7 @@ def calc_pK(opt,T,S,P):
             # This study uses overdeterminations of the carbonate system to
             # iteratively fit K1 and K2
             # Relative overall uncertainties ~2.5% (sigK/K) for both (-MF)
-            a = 4226.23
-            b = -59.4636
-            c = 9.60817
-            d = -0.01781
-            g = 0.0001122
+            a, b, c, d, g = 4226.23, -59.4636, 9.60817, -0.01781, 0.0001122
 
             pK2 = a / TK + b + c * np.log(TK) + d * S + g * (S ** 2)
             pK2 = pK2 - pSWS2tot  # convert from tot to SWS scale
@@ -1545,13 +1490,7 @@ def calc_pK(opt,T,S,P):
             # K1*K2 with unprecedented precision, and presents a new
             # parameterization for K2 based on these determinations
             # K1 is taken from Waters, Millero, and Woosley, 2014, on the total pH scale:
-            a = 116.8067
-            b = -3655.02
-            c = -16.45817
-            d = 0.04523
-            g = -0.615
-            h = -0.0002799
-            l = 4.969
+            a, b, c, d, g, h, l = 116.8067, -3655.02, -16.45817, 0.04523, -0.615, -0.0002799, 4.969
 
             pK2 = a + b / TK + c * np.log(TK) + d * S + g * np.sqrt(S) + h * (S ** 2) + l * (S / TK)
             pK2 = pK2 - pSWS2tot  # convert from pHtot to SWS
@@ -1574,11 +1513,7 @@ def calc_pK(opt,T,S,P):
 
         else:
         # Ammonia, added by Sharp et al 2021, from Clegg and Whitfield (1995)
-            a = 9.244605
-            b = -2729.33
-            c = 1 / 298.15
-            d = 0.04203362
-            g = -11.24742
+            a, b, c, d, g = 9.244605, -2729.33, 1 / 298.15, 0.04203362, -11.24742
 
             def f(T, a):
                 return a[0] + a[1] * np.sqrt(T) + a[2] * T + a[3] / T
@@ -1626,11 +1561,7 @@ def calc_pK(opt,T,S,P):
 
         else:
         # Millero et al (1988)
-            a = 225.838
-            b = -13275.3
-            c = -34.6435
-            d = 0.3449
-            h = -0.0274
+            a, b, c, d, h = 225.838, -13275.3, -34.6435, 0.3449, -0.0274
             
             LOG10 = np.log(10)
 
@@ -1660,11 +1591,7 @@ def calc_pK(opt,T,S,P):
         # calculate Kar-Aragonite for GEOSECS -----------------------------
             # Berner, R. A., American Journal of Science 276:713-730, 1976:
             # (quoted in Takahashi et al, GEOSECS Pacific Expedition v. 3, 1982)
-            a = 0.0000001
-            b = -34.452
-            c = -39.866
-            d = 110.21
-            g = 0.0000075752
+            a, b, c, d, g = 0.0000001,  -34.452, -39.866, 110.21, 0.0000075752
             LOG10 = np.log(10)
 
             Kar = 1.45 * a * (b + c * (S ** (1/3)) + d * np.log10(S) + g * (TK ** 2))
@@ -1682,11 +1609,7 @@ def calc_pK(opt,T,S,P):
 
         else:
         #   calculate Kar-Aragonite (Mucci, 1983) ---------------------------
-            a = 0.0000001
-            b = -34.452
-            c = -39.866
-            d = 110.21
-            g = 0.0000075752
+            a, b, c, d, g = 0.0000001, -34.452, -39.866, 110.21, 0.0000075752
             Kar_const = 1.45
 
             LOG10 = np.log(10)
@@ -1713,11 +1636,7 @@ def calc_pK(opt,T,S,P):
 
         if opt['K1K2'] == 6 or opt['K1K2'] == 7:
         # calculate Kca-Calcite (Berner, 1976) ----------------------------
-            a = 0.0000001
-            b = -34.452
-            c = -39.866
-            d = 110.21
-            g = 0.0000075752
+            a, b, c, d, g = 0.0000001, -34.452, -39.866, 110.21, 0.0000075752
 
             LOG10 = np.log(10)
 
