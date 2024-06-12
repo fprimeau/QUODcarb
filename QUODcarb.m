@@ -4287,8 +4287,8 @@ function [est] = parse_output(z,sigx,sys,f,C)
     %   3. upper and lower bounds in 'q' space, not symmetric
     %           about the value in 'q' space
 
-    est.f       = f; % residual f value, from limp
-    est.C       = C;
+    % PLEASE ADD VARIABLES AT END
+    % CHANGING THIS ORDER BREAKS PrintCSV
     est.sal     = z(sys.isal);
     est.esal    = sigx(sys.isal);
     
@@ -4760,6 +4760,9 @@ function [est] = parse_output(z,sigx,sys,f,C)
         est.tp(i).eKca_l    = ebar_l(sys.tp(i).ipKca);
         est.tp(i).eKca_u    = ebar_u(sys.tp(i).ipKca);
     end
+    % PLEASE ADD NEW VARIABLES HERE AT END
+    est.f       = f; % residual f value, from limp
+    est.C       = C;
 end
 
 % ----------------------------------------------------------------------
@@ -4920,10 +4923,10 @@ function make_headers(est,opt,fid)
 
     % row 3
     fprintf(fid,'%s, ','(0=good)');
-       
+
     fprintf(fid,'%s, ', '(PSU)'); % est.sal
     fprintf(fid,'%s, ', '(PSU)'); % est.esal
-    
+
     for i = 3:6:fnl % temperature independent totals
         fprintf(fid,'%s, ', '(umol/kg)');
         fprintf(fid,'%s, ', '(umol/kg)');

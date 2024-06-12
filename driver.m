@@ -3,7 +3,7 @@
 
 load data.mat; % NEW as of Nov.11
 [in] = data;
-nD = length(in);
+nD = 10; %length(in);
 
 % choose options for opt structure
 opt.K1K2 = 16; % option for K1K2 formulation
@@ -11,9 +11,9 @@ opt.KSO4 = 2;  % option for KSO4 formulation
 opt.KF   = 1;  % option for KF formulation
 opt.TB   = 1;  % option for TB formulation
 opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
-opt.printcsv = 0;  % print est to CSV? 1 = on , 0 = off
+opt.printcsv = 1;  % print est to CSV? 1 = on , 0 = off
 % opt.fname    = 'QUODcarb_output.csv'; % don't need it if printcsv is off
-opt.fname    = 'output_csv/Q5K16.csv';
+opt.fname    = 'output_csv/test.csv';
 opt.co2press = 1; % 1 = on, 0 = off
 opt.Revelle  = 0; % 1 = on, 0 = off 
 opt.printmes = 0; % 1 = on, 0 = off
@@ -51,12 +51,12 @@ for i = 1:nD
     obs(i).tp(2).eco3 = in(11,1)*0.02;  % 2% from Jon Sharp NEW 1/25/24
 
     % third (T,P)-dependent measurement
-    obs(i).tp(3).T     = 20 ; % degC
-    obs(i).tp(3).eT    = 0.03 ; % from cruise report
-    obs(i).tp(3).P     = 0.0 ; % dbar (surface pressure for pco2)
-    obs(i).tp(3).eP    = 0.07 ;
-    obs(i).tp(3).pco2  = in(10,i); % (µatm)
-    obs(i).tp(3).epco2 = in(10,i)*0.0021; % 0.21% relative std error (avg)
+    % obs(i).tp(3).T     = 20 ; % degC
+    % obs(i).tp(3).eT    = 0.03 ; % from cruise report
+    % obs(i).tp(3).P     = 0.0 ; % dbar (surface pressure for pco2)
+    % obs(i).tp(3).eP    = 0.07 ;
+    % obs(i).tp(3).pco2  = in(10,i); % (µatm)
+    % obs(i).tp(3).epco2 = in(10,i)*0.0021; % 0.21% relative std error (avg)
 end
 
 obs_backup = obs;
