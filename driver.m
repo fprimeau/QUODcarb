@@ -3,13 +3,13 @@
 
 load data.mat; % NEW as of Nov.11
 [in] = data;
-nD = 25; %length(in);
+nD = length(in);
 
 % choose options for opt structure
 opt.K1K2 = 16; % option for K1K2 formulation
-opt.KSO4 = 1;  % option for KSO4 formulation
-opt.KF   = 2;  % option for KF formulation
-opt.TB   = 2;  % option for TB formulation
+opt.KSO4 = 2;  % option for KSO4 formulation
+opt.KF   = 1;  % option for KF formulation
+opt.TB   = 1;  % option for TB formulation
 opt.phscale  = 1;  % 1 = tot, 2 = sws, 3 = free, 4 = NBS
 opt.printcsv = 0;  % print est to CSV? 1 = on , 0 = off
 % opt.fname    = 'QUODcarb_output.csv'; % don't need it if printcsv is off
@@ -20,8 +20,7 @@ opt.printmes = 0; % 1 = on, 0 = off
 
 
 % read in GOMECC data and put into obs structure
-for i = 1:nD
-    
+for i = 1:nD   
     % measurements that are independent of (T,P)
     obs(i).TC    = in(5,i); % (umol/kg)
     obs(i).eTC   = 2.01;    % TC error ±2.01 umol/kg
@@ -52,7 +51,7 @@ for i = 1:nD
     obs(i).tp(2).eco3 = in(11,1)*0.02;  % 2% from Jon Sharp NEW 1/25/24
 
     % third (T,P)-dependent measurement
-    obs(i).tp(3).T     = 20 ; %degC
+    obs(i).tp(3).T     = 20 ; % degC
     obs(i).tp(3).eT    = 0.03 ; % from cruise report
     obs(i).tp(3).P     = 0.0 ; % dbar (surface pressure for pco2)
     obs(i).tp(3).eP    = 0.07 ;
@@ -64,203 +63,96 @@ obs_backup = obs;
 
 %% Q5: All five input
 % CT AT pH pCO2 CO3 (Q5) (fid5)
-[est,obs,sys,iflag] = QUODcarb(obs,opt); 
+[est,obs,sys,iflag,opt] = QUODcarb(obs,opt);
+    % note there are now five outputs from QUODcarb
 
 
-% K04
-<<<<<<< HEAD
-tic
-opt.K1K2 = 4;
-[est,~,sys,~,~] = QUODcarb(obs,opt); % [est, obs, sys, iflag]
-
-estK04 = est;
-% fprintf('K04 done \n')
-toc
-
-% K10
-opt.K1K2 = 10;
-[est,~,~,~,~] = QUODcarb(obs,opt);
-estK10 = est;
-
-% K11
-opt.K1K2 = 11;
-[est,~,~,~,~] = QUODcarb(obs,opt);
-estK11 = est;
-
-% K12
-opt.K1K2 = 12;
-[est,~,~,~,~] = QUODcarb(obs,opt);
-estK12 = est;
-
-% K13
-opt.K1K3 = 13;
-[est,~,~,~,~] = QUODcarb(obs,opt);
-estK13 = est;
-
-% K14
-opt.K1K2 = 14;
-[est,~,~,~,~] = QUODcarb(obs,opt);
-estK14 = est;
-
-% K15
-opt.K1K2 = 15;
-[est,~,~,~,~] = QUODcarb(obs,opt);
-estK15 = est;
-
-% K16
-opt.K1K2 = 16;
-[est,~,~,~,~] = QUODcarb(obs,opt);
-estK16 = est;
-
-% K17
-opt.K1K2 = 17;
-[est,~,~,~,~] = QUODcarb(obs,opt);
-estK17 = est;
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-%[est,~,~,~] = QUODcarb(obs,opt);
-%estK04 = est;
-
-% K10
-%obs = obs_backup;
-%opt.K1K2 = 10;
-%[est,~,~,~] = QUODcarb(obs,opt);
-%estK10 = est;
-
-% K11
-%obs = obs_backup;
-%opt.K1K2 = 11;
-%[est,~,~,~] = QUODcarb(obs,opt);
-%estK11 = est;
-
-% K12
-%obs = obs_backup;
-%opt.K1K2 = 12;
-%[est,~,~,~] = QUODcarb(obs,opt);
-%estK12 = est;
-
-% K13
-%obs = obs_backup;
-%opt.K1K2 = 13;
-%[est,~,~,~] = QUODcarb(obs,opt);
-%estK13 = est;
-
-% K14
-%obs = obs_backup;
-%opt.K1K2 = 14;
-%[est,~,~,~] = QUODcarb(obs,opt);
-%estK14 = est;
-
-% K15
-%obs = obs_backup;
-%opt.K1K2 = 15;
-%[est,~,~,~] = QUODcarb(obs,opt);
-%estK15 = est;
-
-% K16
-%obs = obs_backup;
-%opt.K1K2 = 16;
-%[est,~,~,~] = QUODcarb(obs,opt);
-%estK16 = est;
-
-% K17
-%obs = obs_backup;
-%opt.K1K2 = 17;
-%[est,~,~,~] = QUODcarb(obs,opt);
-%estK17 = est;
->>>>>>> main
-
-%save output_mat_files/pKi/estK10.mat estK10;
-%save output_mat_files/pKi/estK04.mat estK04;
-%save output_mat_files/pKi/estK11.mat estK11;
-%save output_mat_files/pKi/estK12.mat estK12;
-%save output_mat_files/pKi/estK13.mat estK13;
-%save output_mat_files/pKi/estK14.mat estK14;
-%save output_mat_files/pKi/estK15.mat estK15;
-%save output_mat_files/pKi/estK16.mat estK16;
-%save output_mat_files/pKi/estK17.mat estK17;
-=======
+% % K04
 % tic
 % opt.K1K2 = 4;
-% [est,~,~,~] = QUODcarb(obs,opt); % [est, obs, sys, iflag]
+% [est,~,sys,~,~] = QUODcarb(obs,opt); % [est, obs, sys, iflag]
 % estK04 = est;
 % fprintf('K04 done \n')
 % toc
-% keyboard
-
-% K10
+% 
+% % K10
 % opt.K1K2 = 10;
-% [est,~,~,~] = QUODcarb(obs,opt);
+% [est,~,~,~,~] = QUODcarb(obs,opt);
 % estK10 = est;
->>>>>>> eef4a5cd5ee6bd54dfcc178ab32c16b76e173276
-
-% K11
+% 
+% % K11
 % opt.K1K2 = 11;
-% [est,~,~,~] = QUODcarb(obs,opt);
+% [est,~,~,~,~] = QUODcarb(obs,opt);
 % estK11 = est;
-
-% K12
+% 
+% % K12
 % opt.K1K2 = 12;
-% [est,~,~,~] = QUODcarb(obs,opt);
+% [est,~,~,~,~] = QUODcarb(obs,opt);
 % estK12 = est;
-
-% K13
-% opt.K1K3 = 13;
-% [est,~,~,~] = QUODcarb(obs,opt);
+% 
+% % K13
+% opt.K1K2 = 13;
+% [est,~,~,~,~] = QUODcarb(obs,opt);
 % estK13 = est;
-
-% K14
+% 
+% % K14
 % opt.K1K2 = 14;
-% [est,~,~,~] = QUODcarb(obs,opt);
+% [est,~,~,~,~] = QUODcarb(obs,opt);
 % estK14 = est;
-
-% K15
+% 
+% % K15
 % opt.K1K2 = 15;
-% [est,~,~,~] = QUODcarb(obs,opt);
+% [est,~,~,~,~] = QUODcarb(obs,opt);
 % estK15 = est;
-
-% K16
+% 
+% % K16
 % opt.K1K2 = 16;
-% [est,~,~,~] = QUODcarb(obs,opt);
+% [est,~,~,~,~] = QUODcarb(obs,opt);
 % estK16 = est;
-
-% K17
+% 
+% % K17
 % opt.K1K2 = 17;
-% [est,~,~,~] = QUODcarb(obs,opt);
+% [est,~,~,~,~] = QUODcarb(obs,opt);
 % estK17 = est;
-
+% 
+% save output_mat_files/9pK3tp/estK04.mat estK04;
+% save output_mat_files/9pK3tp/estK10.mat estK10;
+% save output_mat_files/9pK3tp/estK11.mat estK11;
+% save output_mat_files/9pK3tp/estK12.mat estK12;
+% save output_mat_files/9pK3tp/estK13.mat estK13;
+% save output_mat_files/9pK3tp/estK14.mat estK14;
+% save output_mat_files/9pK3tp/estK15.mat estK15;
+% save output_mat_files/9pK3tp/estK16.mat estK16;
+% save output_mat_files/9pK3tp/estK17.mat estK17;
+% 
 % for i = 1:nD
-%     fK04(i) = estK04(i).f;
-%     fK10(i) = estK10(i).f;
-%     fK11(i) = estK11(i).f;
-%     fK12(i) = estK12(i).f;
-%     fK13(i) = estK13(i).f;
-%     fK14(i) = estK14(i).f;
-%     fK15(i) = estK15(i).f;
-%     fK16(i) = estK16(i).f;
-%     fK17(i) = estK17(i).f;
+%     f_9xnD(1,i) = estK04(i).f;
+%     f_9xnD(2,i) = estK10(i).f;
+%     f_9xnD(3,i) = estK11(i).f;
+%     f_9xnD(4,i) = estK12(i).f;
+%     f_9xnD(5,i) = estK13(i).f;
+%     f_9xnD(6,i) = estK14(i).f;
+%     f_9xnD(7,i) = estK15(i).f;
+%     f_9xnD(8,i) = estK16(i).f;
+%     f_9xnD(9,i) = estK17(i).f;
 % end
+% 
+% save output_mat_files/9pK3tp/f_9xnD.mat f_9xnD;
 
-% save output_mat_files/new_pK/fK04.mat fK04;
-% save output_mat_files/new_pK/fK10.mat fK10;
-% save output_mat_files/new_pK/fK11.mat fK11;
-% save output_mat_files/new_pK/fK12.mat fK12;
-% save output_mat_files/new_pK/fK13.mat fK13;
-% save output_mat_files/new_pK/fK14.mat fK14;
-% save output_mat_files/new_pK/fK15.mat fK15;
-% save output_mat_files/new_pK/fK16.mat fK16;
-% save output_mat_files/new_pK/fK17.mat fK17;
+
+
 
 % get other stuff from driver_all.m, updated 1/25/24
 
-% 
+% below are syntax examples for running all 26 possible combos
 %% Q5: All five input
+
 % CT AT pH pCO2 CO3 (Q5) (fid26)
 % obs = obs_backup;
 % [est,~,~,~,~] = QUODcarb(obs,opt);
 % est26 = est;
 % 
+
 % %% Q2: Input Pairs
 % 
 % % TC TA (Q2) (fid01)
@@ -272,7 +164,6 @@ estK17 = est;
 % end
 % [est,~,~,~,~] = QUODcarb(obs,opt);
 % est01  = est;
-<<<<<<< HEAD
 % % [est,obs,~,~,~] = QUODcarb(obs,opt); % need obs for compare
 % % fid01   = 'compare_outs/compare_TC_TA.csv'; 
 % % tp     = 2; % second tp system for ph in there
@@ -291,7 +182,7 @@ estK17 = est;
 % % tp      = 2;
 % % fid02   = 'compare_outs/compare_TC_ph.csv';
 % % [A]     = compare(obs,est,opt,tp,2,fid02);
-=======
+
 % [est,obs,~,~] = QUODcarb(obs,opt); % need obs for compare
 % fid01   = 'compare_outs/compare_TC_TA.csv'; 
 % tp     = 2; % second tp system for ph in there
@@ -310,7 +201,7 @@ estK17 = est;
 % tp      = 2;
 % fid02   = 'compare_outs/compare_TC_ph.csv';
 % [A]     = compare(obs,est,opt,tp,2,fid02);
->>>>>>> main
+
 % 
 % % TC pCO2 (Q2)(fid03)
 % obs = obs_backup;
@@ -327,7 +218,7 @@ estK17 = est;
 % % [A]     = compare(obs,est,opt,tp,7,fid03);
 % 
 % % TC CO3 (Q2)(fid04)
-<<<<<<< HEAD
+
 % obs = obs_backup;
 % for i = 1:nD
 %     obs(i).TA = nan;         obs(i).eTA = nan;
@@ -340,7 +231,7 @@ estK17 = est;
 % % tp      = 2;
 % % fid04   = 'compare_outs/compare_TC_co3.csv';
 % % [A]     = compare(obs,est,opt,tp,6,fid04);
-=======
+
 %obs = obs_backup;
 %for i = 1:nD
 %    obs(i).TA = nan;         obs(i).eTA = nan;
@@ -353,7 +244,7 @@ estK17 = est;
 % tp      = 2;
 % fid04   = 'compare_outs/compare_TC_co3.csv';
 % [A]     = compare(obs,est,opt,tp,6,fid04);
->>>>>>> main
+
 % 
 % % TA ph (Q2) (fid05)
 % obs = obs_backup;
@@ -432,7 +323,4 @@ estK17 = est;
 % [est,~,~,~,~] = QUODcarb(obs,opt);
 % est10   = est;
 % % % NO compare! Wrong tp's
-<<<<<<< HEAD
-=======
 
->>>>>>> main

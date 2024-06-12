@@ -43,25 +43,28 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %--------------------------------------------------------------------------
 % 
 % INPUT OPTIONS:
-%   opt.K1K2  -> choice of K1 and K2 formulation
-%           1 = Roy et al, 1993
-%           2 = Goyet & Poisson, 1989
-%           3 = Hansson, 1973          REFIT by Dickson and Millero, 1987
-%           4 = Mehrbach et al., 1973  REFIT by Dickson and Millero, 1987
+%   opt.K1K2  -> choice of K1 and K2 formulation    (T-range)   (S-range)
+%           1 = Roy et al, 1993                     (T:0-45)    (S:5-45)
+%           2 = Goyet & Poisson, 1989               (T:-1-40)   (S:10-50)
+%           3 = Hansson, 1973          REFIT by Dickson & Millero, 1987
+%                                                   (T:2-35)    (S:20-40)
+%           4 = Mehrbach et al., 1973  REFIT by Dickson & Millero, 1987
+%                                                   (T:2-35)    (S:20-40)
 %           5 = Hansson, 1973 and Mehrbach, 1973 
-%                                      REFIT by Dickson and Millero, 1987
-%        x(6) = x(GEOSECS)            ~NOT AVAILABLE IN QUODcarb~
-%        x(7) = x(Peng)               ~NOT AVAILABLE IN QUODcarb~
-%        x(8) = x(Millero, 1979)      ~NOT AVAILABLE IN QUODcarb~
-%           9 = Cai and Wang, 1998
-%          10 = Lueker et al., 2000    (DEFAULT)
-%          11 = Mojica Prieto and Millero, 2002
-%          12 = Millero et al., 2000
-%          13 = Millero et al., 2002
-%          14 = Millero et al., 2006
-%          15 = Waters, Millero, and Woosley, 2014
-%          16 = Sulpis et al., 2020
-%          17 = Schockman and Byrne, 2021
+%                                      REFIT by Dickson & Millero, 1987
+%                                                   (T:2-35)    (S:20-40)
+%           x = x(GEOSECS)            ~NOT AVAILABLE IN QUODcarb~
+%           x = x(Peng)               ~NOT AVAILABLE IN QUODcarb~
+%           x = x(Millero, 1979)      ~NOT AVAILABLE IN QUODcarb~
+%           9 = Cai and Wang, 1998                  (T:2-35)    (S:0-49)
+%          10 = Lueker et al., 2000    (DEFAULT)    (T:2-35)    (S:19-43)
+%          11 = Mojica Prieto and Millero, 2002     (T:0-45)    (S:5-42)
+%          12 = Millero et al., 2002                (T:-1.6-35) (S:34-37)
+%          13 = Millero et al., 2006                (T:0-50)    (S:1-50)
+%          14 = Millero et al., 2010                (T:0-50)    (S:1-50)
+%          15 = Waters, Millero, and Woosley, 2014  (T:0-50)    (S:1-50)
+%          16 = Sulpis et al., 2020                 (T:-1.7-32) (S:31-38)
+%          17 = Schockman and Byrne, 2021           (T:15-35)   (S:19-41)
 %
 %   opt.KSO4  -> choice of KSO4 formulation
 %           1 = Dickson (1990a)         (DEFAULT)
@@ -207,7 +210,7 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     % update the pK values based on the new estimate of (T,P)
 
     [y, gy, ggy ] = update_y(y,x,obs,sys,opt);
-    % Make a vector of measured quantities    
+    % Make a vector of measured quantities
     id  = find(~isnan(y));
     y   = y(id).';
     gy  = gy(id,:);
@@ -4780,7 +4783,7 @@ function [x,J,iflag] = newtn(x0,F,tol)
 % iflag: 0 ==> Newton's method converged to the desired
 %                      tolerance
 %        1 ==> Newton's method did not converge 
-    iprint = 1;
+    iprint = 0;
     MAXIT = 50;
     x = x0;
     if (nargin==4)
@@ -4807,7 +4810,7 @@ function [x,J,iflag] = newtn(x0,F,tol)
     if (itno>=MAXIT)
         if norm(F0(1:end-1)) < tol*1e1
             iflag = 2;
-            fprintf('Warniing Newton''s Method did not converge.\n ')
+            fprintf('Warning Newton''s Method did not converge.\n ')
             fprintf('But value was only 10x more than tolerance...\n')
             fprintf('so it was close, recommend keeping. \n')
         else
