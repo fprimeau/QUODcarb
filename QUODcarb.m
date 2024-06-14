@@ -2033,7 +2033,7 @@ function [pT,gpT,ggpT,epT] = calc_pTOT(opt,S)
             TB      = 0.0004106 * S / 35;
             pTB     = p( TB );
             gpTB    = dpdx( TB )      *    0.0004106 / 35 ;
-            ggpTB   = sys.d2pdx2( TB ) * ( 0.0004106 / 35 ) ^ 2;
+            ggpTB   = d2pdx2( TB ) * ( 0.0004106 / 35 ) ^ 2;
 
             % can't find paper, assume same as Uppstrom
             % std 5e-6 on avg 2.32e-4

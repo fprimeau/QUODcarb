@@ -41,20 +41,6 @@ def calc_pTOT(opt,S):
 
     my_abs = lambda x: (x * x) ** 0.5
 
-    # compute the totals and their derivatives
-    [pTB  , gpTB  , ggpTB  , epTB  ] = calc_pTB(opt,S)
-    [pTS  , gpTS  , ggpTS  , epTS  ] = calc_pTS(opt,S)
-    [pTF  , gpTF  , ggpTF  , epTF  ] = calc_pTF(opt,S)
-    [pTCa , gpTCa , ggpTCa , epTCa ] = calc_pTCa(opt,S)
-
-    # ---------------------------------------------------------------------
-    # output
-    # ---------------------------------------------------------------------
-    pT   = [   pTB;   pTS;   pTF;   pTCa ]
-    gpT  = [  gpTB;  gpTS;  gpTF;  gpTCa ]
-    ggpT = [ ggpTB; ggpTS; ggpTF; ggpTCa ]
-    epT  = [  epTB;  epTS;  epTF;  epTCa ]
-
     # ---------------------------------------------------------------------
     # subfunctions
     # ---------------------------------------------------------------------
@@ -97,7 +83,7 @@ def calc_pTOT(opt,S):
             TB      = 0.0004106 * S / 35
             pTB     = p( TB )
             gpTB    = dpdx( TB )      *    0.0004106 / 35 
-            ggpTB   = sys['d2pdx2']( TB ) * ( 0.0004106 / 35 ) ** 2
+            ggpTB   = d2pdx2( TB ) * ( 0.0004106 / 35 ) ** 2
 
             # can't find paper, assume same as Uppstrom
             # std 5e-6 on avg 2.32e-4
@@ -157,3 +143,17 @@ def calc_pTOT(opt,S):
         eTCa    = (TCau - TCal) / 2
         my_abs = lambda x: math.sqrt(x * x)
         epTCa   = my_abs( p(TCa + eTCa) - pTCa )
+
+    # compute the totals and their derivatives
+    [pTB  , gpTB  , ggpTB  , epTB  ] = calc_pTB(opt,S)
+    [pTS  , gpTS  , ggpTS  , epTS  ] = calc_pTS(opt,S)
+    [pTF  , gpTF  , ggpTF  , epTF  ] = calc_pTF(opt,S)
+    [pTCa , gpTCa , ggpTCa , epTCa ] = calc_pTCa(opt,S)
+
+    # ---------------------------------------------------------------------
+    # output
+    # ---------------------------------------------------------------------
+    pT   = [   pTB,   pTS,   pTF,   pTCa ]
+    gpT  = [  gpTB,  gpTS,  gpTF,  gpTCa ]
+    ggpT = [ ggpTB, ggpTS, ggpTF, ggpTCa ]
+    epT  = [  epTB,  epTS,  epTF,  epTCa ]

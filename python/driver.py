@@ -8,6 +8,7 @@ import scipy
 import numpy as np
 import copy
 import mksys
+import parse_input as pi
 #import QUODcarb
 
 data = scipy.io.loadmat('data.mat')
@@ -34,18 +35,18 @@ obs = []
 for i in range(nD):
     obs.append({})
     # measurements independent of (T,P)
-    obs[i]['TC'] = data['data'][i][4]     # (umol/kg)
+    obs[i]['TC'] = data['datag'][i][4]     # (umol/kg)
     obs[i]['eTC'] =  2.01                   # TC error ±2.01 umol/kg
-    obs[i]['TA'] = data['data'][i][6]
+    obs[i]['TA'] = data['datag'][i][6]
     obs[i]['TC'] = 1.78                    # TA error ±2.01 umol/kg
-    obs[i]['sal'] = data['data'][i][2]    # PSU
+    obs[i]['sal'] = data['datag'][i][2]    # PSU
     obs[i]['esal'] = 0.002                 # new = 0.001
 
     # nutrients P and Si also independent of (T,P)
-    obs[i]['TP'] = data['data'][i][23]
-    obs[i]['eTP'] = data['data'][i][23] * 0.001    # 0.01% meas uncertainty
-    obs[i]['TSi'] = data['data'][i][17]
-    obs[i]['eTSi'] = data['data'][i][17] * 0.001   # 0.01% meas uncertainty
+    obs[i]['TP'] = data['datag'][i][23]
+    obs[i]['eTP'] = data['datag'][i][23] * 0.001    # 0.01% meas uncertainty
+    obs[i]['TSi'] = data['datag'][i][17]
+    obs[i]['eTSi'] = data['datag'][i][17] * 0.001   # 0.01% meas uncertainty
     obs[i]['tp'] = []
     # first(T,P)-dependent measurement
     """
@@ -55,9 +56,9 @@ for i in range(nD):
     'eP': (max) ± 0.63 dbar 
     """
     obs[i]['tp'].append({})
-    obs[i]['tp'][0]['T'] = data['data'][i][1]
+    obs[i]['tp'][0]['T'] = data['datag'][i][1]
     obs[i]['tp'][0]['eT'] = 0.02
-    obs[i]['tp'][0]['P'] = data['data'][i][0]
+    obs[i]['tp'][0]['P'] = data['datag'][i][0]
     obs[i]['tp'][0]['eP'] = 0.63
     # second(T,P)-dependent measurement
     """
@@ -73,9 +74,9 @@ for i in range(nD):
     obs[i]['tp'][1]['eT'] = 0.05
     obs[i]['tp'][1]['P'] = 0.0
     obs[i]['tp'][1]['eP'] = 0.63
-    obs[i]['tp'][1]['ph'] = data['data'][i][8]
+    obs[i]['tp'][1]['ph'] = data['datag'][i][8]
     obs[i]['tp'][1]['eph'] = 0.0004, 
-    obs[i]['tp'][1]['co3'] = data['data'][i][13]
+    obs[i]['tp'][1]['co3'] = data['datag'][i][13]
     obs[i]['tp'][1]['eco3'] = 2.0
     # third (T,P)-dependent measurement
     """
@@ -90,8 +91,8 @@ for i in range(nD):
     obs[i]['tp'][2]['eT'] = 0.03
     obs[i]['tp'][2]['P'] = 0.0
     obs[i]['tp'][2]['eP'] = 0.63
-    obs[i]['tp'][2]['pco2'] = data['data'][i, 10]
-    obs[i]['tp'][2]['epco2'] = data['data'][i][10] * 0.0021
+    obs[i]['tp'][2]['pco2'] = data['datag'][i, 10]
+    obs[i]['tp'][2]['epco2'] = data['datag'][i][10] * 0.0021
 
 obs = np.array(obs)
 obs_backup = copy.deepcopy(obs)
@@ -143,3 +144,4 @@ obs_backup = copy.deepcopy(obs)
 # [A]     = compare(obs,est,opt,tp,3,fid3)
 
 sys = mksys.mksys(obs[0], opt['phscale'])
+pi.parse_input(obs,sys,opt,nD)    

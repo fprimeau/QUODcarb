@@ -1031,11 +1031,11 @@ def calc_pK(opt,T,S,P):
             df = lambda S, a: 0.5 * a[1] / S ** 0.5 + a[2] + 2 * a[3] * S
 
             # Calculate pK1
-            pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * log(TK)
+            pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * np.log(TK)
 
             # Derivatives
             pK1_T = -f(S, a2) / (TK ** 2) + f(S, a3) / TK
-            pK1_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * log(TK)
+            pK1_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * np.log(TK)
             pK1_P = 0
             epK1 = 0.0054
 
@@ -1080,11 +1080,11 @@ def calc_pK(opt,T,S,P):
             df = lambda S, a: 0.5 * a[1] / S ** 0.5 + a[2] + 2 * a[3] * S
 
             # Calculate pK1
-            pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * log(TK)
+            pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * np.log(TK)
 
             # Derivatives
             pK1_T = -f(S, a2) / (TK ** 2) + f(S, a3) / TK
-            pK1_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * log(TK)
+            pK1_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * np.log(TK)
             pK1_P = 0
             epK1 = 0.0055
 
@@ -1101,7 +1101,7 @@ def calc_pK(opt,T,S,P):
             g = 0.0001152
 
             # Calculate pK1
-            pK1 = a / TK + b + c * log(TK) + d * S + g * (S ** 2)
+            pK1 = a / TK + b + c * np.log(TK) + d * S + g * (S ** 2)
             pK1 = pK1 - pSWS2tot  # Convert from total to SWS scale
 
             # Derivatives
@@ -1126,18 +1126,18 @@ def calc_pK(opt,T,S,P):
 
             # Functions
             def f(S, a):
-                return a[0] + a[1] * sqrt(S) + a[2] * S + a[3] * (S ** 2)
+                return a[0] + a[1] * np.sqrt(S) + a[2] * S + a[3] * (S ** 2)
 
             def df(S, a):
-                return 0.5 * a[1] / sqrt(S) + a[2] + 2 * a[3] * S
+                return 0.5 * a[1] / np.sqrt(S) + a[2] + 2 * a[3] * S
 
             # Calculate pK1
-            pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * log(TK)
+            pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * np.log(TK)
             pK1 = pK1 - pSWS2tot  # Convert from total to SWS scale
 
             # Derivatives
             pK1_T = (-f(S, a2) / (TK ** 2) + f(S, a3) / TK) - gpSWS2tot[0]
-            pK1_S = (df(S, a1) + df(S, a2) / TK + df(S, a3) * log(TK)) - gpSWS2tot[1]
+            pK1_S = (df(S, a1) + df(S, a2) / TK + df(S, a3) * np.log(TK)) - gpSWS2tot[1]
             pK1_P = 0
 
             epK1 = 0.0055  # Same as Waters and Millero formulation
@@ -1168,7 +1168,7 @@ def calc_pK(opt,T,S,P):
 
             # Functions
             def f(T, a):
-                return a[0] + a[1] / T + a[2] * log(T)
+                return a[0] + a[1] / T + a[2] * np.log(T)
 
             def df(T, a):
                 return -a[1] / T ** 2 + a[2] / T
@@ -1411,10 +1411,10 @@ def calc_pK(opt,T,S,P):
             f = lambda S, a: a[0] + a[1] * S ** 0.5 + a[2] * S + a[3] * S ** 2
             df = lambda S, a: 0.5 * a[1] / S ** 0.5 + a[2] + 2 * a[3] * S
 
-            pK2 = f(S, a1) + f(S, a2) / TK + f(S, a3) * log(TK)
+            pK2 = f(S, a1) + f(S, a2) / TK + f(S, a3) * np.log(TK)
 
             pK2_T = -f(S, a2) / (TK ** 2) + f(S, a3) / TK
-            pK2_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * log(TK)
+            pK2_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * np.log(TK)
             pK2_P = 0
             epK2 = 0.011
 
@@ -1433,10 +1433,10 @@ def calc_pK(opt,T,S,P):
             f = lambda S, a: a[0] + a[1] * S ** 0.5 + a[2] * S + a[3] * S ** 2
             df = lambda S, a: 0.5 * a[1] / S ** 0.5 + a[2] + 2 * a[3] * S
 
-            pK2 = f(S, a1) + f(S, a2) / TK + f(S, a3) * log(TK)
+            pK2 = f(S, a1) + f(S, a2) / TK + f(S, a3) * np.log(TK)
 
             pK2_T = -f(S, a2) / (TK ** 2) + f(S, a3) / TK
-            pK2_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * log(TK)
+            pK2_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * np.log(TK)
             pK2_P = 0
             epK2 = 0.010 # pg 141
 

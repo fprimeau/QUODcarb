@@ -1,7 +1,8 @@
+import calc_pTOT as ct
+import calc_pk as cp
 import numpy as np
 
 def parse_input(obs,sys,opt,nD):
-
     def isgood(thing):
         return (thing is not None) and not np.any(np.isnan(thing))
     p = sys['p']
@@ -56,7 +57,7 @@ def parse_input(obs,sys,opt,nD):
         else:
             wobs[i, sys['ipTA']] = w(obs[i]['TA'], obs[i]['eTA']) # std e -> w
         # calculate totals that are a function of salinity
-        pT, _, _, epT = calc_pTOT(opt, obs[i]['sal'])
+        pT, _, _, epT = ct.calc_pTOT(opt, obs[i]['sal'])
         # (see Ref's within calc_pTOT)
         pTB, TB, epTB = pT[0], q(pTB[0]) * 1e6, epT[0]
         pTS, TS, epTS = pT[1], q(pTS[1]) * 1e6, epT[1]
@@ -192,7 +193,7 @@ def parse_input(obs,sys,opt,nD):
             yobs[i,sys['tp'][j]['iP']]   = obs[i]['tp'][j]['P']
             wobs[i,sys['tp'][j]['iT']]   = (obs[i]['tp'][j]['eT']) ** (-2)
             wobs[i,sys['tp'][j]['iP']]   = (obs[i]['tp'][j]['eP']) ** (-2)
-            pK, _, epK = calc_pK(opt, obs[i]['tp'][j]['T'], obs[i]['sal'], obs[i]['tp'][j]['P']) # T, S, P
+            pK, _, epK = cp.calc_pK(opt, obs[i]['tp'][j]['T'], obs[i]['sal'], obs[i]['tp'][j]['P']) # T, S, P
 
             pK0, pK1, pK2 = pK[0], pK[1], pK[2]  
             pKb, pKw, pKs = pK[3], pK[4], pK[5]
