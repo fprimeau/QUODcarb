@@ -19,261 +19,7 @@ def calc_pK(opt,T,S,P):
 #   epK  = [epK0;epK1;epK2;epKb;epKw;epKs;epKf;epKp1;epKp2;epKp3;epKsi;epKnh4;epKh2s;epp2f;epKar;epKca];
 #           errors of pK (1 standard deviation)
 
-    TK   = T + 273.15   # convert to Kelvin
-    Rgas = 83.14462618  # RgasConstant, ml bar-1 K-1 mol-1, DOEv2
-    RT   = Rgas * TK
-    RT_T = Rgas
-    
-    Pbar    = P / 10    # convert from dbar to bar
-    Pbar_P  = 1 / 10
-    A, B, C       = 19.924, 1000, 1.005
-    ions = lambda S: A * S / (B - C * S) # from DOE handbook
-    ions_S = lambda S: (A * B) / (B - C * S) ** 2
-    LOG10 = np.log(10)
-    p = lambda x: -np.log10(x)
-    q = lambda x: 10 ** (-x) # inverse p, i.e., a backward p
-    dpdx = lambda x: -1 / (x * LOG10)           # p'
-    dqdx = lambda x: -LOG10 * 10 ** (-x)        # q'
-    
-    # corrections for pressure---------------------------------------------
-    # Millero 1995, 1992, 1982, 1979; Takahashi et al. 1982;
-    #   Culberson & Pytkowicz 1968; Edmond & Gieskes 1970.
-    dV = lambda T, a: a[0] + a[1] * T + a[2] * T ** 2
-    dV_T = lambda T, a: a[1] + 2 * a[2] * T
-    Ka = lambda T, b: (b[0] + b[1] * T) / 1000
-    Ka_T = lambda T, b: b[1] / 1000
-
-    ppfac = lambda T, Pbar, a, b: -((-dV(T, a) * Pbar + 0.5 * Ka(T, b) * Pbar ** 2) / RT) / LOG10
-
-    ppfac_T = lambda T, Pbar, a, b: (
-        -((-dV_T(T, a) * Pbar + 0.5 * Ka_T(T, b) * Pbar ** 2) / RT) / LOG10
-        - ((-dV(T, a) * Pbar + 0.5 * Ka(T, b) * Pbar ** 2) * RT_T / ((RT) ** 2)) / LOG10
-    )
-
-    ppfac_P = lambda T, Pbar, Pbar_P, a, b: (
-        -((-dV(T, a) + Ka(T, b) * Pbar) * Pbar_P / RT) / LOG10
-    )
-
-    # compute the pK's and their derivatives w.r.t. T,P,and S -------------
-    [pp2f    , gpp2f , epp2f ] = calc_p2f(opt,T,RT,RT_T,Pbar,Pbar_P)
-    [pKs     , gpKs  , epKs  ] = calc_pKs(opt,T,S,Pbar,Pbar_P)
-    [pKf     , gpKf  , epKf  ] = calc_pKf(opt,T,S,Pbar,Pbar_P) 
-    [pSWS2tot, gpSWS2tot     ] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf)
-    [pfH     , gpfH  , epfH  ] = calc_pfH(opt,T,S)
-    [pK0     , gpK0  , epK0  ] = calc_pK0(opt,T,RT,RT_T,S,Pbar,Pbar_P); 
-    [pKb     , gpKb  , epKb  ] = calc_pKb(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot,pfH,gpfH) 
-    [pKw     , gpKw  , epKw  ] = calc_pKw(opt,T,S,Pbar,Pbar_P)
-    [pKp1    , gpKp1 , epKp1 ] = calc_pKp1(opt,T,S,Pbar,Pbar_P,pfH,gpfH) 
-    [pKp2    , gpKp2 , epKp2 ] = calc_pKp2(opt,T,S,Pbar,Pbar_P,pfH,gpfH) 
-    [pKp3    , gpKp3 , epKp3 ] = calc_pKp3(opt,T,S,Pbar,Pbar_P,pfH,gpfH) 
-    [pKsi    , gpKsi , epKsi ] = calc_pKsi(opt,T,S,Pbar,Pbar_P,pfH,gpfH) 
-    [pK1     , gpK1  , epK1  ] = calc_pK1(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot) 
-    [pK2     , gpK2  , epK2  ] = calc_pK2(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot)
-    [pKnh4   , gpKnh4, epKnh4] = calc_pKnh4(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot)
-    [pKh2s   , gpKh2s, epKh2s] = calc_pKh2s(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot)
-    [pKar    , gpKar , epKar ] = calc_pKar(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
-    [pKca    , gpKca , epKca ] = calc_pKca(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
-
-
-    # pressure correction for Ks (Millero, 1995) --------------------------
-    a = [-18.03, 0.0466, 0.000316]
-    b = [-4.53, 0.09 ]
-    pKs     = pKs + ppfac(T,Pbar,a,b)
-    pKs_T   = gpKs[0] # isn't this needed?
-    pKs_P   = gpKs[2]
-    pKs_T   = pKs_T + ppfac_T(T,Pbar,a,b)
-    pKs_P   = pKs_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKs[0] = pKs_T
-    gpKs[2] = pKs_P
-
-    # pressure correction for Kf (Millero, 1995) --------------------------
-    a = [ -9.78, -0.009, -0.000942 ]
-    b = [ -3.91, 0.054 ];       
-    pKf     = pKf + ppfac(T,Pbar,a,b)
-    pKf_T   = gpKf(1)
-    pKf_P   = gpKf(3)
-    pKf_T   = pKf_T + ppfac_T(T,Pbar,a,b)
-    pKf_P   = pKf_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKf[0] = pKf_T
-    gpKf[2] = pKf_P
-
-    # pressure correction for Kb (Millero, 1979) --------------------------
-    a = [ -29.48, 0.1622, -0.002608 ]
-    b = [  -2.84,   0.0 ]  
-    pKb     = pKb + ppfac(T,Pbar,a,b)
-    pKb_T   = gpKb[0]
-    pKb_P   = gpKb[2]
-    pKb_T   = pKb_T + ppfac_T(T,Pbar,a,b)
-    pKb_P   = pKb_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKb[0] = pKb_T
-    gpKb[2] = pKb_P
-
-    # pressure correction for Kw (Millero, 1983) --------------------------
-    a = [ -20.02, 0.1119, -0.001409]
-    b = [ -5.13, 0.0794 ]
-    pKw     = pKw + ppfac(T,Pbar,a,b)
-    pKw_T   = gpKw[0]
-    pKw_P   = gpKw[2]
-    pKw_T   = pKw_T + ppfac_T(T,Pbar,a,b)
-    pKw_P   = pKw_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKw[0] = pKw_T
-    gpKw[2] = pKw_P
-
-    # pressure correction for Kp1 (Millero, 1995; same as Millero, 1983) --
-    a = [ -14.51, 0.1211, -0.000321 ]
-    b = [  -2.67, 0.0427 ]
-    pKp1        = pKp1 + ppfac(T,Pbar,a,b)
-    pKp1_T      = gpKp1[0]
-    pKp1_P      = gpKp1[2]
-    pKp1_T      = pKp1_T + ppfac_T(T,Pbar,a,b)
-    pKp1_P      = pKp1_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKp1[0]    = pKp1_T
-    gpKp1[2]    = pKp1_P
-        
-    # pressure correction for Kp2 (Millero, 1995; same as Millero, 1983) --
-    a = [ -23.12, 0.1758, -0.002647 ]
-    b = [ -5.15, 0.09 ]
-    pKp2        = pKp2 + ppfac(T,Pbar,a,b)
-    pKp2_T      = gpKp2[0]
-    pKp2_P      = gpKp2[2]
-    pKp2_T      = pKp2_T + ppfac_T(T,Pbar,a,b)
-    pKp2_P      = pKp2_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKp2[0]    = pKp2_T
-    gpKp2[2]    = pKp2_P
-        
-    # pressure correction for Kp3 (Millero, 1995; same as Millero, 1983) --
-    a = [ -26.57, 0.202, -0.003042 ]
-    b = [ -4.08, 0.0714 ]
-    pKp3        = pKp3 + ppfac(T,Pbar,a,b)
-    pKp3_T      = gpKp3[0]
-    pKp3_P      = gpKp3[2]
-    pKp3_T      = pKp3_T + ppfac_T(T,Pbar,a,b)
-    pKp3_P      = pKp3_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKp3[0]    = pKp3_T
-    gpKp3[2]    = pKp3_P
-
-    # pressure correction for Ksi 
-    # (Millero, 1995; used the values from boric acid)
-    a = [ -29.48, 0.1622, -0.002608 ]
-    b =[ -2.84, 0]     
-    pKsi        = pKsi + ppfac(T,Pbar,a,b)
-    pKsi_T      = gpKsi[0]
-    pKsi_P      = gpKsi[2]
-    pKsi_T      = pKsi_T + ppfac_T(T,Pbar,a,b)
-    pKsi_P      = pKsi_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKsi[0]    = pKsi_T
-    gpKsi[2]    = pKsi_P
-
-    # pressure correction for K1 (Millero, 1995) --------------------------
-    # only for opt.cK1K2 ~=6 & ~=7 & ~=8
-    a = [-25.5, 0.1271, 0]
-    b = [ -3.08, 0.0877 ]
-    pK1     = pK1 + ppfac(T,Pbar,a,b)
-    pK1_T   = gpK1[0]
-    pK1_P   = gpK1[2]
-    pK1_T   = pK1_T + ppfac_T(T,Pbar,a,b)
-    pK1_P   = pK1_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpK1[0] = pK1_T
-    gpK1[2] = pK1_P
-
-    # pressure correction for K2 (Millero, 1995) --------------------------
-    # only for opt.cK1K2 ~=6 & ~=7 & ~=8
-    a = [ -15.82, -0.0219, 0]
-    b = [ 1.13, -0.1475]
-    pK2     = pK2 + ppfac(T,Pbar,a,b)
-    pK2_T   = gpK2[0]
-    pK2_P   = gpK2[2]
-    pK2_T   = pK2_T + ppfac_T(T,Pbar,a,b)
-    pK2_P   = pK2_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpK2[0] = pK2_T
-    gpK2[2] = pK2_P
-
-    # pressure correction for Knh4 (added to CO2SYSv3 by J. Sharp) --------
-    a = [ -26.43, 0.0889, -0.000905 ]
-    b = [ -5.03, 0.0814 ]
-    pKnh4       = pKnh4 + ppfac(T,Pbar,a,b)
-    pKnh4_T     = gpKnh4[0]
-    pKnh4_P     = gpKnh4[2]
-    pKnh4_T     = pKnh4_T + ppfac_T(T,Pbar,a,b)
-    pKnh4_P     = pKnh4_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKnh4[0]   = pKnh4_T
-    gpKnh4[2]   = pKnh4_P
-        
-    # pressure correction for Kh2s (added to CO2SYSv3 by J. Sharp) --------
-    a = [ -11.07, -0.009, -0.000942 ]
-    b = [ -2.89,  0.054 ]
-    pKh2s       = pKh2s + ppfac(T,Pbar,a,b)
-    pKh2s_T     = gpKh2s[0]
-    pKh2s_P     = gpKh2s[2]
-    pKh2s_T     = pKh2s_T + ppfac_T(T,Pbar,a,b)
-    pKh2s_P     = pKh2s_P + ppfac_P(T,Pbar,Pbar_P,a,b)
-    gpKh2s[0]   = pKh2s_T
-    gpKh2s[2]   = pKh2s_P
-        
-    # correct pH scale conversion factors for pressure --------------------
-    [pSWS2tot, gpSWS2tot, pFREE2tot, gpFREE2tot] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf)
-
-    # find pH scale conversion factor -------------------------------------
-    # (pressure corrected)
-    if opt['phscale'] == 1: # pH_total
-        phfac = pSWS2tot
-        gphfac = gpSWS2tot
-    elif opt['phscale'] == 2: # pH_SWS, they are all on this now
-        phfac = 0
-        gphfac = 0
-    elif opt['phscale'] == 3: # pH_free
-        phfac = pSWS2tot - pFREE2tot
-        gphfac = gpSWS2tot - gpFREE2tot
-    elif opt['phscale'] == 4: # pH_NBS
-        phfac = pfH
-        gphfac = gpfH
-    else:
-        raise ValueError('Need to input valid pH scale 1-4')
-    
-
-    # convert from SWS to chosen pH scale ---------------------------------    
-    pK1   += phfac
-    gpK1  += gphfac
-    pK2   += phfac
-    gpK2  += gphfac
-    pKw   += phfac
-    gpKw  += gphfac
-    pKb   += phfac
-    gpKb  += gphfac 
-    pKp1  += phfac
-    gpKp1 += gphfac
-    pKp2  += phfac
-    gpKp2 += gphfac
-    pKp3  += phfac
-    gpKp3 += gphfac
-    pKsi  += phfac
-    gpKsi += gphfac
-    pKnh4 += phfac
-    gpKnh4 += gphfac
-    pKh2s += phfac
-    gpKh2s += gphfac
-    # pKar, pKca, pKs, and pKf do not need the conversion
-
-   
-    # ---------------------------------------------------------------------
-    # output
-    # ---------------------------------------------------------------------
-    pK   = [pK0, pK1, pK2, pKb, pKw, pKs, pKf, pKp1, pKp2, pKp3, pKsi, pKnh4, pKh2s, pp2f, pKar, pKca, pfH]
-
-    pK = pK * opt['mpk'](T,S,P)
-    
-    gpK  = [gpK0, gpK1, gpK2, gpKb, gpKw, gpKs, gpKf, gpKp1, gpKp2, gpKp3, gpKsi, gpKnh4, gpKh2s, gpp2f, gpKar, gpKca, gpfH]
-
-    gpK = pK * opt['gmpk'](T,S,P) + gpK * opt['mpk'](T,S,P)
-    
-    epK  = [epK0, epK1, epK2, epKb, epKw, epKs, epKf, epKp1, epKp2, epKp3, epKsi, epKnh4, epKh2s, epp2f, epKar, epKca, epfH]
-    epK = epK * opt['empk']
-    
-    # pK0, pK1, pK2, pKb, pKw, pKs = 1, 2, 3, 4, 5, 6 
-    # pKf, pKp1, pKp2, pKp3, pKsi, pKnh4 = 7, 8, 9, 10, 11, 12
-    # pKh2s, pp2f, pKar, pKca, pfH = 13, 14, 15, 16, 17
-
-    # ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
     # subfunctions
     # ---------------------------------------------------------------------
 
@@ -313,6 +59,7 @@ def calc_pK(opt,T,S,P):
         ep2f = 0.001 * p2f  # 0.1% relative uncertainty
         my_abs = lambda x: np.sqrt(x*x)
         epp2f = my_abs( p(p2f + ep2f) - pp2f )
+        return [pp2f, gpp2f, epp2f]
     
     def calc_pK0(opt,T,RT,RT_T,S,Pbar,Pbar_P):
     # calculate K0, Weiss 1974, Marine Chemistry, 2: 203-215
@@ -360,6 +107,7 @@ def calc_pK(opt,T,S,P):
         eK0 = K0 * 0.003  # 0.3% relative on K0
         my_abs = lambda x: np.sqrt(x*x)
         epK0 = my_abs(p(K0 + eK0) - pK0)
+        return [pK0, gpK0, epK0]
 
     def calc_pKs(opt, T, S, Pbar, Pbar_P):
         TK = T + 273.15  # convert to Kelvin
@@ -369,7 +117,7 @@ def calc_pK(opt,T,S,P):
 
         # all calculated on free pH scale
         # stay on free pH scale (no conversion to SWS or total)
-        if opt.KSO4 == 1:
+        if opt['KSO4'] == 1:
             # calculate Ks (Dickson 1990a)------------------------------
             # "goodness of fit: 0.021" (assuming 1 sigma -MF)
             a1 = [-4276.1, 141.328, 23.093]
@@ -452,6 +200,7 @@ def calc_pK(opt,T,S,P):
             epKs = my_abs( p(Ks + eKs) - pKs )
             pKs_P = 0.0
             gpKs = [pKs_T, pKs_S, pKs_P]
+        return [pKs, gpKs, epKs]
     
     def calc_pKf(opt,T,S,Pbar,Pbar_P):
         TK = T + 273.15 # convert to Kelvin
@@ -492,6 +241,7 @@ def calc_pK(opt,T,S,P):
         my_abs = lambda x: np.sqrt(x*x)
         epKf = my_abs(-elnKf / np.log10(10))  # -/LOG10 converts to epK
         # None found in Dickson's, so take Perez and Fraga's
+        return [pKf, gpKf, epKf]
     
         
     def calc_pKb(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot,pfH,gpfH):
@@ -542,6 +292,7 @@ def calc_pK(opt,T,S,P):
         my_abs = lambda x: np.sqrt(x*x)
         epKb = my_abs(-elnKb / np.log(10))  # convert from lnKb to pKb with -/LOG10
         # none found in Li et al's paper
+        return [pKb, gpKb, epKb]
 
     def calc_pKw(opt,T,S,Pbar,Pbar_P):
         TK = T + 273.15; # convert to Kelvin
@@ -614,6 +365,7 @@ def calc_pK(opt,T,S,P):
             elnKw = 0.01  # pg 670 Millero, 1995
             my_abs = lambda x: np.sqrt(x * x)
             epKw = my_abs(-elnKw / LOG10)  # Convert to epK with -/LOG10
+        return [pKw, gpKw, epKw]
                 
     def calc_pKp1(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
         TK = T + 273.15 # convert to Kelvin
@@ -650,6 +402,7 @@ def calc_pK(opt,T,S,P):
 
             # Uncertainty
             epKp1 = 0.09  # pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
+        return [pKp1, gpKp1, epKp1]
 
     
     def calc_pKp2(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
@@ -682,6 +435,7 @@ def calc_pK(opt,T,S,P):
 
         # Uncertainty
         epKp2 = 0.03  # pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
+        return [pKp2, gpKp2, epKp2]
 
     def calc_pKp3(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
         TK = T + 273.15 # convert to Kelvin
@@ -713,6 +467,7 @@ def calc_pK(opt,T,S,P):
 
         # Uncertainty
         epKp3 = 0.2  # pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
+        return [pKp3, gpKp3, epKp3]
 
     def calc_pKsi(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
         TK = T + 273.15 # convert to Kelvin
@@ -747,9 +502,10 @@ def calc_pK(opt,T,S,P):
         gpKsi = [pKsi_T, pKsi_S, pKsi_P]
 
         epKsi = 0.02 # pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
+        return [pKsi, gpKsi, epKsi]
     
     def calc_pK1(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot):
-        # calculate pK1 based on user choice input with opt.cK1K2
+        # calculate pK1 based on user choice input with opt['cK1K2']
         TK = T + 273.15 # convert to Kelvin
 
         if opt['K1K2'] == 1:
@@ -1141,9 +897,10 @@ def calc_pK(opt,T,S,P):
             pK1_P = 0
 
             epK1 = 0.0055  # Same as Waters and Millero formulation
+        return [pK1, gpK1, epK1]
             
     def calc_pK2(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot):
-    # calculate pK2 based on user choice input with opt.cK1K2
+    # calculate pK2 based on user choice input with opt['cK1K2']
         TK = T + 273.15 # convert to Kelvin
 
         if opt['K1K2'] == 1:
@@ -1500,6 +1257,7 @@ def calc_pK(opt,T,S,P):
             pK2_P = 0
 
             epK2 = 0.010  # in abstract
+        return [pK2, gpK2, epK2]
 
     
     def calc_pKnh4(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot):
@@ -1550,11 +1308,12 @@ def calc_pK(opt,T,S,P):
 
             pKnh4_P = 0
             epKnh4 = 0.00017  # pg 2416 of Clegg and Whitefield (1995)
+        return [pKnh4, gpKnh4, epKnh4]
             
     def calc_pKh2s(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot):
     # calculate pKh2s
         TK = T + 273.15 # convert to Kelvin
-        if (opt['K1K2'] == 6 or opt['K1K2'] == 7 or opt.K1K2 == 8):
+        if (opt['K1K2'] == 6 or opt['K1K2'] == 7 or opt['K1K2'] == 8):
             pass
             # Kh2s = 0;
             # how to convert to p space?
@@ -1579,6 +1338,7 @@ def calc_pK(opt,T,S,P):
             gpKh2s = [pKh2s_T, pKh2s_S, pKh2s_P]
 
             epKh2s = 0.033  # from Millero et al (1988), in abstract
+        return [pKh2s, gpKh2s, epKh2s]
     
     def calc_pKar(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
     # Aragonite solubility
@@ -1626,6 +1386,7 @@ def calc_pK(opt,T,S,P):
             pKar -= ((33.3 - 0.22 * TK) * Pbar / RT) / LOG10
             pKar_T = dpdx(pKar) * Kar_T - (Pbar * Rgas * (59.8730 * TK - 9155.988) / (RT**2)) / LOG10
             pKar_P = -((33.3 - 0.22 * TK) * Pbar_P / RT) / LOG10
+        return [pKar, gpKar, epKar]
     
     def calc_pKca(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
     # Calcite solubility
@@ -1676,7 +1437,7 @@ def calc_pK(opt,T,S,P):
             d2 = np.array([-11.76, 0.3692])
 
             pKca, pKca_T, pKca_P = ppfac(TK, Pbar, Pbar_P, d1, d2, pKca, pKca_T)
-
+        return [pKca, gpKca, epKca]
             
     def calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf):
     # pH scale conversion factors (not pressure corrected)----------- 
@@ -1714,6 +1475,7 @@ def calc_pK(opt,T,S,P):
         pFREE2tot_S = (-top_S / (top * LOG10))
         pFREE2tot_P = (-top_P / (top * LOG10))
         gpFREE2tot = [pFREE2tot_T, pFREE2tot_S, pFREE2tot_P]
+        return [pSWS2tot, gpSWS2tot]
 
     def q(x):
         return 10 ** (-x)
@@ -1757,3 +1519,261 @@ def calc_pK(opt,T,S,P):
             def my_abs(x):
                 return np.sqrt(x * x)
             epfH = my_abs(p(fH + efH) - pfH)
+        return [pfH, gpfH, epfH]
+
+
+    TK   = T + 273.15   # convert to Kelvin
+    Rgas = 83.14462618  # RgasConstant, ml bar-1 K-1 mol-1, DOEv2
+    RT   = Rgas * TK
+    RT_T = Rgas
+    
+    Pbar    = P / 10    # convert from dbar to bar
+    Pbar_P  = 1 / 10
+    A, B, C       = 19.924, 1000, 1.005
+    ions = lambda S: A * S / (B - C * S) # from DOE handbook
+    ions_S = lambda S: (A * B) / (B - C * S) ** 2
+    LOG10 = np.log(10)
+    p = lambda x: -np.log10(x)
+    q = lambda x: 10 ** (-x) # inverse p, i.e., a backward p
+    dpdx = lambda x: -1 / (x * LOG10)           # p'
+    dqdx = lambda x: -LOG10 * 10 ** (-x)        # q'
+    
+    # corrections for pressure---------------------------------------------
+    # Millero 1995, 1992, 1982, 1979; Takahashi et al. 1982;
+    #   Culberson & Pytkowicz 1968; Edmond & Gieskes 1970.
+    dV = lambda T, a: a[0] + a[1] * T + a[2] * T ** 2
+    dV_T = lambda T, a: a[1] + 2 * a[2] * T
+    Ka = lambda T, b: (b[0] + b[1] * T) / 1000
+    Ka_T = lambda T, b: b[1] / 1000
+
+    ppfac = lambda T, Pbar, a, b: -((-dV(T, a) * Pbar + 0.5 * Ka(T, b) * Pbar ** 2) / RT) / LOG10
+
+    ppfac_T = lambda T, Pbar, a, b: (
+        -((-dV_T(T, a) * Pbar + 0.5 * Ka_T(T, b) * Pbar ** 2) / RT) / LOG10
+        - ((-dV(T, a) * Pbar + 0.5 * Ka(T, b) * Pbar ** 2) * RT_T / ((RT) ** 2)) / LOG10
+    )
+
+    ppfac_P = lambda T, Pbar, Pbar_P, a, b: (
+        -((-dV(T, a) + Ka(T, b) * Pbar) * Pbar_P / RT) / LOG10
+    )
+
+    # compute the pK's and their derivatives w.r.t. T,P,and S -------------
+    [pp2f    , gpp2f , epp2f ] = calc_p2f(opt,T,RT,RT_T,Pbar,Pbar_P)
+    [pKs     , gpKs  , epKs  ] = calc_pKs(opt,T,S,Pbar,Pbar_P)
+    [pKf     , gpKf  , epKf  ] = calc_pKf(opt,T,S,Pbar,Pbar_P) 
+    [pSWS2tot, gpSWS2tot     ] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf)
+    [pfH     , gpfH  , epfH  ] = calc_pfH(opt,T,S)
+    [pK0     , gpK0  , epK0  ] = calc_pK0(opt,T,RT,RT_T,S,Pbar,Pbar_P); 
+    [pKb     , gpKb  , epKb  ] = calc_pKb(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot,pfH,gpfH) 
+    [pKw     , gpKw  , epKw  ] = calc_pKw(opt,T,S,Pbar,Pbar_P)
+    [pKp1    , gpKp1 , epKp1 ] = calc_pKp1(opt,T,S,Pbar,Pbar_P,pfH,gpfH) 
+    [pKp2    , gpKp2 , epKp2 ] = calc_pKp2(opt,T,S,Pbar,Pbar_P,pfH,gpfH) 
+    [pKp3    , gpKp3 , epKp3 ] = calc_pKp3(opt,T,S,Pbar,Pbar_P,pfH,gpfH) 
+    [pKsi    , gpKsi , epKsi ] = calc_pKsi(opt,T,S,Pbar,Pbar_P,pfH,gpfH) 
+    [pK1     , gpK1  , epK1  ] = calc_pK1(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot) 
+    [pK2     , gpK2  , epK2  ] = calc_pK2(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot)
+    [pKnh4   , gpKnh4, epKnh4] = calc_pKnh4(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot)
+    [pKh2s   , gpKh2s, epKh2s] = calc_pKh2s(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot)
+    [pKar    , gpKar , epKar ] = calc_pKar(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
+    [pKca    , gpKca , epKca ] = calc_pKca(opt,T,S,Pbar,Pbar_P,pfH,gpfH)
+
+
+    # pressure correction for Ks (Millero, 1995) --------------------------
+    a = [-18.03, 0.0466, 0.000316]
+    b = [-4.53, 0.09 ]
+    pKs     = pKs + ppfac(T,Pbar,a,b)
+    pKs_T   = gpKs[0] # isn't this needed?
+    pKs_P   = gpKs[2]
+    pKs_T   = pKs_T + ppfac_T(T,Pbar,a,b)
+    pKs_P   = pKs_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKs[0] = pKs_T
+    gpKs[2] = pKs_P
+
+    # pressure correction for Kf (Millero, 1995) --------------------------
+    a = [ -9.78, -0.009, -0.000942 ]
+    b = [ -3.91, 0.054 ];       
+    pKf     = pKf + ppfac(T,Pbar,a,b)
+    pKf_T   = gpKf(1)
+    pKf_P   = gpKf(3)
+    pKf_T   = pKf_T + ppfac_T(T,Pbar,a,b)
+    pKf_P   = pKf_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKf[0] = pKf_T
+    gpKf[2] = pKf_P
+
+    # pressure correction for Kb (Millero, 1979) --------------------------
+    a = [ -29.48, 0.1622, -0.002608 ]
+    b = [  -2.84,   0.0 ]  
+    pKb     = pKb + ppfac(T,Pbar,a,b)
+    pKb_T   = gpKb[0]
+    pKb_P   = gpKb[2]
+    pKb_T   = pKb_T + ppfac_T(T,Pbar,a,b)
+    pKb_P   = pKb_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKb[0] = pKb_T
+    gpKb[2] = pKb_P
+
+    # pressure correction for Kw (Millero, 1983) --------------------------
+    a = [ -20.02, 0.1119, -0.001409]
+    b = [ -5.13, 0.0794 ]
+    pKw     = pKw + ppfac(T,Pbar,a,b)
+    pKw_T   = gpKw[0]
+    pKw_P   = gpKw[2]
+    pKw_T   = pKw_T + ppfac_T(T,Pbar,a,b)
+    pKw_P   = pKw_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKw[0] = pKw_T
+    gpKw[2] = pKw_P
+
+    # pressure correction for Kp1 (Millero, 1995; same as Millero, 1983) --
+    a = [ -14.51, 0.1211, -0.000321 ]
+    b = [  -2.67, 0.0427 ]
+    pKp1        = pKp1 + ppfac(T,Pbar,a,b)
+    pKp1_T      = gpKp1[0]
+    pKp1_P      = gpKp1[2]
+    pKp1_T      = pKp1_T + ppfac_T(T,Pbar,a,b)
+    pKp1_P      = pKp1_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKp1[0]    = pKp1_T
+    gpKp1[2]    = pKp1_P
+        
+    # pressure correction for Kp2 (Millero, 1995; same as Millero, 1983) --
+    a = [ -23.12, 0.1758, -0.002647 ]
+    b = [ -5.15, 0.09 ]
+    pKp2        = pKp2 + ppfac(T,Pbar,a,b)
+    pKp2_T      = gpKp2[0]
+    pKp2_P      = gpKp2[2]
+    pKp2_T      = pKp2_T + ppfac_T(T,Pbar,a,b)
+    pKp2_P      = pKp2_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKp2[0]    = pKp2_T
+    gpKp2[2]    = pKp2_P
+        
+    # pressure correction for Kp3 (Millero, 1995; same as Millero, 1983) --
+    a = [ -26.57, 0.202, -0.003042 ]
+    b = [ -4.08, 0.0714 ]
+    pKp3        = pKp3 + ppfac(T,Pbar,a,b)
+    pKp3_T      = gpKp3[0]
+    pKp3_P      = gpKp3[2]
+    pKp3_T      = pKp3_T + ppfac_T(T,Pbar,a,b)
+    pKp3_P      = pKp3_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKp3[0]    = pKp3_T
+    gpKp3[2]    = pKp3_P
+
+    # pressure correction for Ksi 
+    # (Millero, 1995; used the values from boric acid)
+    a = [ -29.48, 0.1622, -0.002608 ]
+    b =[ -2.84, 0]     
+    pKsi        = pKsi + ppfac(T,Pbar,a,b)
+    pKsi_T      = gpKsi[0]
+    pKsi_P      = gpKsi[2]
+    pKsi_T      = pKsi_T + ppfac_T(T,Pbar,a,b)
+    pKsi_P      = pKsi_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKsi[0]    = pKsi_T
+    gpKsi[2]    = pKsi_P
+
+    # pressure correction for K1 (Millero, 1995) --------------------------
+    # only for opt['cK1K2'] ~=6 & ~=7 & ~=8
+    a = [-25.5, 0.1271, 0]
+    b = [ -3.08, 0.0877 ]
+    pK1     = pK1 + ppfac(T,Pbar,a,b)
+    pK1_T   = gpK1[0]
+    pK1_P   = gpK1[2]
+    pK1_T   = pK1_T + ppfac_T(T,Pbar,a,b)
+    pK1_P   = pK1_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpK1[0] = pK1_T
+    gpK1[2] = pK1_P
+
+    # pressure correction for K2 (Millero, 1995) --------------------------
+    # only for opt['cK1K2'] ~=6 & ~=7 & ~=8
+    a = [ -15.82, -0.0219, 0]
+    b = [ 1.13, -0.1475]
+    pK2     = pK2 + ppfac(T,Pbar,a,b)
+    pK2_T   = gpK2[0]
+    pK2_P   = gpK2[2]
+    pK2_T   = pK2_T + ppfac_T(T,Pbar,a,b)
+    pK2_P   = pK2_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpK2[0] = pK2_T
+    gpK2[2] = pK2_P
+
+    # pressure correction for Knh4 (added to CO2SYSv3 by J. Sharp) --------
+    a = [ -26.43, 0.0889, -0.000905 ]
+    b = [ -5.03, 0.0814 ]
+    pKnh4       = pKnh4 + ppfac(T,Pbar,a,b)
+    pKnh4_T     = gpKnh4[0]
+    pKnh4_P     = gpKnh4[2]
+    pKnh4_T     = pKnh4_T + ppfac_T(T,Pbar,a,b)
+    pKnh4_P     = pKnh4_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKnh4[0]   = pKnh4_T
+    gpKnh4[2]   = pKnh4_P
+        
+    # pressure correction for Kh2s (added to CO2SYSv3 by J. Sharp) --------
+    a = [ -11.07, -0.009, -0.000942 ]
+    b = [ -2.89,  0.054 ]
+    pKh2s       = pKh2s + ppfac(T,Pbar,a,b)
+    pKh2s_T     = gpKh2s[0]
+    pKh2s_P     = gpKh2s[2]
+    pKh2s_T     = pKh2s_T + ppfac_T(T,Pbar,a,b)
+    pKh2s_P     = pKh2s_P + ppfac_P(T,Pbar,Pbar_P,a,b)
+    gpKh2s[0]   = pKh2s_T
+    gpKh2s[2]   = pKh2s_P
+        
+    # correct pH scale conversion factors for pressure --------------------
+    [pSWS2tot, gpSWS2tot, pFREE2tot, gpFREE2tot] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf)
+
+    # find pH scale conversion factor -------------------------------------
+    # (pressure corrected)
+    if opt['phscale'] == 1: # pH_total
+        phfac = pSWS2tot
+        gphfac = gpSWS2tot
+    elif opt['phscale'] == 2: # pH_SWS, they are all on this now
+        phfac = 0
+        gphfac = 0
+    elif opt['phscale'] == 3: # pH_free
+        phfac = pSWS2tot - pFREE2tot
+        gphfac = gpSWS2tot - gpFREE2tot
+    elif opt['phscale'] == 4: # pH_NBS
+        phfac = pfH
+        gphfac = gpfH
+    else:
+        raise ValueError('Need to input valid pH scale 1-4')
+    
+
+    # convert from SWS to chosen pH scale ---------------------------------    
+    pK1   += phfac
+    gpK1  += gphfac
+    pK2   += phfac
+    gpK2  += gphfac
+    pKw   += phfac
+    gpKw  += gphfac
+    pKb   += phfac
+    gpKb  += gphfac 
+    pKp1  += phfac
+    gpKp1 += gphfac
+    pKp2  += phfac
+    gpKp2 += gphfac
+    pKp3  += phfac
+    gpKp3 += gphfac
+    pKsi  += phfac
+    gpKsi += gphfac
+    pKnh4 += phfac
+    gpKnh4 += gphfac
+    pKh2s += phfac
+    gpKh2s += gphfac
+    # pKar, pKca, pKs, and pKf do not need the conversion
+
+   
+    # ---------------------------------------------------------------------
+    # output
+    # ---------------------------------------------------------------------
+    pK   = [pK0, pK1, pK2, pKb, pKw, pKs, pKf, pKp1, pKp2, pKp3, pKsi, pKnh4, pKh2s, pp2f, pKar, pKca, pfH]
+
+    pK = pK * opt['mpk'](T,S,P)
+    
+    gpK  = [gpK0, gpK1, gpK2, gpKb, gpKw, gpKs, gpKf, gpKp1, gpKp2, gpKp3, gpKsi, gpKnh4, gpKh2s, gpp2f, gpKar, gpKca, gpfH]
+
+    gpK = pK * opt['gmpk'](T,S,P) + gpK * opt['mpk'](T,S,P)
+    
+    epK  = [epK0, epK1, epK2, epKb, epKw, epKs, epKf, epKp1, epKp2, epKp3, epKsi, epKnh4, epKh2s, epp2f, epKar, epKca, epfH]
+    epK = epK * opt['empk']
+    
+    # pK0, pK1, pK2, pKb, pKw, pKs = 1, 2, 3, 4, 5, 6 
+    # pKf, pKp1, pKp2, pKp3, pKsi, pKnh4 = 7, 8, 9, 10, 11, 12
+    # pKh2s, pp2f, pKar, pKca, pfH = 13, 14, 15, 16, 17
+
+    
