@@ -51,9 +51,9 @@ def calc_pTOT(opt,S):
             # ( copied from Orr's code )
             # TB = ( 0.000232/ 10.811) * (sal/1.80655)
             TB     = 0.0004157 * S / 35
-            pTB    =  p( TB )
-            gpTB   = dpdx( TB )   *  0.0004157 / 35
-            ggpTB  = d2pdx2( TB ) * (0.0004157 / 35 ) ** 2
+            pTB    =  p(TB)
+            gpTB   = dpdx(TB)   *  0.0004157 / 35
+            ggpTB  = d2pdx2(TB) * (0.0004157 / 35 ) ** 2
 
             # std 5e-6 on avg 2.32e-4 for (B mg kg^-1)/(Cl o/oo)
             TBu     = ( ( (2.32e-4 + 5e-6)/10.811) * S/1.80655 )
@@ -67,8 +67,8 @@ def calc_pTOT(opt,S):
             # TB = (0.0002414/ 10.811) * (sal/1.80655)
             TB      = 0.0004326 * S / 35
             pTB     = p(TB)
-            gpTB    = dpdx( TB )   *   0.0004326 / 35
-            ggpTB   = d2pdx2( TB ) * ( 0.0004326 / 35 ) ** 2
+            gpTB    = dpdx(TB)   *   0.0004326 / 35
+            ggpTB   = d2pdx2(TB) * ( 0.0004326 / 35 ) ** 2
             
             # std 9e-7 on avg 2.414e-4
             TBu     = ( ( (2.414e-4 + 9e-7)/10.811) * S/1.80655)
@@ -81,9 +81,9 @@ def calc_pTOT(opt,S):
             # ed. Riley and Skirrow, 1965: GEOSECS references this
             # (copied from Orr's code)
             TB      = 0.0004106 * S / 35
-            pTB     = p( TB )
-            gpTB    = dpdx( TB )      *    0.0004106 / 35 
-            ggpTB   = d2pdx2( TB ) * ( 0.0004106 / 35 ) ** 2
+            pTB     = p(TB)
+            gpTB    = dpdx(TB)      *    0.0004106 / 35 
+            ggpTB   = d2pdx2(TB) * ( 0.0004106 / 35 ) ** 2
 
             # can't find paper, assume same as Uppstrom
             # std 5e-6 on avg 2.32e-4
@@ -91,14 +91,15 @@ def calc_pTOT(opt,S):
             TBl     = ( ( (2.32e-4 - 5e-6)/10.811) * S/1.80655 )
             eTB     = (TBu - TBl) /2 
             epTB    = my_abs( p(TB + eTB) - pTB ) # mol/kg
+        return [pTB, gpTB, ggpTB, epTB]
 
     def calc_pTS(opt,S):
         # Morris, A. W., and Riley, J. P., Deep-Sea Research 13:699-705, 1966:
         # copied from Orr's code
         TS      = ( 0.14 / 96.062 ) * ( S / 1.80655 )
-        pTS     = p( TS )
-        gpTS    = dpdx( TS )   *   (0.14 / 96.062 ) / 1.80655 
-        ggpTS   = d2pdx2( TS ) * ( (0.14 / 96.062 ) / 1.80655 ) ** 2 
+        pTS     = p(TS)
+        gpTS    = dpdx(TS)   *   (0.14 / 96.062 ) / 1.80655 
+        ggpTS   = d2pdx2(TS) * ( (0.14 / 96.062 ) / 1.80655 ) ** 2 
         
         # 0.14000 ± 0.00023
         TSu     = ( ( (0.14+0.00023)/96.062 ) * S/ 1.80655 )
@@ -106,14 +107,15 @@ def calc_pTOT(opt,S):
         eTS     = (TSu - TSl) / 2
         my_abs = lambda x: math.sqrt(x * x)
         epTS    = my_abs( p(TS + eTS) - pTS )
+        return [pTS  , gpTS  , ggpTS  , epTS  ] 
 
     def calc_pTF(opt,S):
         # Riley, J. P., Deep-Sea Research 12:219-220, 1965:
         # this is .000068.*Sali./35. = .00000195.*Sali   
         TF      = ( 0.000067 / 18.998 ) * ( S / 1.80655 ); 
-        pTF     = p( TF )
-        gpTF    = dpdx( TF )   *   (0.000067 / 18.998 ) / 1.80655 
-        ggpTF   = d2pdx2( TF ) * ( (0.000067 / 18.998 ) / 1.80655 ) ** 2 
+        pTF     = p(TF)
+        gpTF    = dpdx(TF)   *   (0.000067 / 18.998 ) / 1.80655 
+        ggpTF   = d2pdx2(TF) * ( (0.000067 / 18.998 ) / 1.80655 ) ** 2 
 
         # 6.7 ± 0.1 e-5
         TFu     = ( ( (6.7e-5 + 0.1e-5)/18.998) * S/1.80655 )
@@ -121,21 +123,22 @@ def calc_pTOT(opt,S):
         eTF     = (TFu - TFl) / 2
         my_abs = lambda x: math.sqrt(x * x)
         epTF    = my_abs( p(TF + eTF) - pTF )
+        return [pTF  , gpTF  , ggpTF  , epTF  ]
 
     def calc_pTCa(opt,S):
         if opt['K1K2'] == 6 or opt['K1K2'] == 7:
             # Calculate Ca for GEOSECS, Riley and Skirrow 1965
             TCa     =  ( 0.01026 * S / 35) 
-            pTCa    = p( TCa )
-            gpTCa   = dpdx( TCa )   *   0.01026 / 35 
-            ggpTCa  = d2pdx2( TCa ) * ( 0.01026 / 35 ) ** 2 
+            pTCa    = p(TCa)
+            gpTCa   = dpdx(TCa)   *   0.01026 / 35 
+            ggpTCa  = d2pdx2(TCa) * ( 0.01026 / 35 ) ** 2 
         else:
             # Calculate Ca, Riley and Tongudai 1967
             # this is 0.010285.*obs.sal./35;
             TCa     = ( 0.02128 / 40.087 * ( S / 1.80655 ) )
-            pTCa    = p( TCa )
-            gpTCa   = dpdx( TCa )   *   ( 0.02128 / 40.087 ) / 1.80655 
-            ggpTCa  = d2pdx2( TCa ) * ( ( 0.02128 / 40.087 ) / 1.80655 ) ** 2 
+            pTCa    = p(TCa)
+            gpTCa   = dpdx(TCa)   *   ( 0.02128 / 40.087 ) / 1.80655 
+            ggpTCa  = d2pdx2(TCa) * ( ( 0.02128 / 40.087 ) / 1.80655 ) ** 2 
 
         # mean 0.02128 ± 0.00006 Ca/Cl ratio (g/kg)/(o/oo)
         TCau    = ( (0.02128 + 6e-5)/ 40.087 * ( S / 1.80655 ) )
@@ -143,6 +146,7 @@ def calc_pTOT(opt,S):
         eTCa    = (TCau - TCal) / 2
         my_abs = lambda x: math.sqrt(x * x)
         epTCa   = my_abs( p(TCa + eTCa) - pTCa )
+        return [pTCa , gpTCa , ggpTCa , epTCa ]
 
     # compute the totals and their derivatives
     [pTB  , gpTB  , ggpTB  , epTB  ] = calc_pTB(opt,S)
@@ -157,3 +161,4 @@ def calc_pTOT(opt,S):
     gpT  = [  gpTB,  gpTS,  gpTF,  gpTCa ]
     ggpT = [ ggpTB, ggpTS, ggpTF, ggpTCa ]
     epT  = [  epTB,  epTS,  epTF,  epTCa ]
+    return (pT, gpT, ggpT, epT)

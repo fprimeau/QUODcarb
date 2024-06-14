@@ -59,10 +59,14 @@ def parse_input(obs,sys,opt,nD):
         # calculate totals that are a function of salinity
         pT, _, _, epT = ct.calc_pTOT(opt, obs[i]['sal'])
         # (see Ref's within calc_pTOT)
-        pTB, TB, epTB = pT[0], q(pTB[0]) * 1e6, epT[0]
-        pTS, TS, epTS = pT[1], q(pTS[1]) * 1e6, epT[1]
-        pTF, TF, epTF = pT[2], q(pTF[2]) * 1e6, epT[2]
-        pTCa, TCa, epTCa = pT[3], q(pTCa[3]) * 1e6, epT[3]
+        pTB = pT[0]
+        TB, epTB = q(pTB) * 1e6, epT[0]
+        pTS = pT[1]
+        TS, epTS =  q(pTS) * 1e6, epT[1]
+        pTF =  pT[2]
+        TF, epTF = q(pTF) * 1e6, epT[2]
+        pTCa = pT[3] 
+        TCa, epTCa = q(pTCa) * 1e6, epT[3]
         # total borate
         if 'TB' not in obs[i] or not isgood(obs[i]['TB']):
             obs[i]['TB'] = np.nan
