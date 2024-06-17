@@ -198,8 +198,8 @@ def calc_pK(opt,T,S,P):
             eKs = 0.007/2  # QUODcarb uses 1sigma
             my_abs = lambda x: np.sqrt(x*x)
             epKs = my_abs( p(Ks + eKs) - pKs )
-            pKs_P = 0.0
-            gpKs = [pKs_T, pKs_S, pKs_P]
+        pKs_P = 0.0
+        gpKs = [pKs_T, pKs_S, pKs_P]
         return [pKs, gpKs, epKs]
     
     def calc_pKf(opt,T,S,Pbar,Pbar_P):
@@ -357,15 +357,17 @@ def calc_pK(opt,T,S,P):
 
             # Calculate pKw and its derivatives
             pKw = -(f(TK, a1) + f(TK, a2) * np.sqrt(S) + f(TK, a3) * S) / LOG10
+            # pKw = f(Tk, a2) * (S)
             pKw_T = -(df(TK, a1) + df(TK, a2) * np.sqrt(S) + df(TK, a3) * S) / LOG10
             pKw_S = -((f(TK, a2) * (0.5 / np.sqrt(S))) + f(TK, a3)) / LOG10
+            # pKw_S = (f(TK, a2))
             pKw_P = 0
 
-            # Uncertainty
             elnKw = 0.01  # pg 670 Millero, 1995
             my_abs = lambda x: np.sqrt(x * x)
             epKw = my_abs(-elnKw / LOG10)  # Convert to epK with -/LOG10
-        return [pKw, gpKw, epKw]
+        gpKw = [pKw_T, pKw_S, pKw_P]
+        return gpKw
                 
     def calc_pKp1(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
         TK = T + 273.15 # convert to Kelvin
@@ -399,9 +401,8 @@ def calc_pK(opt,T,S,P):
             pKp1_T = -(df(TK, a1) + df(TK, a2) * np.sqrt(S) + df(TK, a3) * S) / LOG10
             pKp1_S = -(f(TK, a2) * 0.5 / np.sqrt(S) + f(TK, a3)) / LOG10
             pKp1_P = 0
-
-            # Uncertainty
-            epKp1 = 0.09  # pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
+        gpKp1 = [pKp1_T, pKp1_S, pKp1_P]
+        epKp1 = 0.09  # pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
         return [pKp1, gpKp1, epKp1]
 
     
@@ -897,6 +898,8 @@ def calc_pK(opt,T,S,P):
             pK1_P = 0
 
             epK1 = 0.0055  # Same as Waters and Millero formulation
+        
+        gpK1 = [pK1_T, pK1_S, pK1_P]
         return [pK1, gpK1, epK1]
             
     def calc_pK2(opt,T,S,Pbar,Pbar_P,pfH,gpfH,pSWS2tot,gpSWS2tot):
@@ -1257,6 +1260,7 @@ def calc_pK(opt,T,S,P):
             pK2_P = 0
 
             epK2 = 0.010  # in abstract
+        gpK2 = [pK2_T, pK2_S, pK2_P]
         return [pK2, gpK2, epK2]
 
     
@@ -1264,7 +1268,7 @@ def calc_pK(opt,T,S,P):
     # calculate pKnh4
         TK = T + 273.15 # convert to Kelvin
         if (opt['K1K2'] == 6 or opt['K1K2'] == 7 or opt['K1K2'] == 8):
-            pass
+            raise Exception('Invalid K1K2 value for now and Knh4 = 0.')
             # Knh4 = 0
             # how to put in log space?
             # invalid K1K2 options for now
@@ -1307,6 +1311,7 @@ def calc_pK(opt,T,S,P):
                     gpSWS2tot[1]  # convert from total scale to SWS pH scale
 
             pKnh4_P = 0
+            gpKnh4 = [pKnh4_T, pKnh4_S, pKnh4_P]
             epKnh4 = 0.00017  # pg 2416 of Clegg and Whitefield (1995)
         return [pKnh4, gpKnh4, epKnh4]
             
@@ -1314,7 +1319,7 @@ def calc_pK(opt,T,S,P):
     # calculate pKh2s
         TK = T + 273.15 # convert to Kelvin
         if (opt['K1K2'] == 6 or opt['K1K2'] == 7 or opt['K1K2'] == 8):
-            pass
+            raise Exception('Invalid Kh2s value.')
             # Kh2s = 0;
             # how to convert to p space?
 
@@ -1352,15 +1357,17 @@ def calc_pK(opt,T,S,P):
             # Berner, R. A., American Journal of Science 276:713-730, 1976:
             # (quoted in Takahashi et al, GEOSECS Pacific Expedition v. 3, 1982)
             a, b, c, d, g = 0.0000001,  -34.452, -39.866, 110.21, 0.0000075752
-            LOG10 = np.log(10)
 
+            # Berner (p.722) states that he uses 1.48.
+            # It appearse that 1.45 was used in the GEOSECS calculations.
+            LOG10 = np.log(10)
             Kar = 1.45 * a * (b + c * (S ** (1/3)) + d * np.log10(S) + g * (TK ** 2))
             Kar_T = 1.45 * a * 2 * g * TK
             Kar_S = 1.45 * a * ((1/3) * c * (S ** (-2/3)) + d / (S * LOG10))
 
             pKar = -np.log10(Kar)  # 'p' it and convert to SWS pH scale
-            pKar_T = dpdx(pKar) * Kar_T
-            pKar_S = dpdx(pKar) * Kar_S
+            pKar_T = dpdx(pKar) * Kar_T # -gpfH(1)
+            pKar_S = dpdx(pKar) * Kar_S # -gpfH(2)
 
             # Pressure correction
             pKar -= ((33.3 - 0.22 * T) * Pbar / RT) / LOG10  # T = tempC
@@ -1369,25 +1376,39 @@ def calc_pK(opt,T,S,P):
 
         else:
         #   calculate Kar-Aragonite (Mucci, 1983) ---------------------------
-            a, b, c, d, g = 0.0000001, -34.452, -39.866, 110.21, 0.0000075752
-            Kar_const = 1.45
-
+            a1 = [-171.945, -0.077993, 2903.293, 71.595]
+            a2 = [-0.068393, 0.0017276,   88.135,   0.0 ]
+            b, c = -0.10018, 0.0059415
             LOG10 = np.log(10)
 
-            Kar = Kar_const * a * (b + c * np.power(S, 1/3) + d * np.log10(S) + g * (TK**2))
+            def f(T, a):
+                return a[0] + a[1] * T + a[2] / T + a[3] * np.log10(T)
 
-            Kar_T = Kar_const * a * 2 * g * TK
+            def df(T, a):
+                return a[1] - a[2] / (T**2) + a[3] / (T * LOG10)
 
-            Kar_S = Kar_const * a * ((1/3) * c * np.power(S, -2/3) + d / (S * LOG10))
+            log10Kar = f(TK, a1) + f(TK, a2) * np.sqrt(S) + b * S + c * S**(3/2)
+            pKar = -log10Kar  # pK = -log10(K)
 
-            pKar = np.log10(Kar)
+            pKar_T = -(df(TK, a1) + df(TK, a2) * np.sqrt(S))
+            pKar_S = -(0.5 * f(TK, a2) / np.sqrt(S) + b + (3/2) * c * np.sqrt(S))
 
             # Pressure correction
-            pKar -= ((33.3 - 0.22 * TK) * Pbar / RT) / LOG10
-            pKar_T = dpdx(pKar) * Kar_T - (Pbar * Rgas * (59.8730 * TK - 9155.988) / (RT**2)) / LOG10
-            pKar_P = -((33.3 - 0.22 * TK) * Pbar_P / RT) / LOG10
+            d1 = [(-48.76 + 2.8), 0.5304, 0.0]
+            d2 = [-11.76, 0.3692]
+
+            pKar = pKar + ppfac(T, Pbar, d1, d2)
+            pKar_T = pKar_T + ppfac_T(T, Pbar, d1, d2)
+            pKar_P = ppfac_P(T, Pbar, Pbar_P, d1, d2)
+
+            # pKa std = 0.03 (Mucci 1983)
+            # std for Sal part = 0.009 (as given in CO2SYSv3)
+
+        gpKar = [pKar_T, pKar_S, pKar_P]
+        epKar = 0.009 # from Mucci table 7
         return [pKar, gpKar, epKar]
-    
+
+
     def calc_pKca(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
     # Calcite solubility
         TK = T + 273.15
@@ -1432,11 +1453,19 @@ def calc_pK(opt,T,S,P):
             pKca_T = -(df(TK, a1) + df(TK, a2) * np.sqrt(S))
             pKca_S = -(0.5 * f(TK, a2) / np.sqrt(S) + b + (3/2) * c * np.sqrt(S))
 
-            # Pressure correction
+            # pressure correction
             d1 = np.array([-48.76, 0.5304, 0.0])
             d2 = np.array([-11.76, 0.3692])
 
-            pKca, pKca_T, pKca_P = ppfac(TK, Pbar, Pbar_P, d1, d2, pKca, pKca_T)
+            pKca = pKca + ppfac(T, Pbar, d1, d2)
+            pKca_T = pKca_T + ppfac_T(T, Pbar, d1, d2)
+            pKca_P = ppfac_P(T, Pbar, Pbar_P, d1, d2)
+
+            # pKca std = 0.03 (Mucci 1983)
+            # std for Sal part = 0.01 (as given in CO2SYSv3)
+        gpKca = [pKca_T, pKca_S, pKca_P]
+
+        epKca = 0.010 # from Mucci 1983, table 7
         return [pKca, gpKca, epKca]
             
     def calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf):
@@ -1490,7 +1519,7 @@ def calc_pK(opt,T,S,P):
         # fH = [H]/(1 + TS/Ks)
         TK = T + 273.15 # convert to Kelvin
         if opt['K1K2'] == 8:
-            pass
+            raise Exception('Invalid fH value.')
             #fH = 1 #shouldn't occur
         elif opt['K1K2'] == 7:
         # fH def'n: Peng et al, Tellus 39B: 439-458, 1987: ----------------
@@ -1499,10 +1528,10 @@ def calc_pK(opt,T,S,P):
             # doesn't agree with the check value they give on p. 456.
             fH = 1.29 - 0.00204 * TK + (0.00046 - 0.00000148 * TK) * (S ** 2)
             pfH = p(fH)
-            gpfH_T = dpdx(pfH) * (-0.00204 - 0.00000148 * (S ** 2))
+            gpfH_T = dpdx(pfH) - 0.00204 - 0.00000148 * (S ** 2)
             gpfH_S = dpdx(pfH) * 2 * (0.00046 - 0.00000148 * TK) * S
         else:
-            # % fH def'n: Takahashi et al, Ch 3 in GEOSECS v.3, 1982 ------------
+            # fH def'n: Takahashi et al, Ch 3 in GEOSECS v.3, 1982 ------------
             fH = 1.2948 - 0.002036 * TK + (0.0004607 - 0.000001475 * TK) * (S ** 2)
             fH_T = -0.002036 + (-0.000001475) * (S ** 2)
             fH_S = 2 * (0.0004607 - 0.000001475 * TK) * S
@@ -1593,8 +1622,8 @@ def calc_pK(opt,T,S,P):
     a = [ -9.78, -0.009, -0.000942 ]
     b = [ -3.91, 0.054 ];       
     pKf     = pKf + ppfac(T,Pbar,a,b)
-    pKf_T   = gpKf(1)
-    pKf_P   = gpKf(3)
+    pKf_T   = gpKf[0]
+    pKf_P   = gpKf[2]
     pKf_T   = pKf_T + ppfac_T(T,Pbar,a,b)
     pKf_P   = pKf_P + ppfac_P(T,Pbar,Pbar_P,a,b)
     gpKf[0] = pKf_T
