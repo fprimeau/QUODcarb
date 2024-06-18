@@ -11,15 +11,15 @@ def calc_pK(opt,T,S,P):
 #   P  = pressure (dbar)
 
 # OUTPUT:
-#    pK  = [pK0;pK1;pK2;pKb;pKw;pKs;pKf;pKp1;pKp2;pKp3;pKsi;pKnh4;pKh2s;pp2f;pKar;pKca];
+#    pK  = [pK0, pK1, pK2, pKb, pKw, pKs, pKf, pKp1, pKp2, pKp3, pKsi, pKnh4, pKh2s, pp2f, pKar, pKca]
 #           -log10 values of equilibrium constants
-#   gpK  = [pK_T, pK_S, pK_P]; 
+#   gpK  = [pK_T, pK_S, pK_P] 
 #           first derivatives (gradient of pK wrt T, S, P) 
 #           (size: length(pK) x 3 )
-#   epK  = [epK0;epK1;epK2;epKb;epKw;epKs;epKf;epKp1;epKp2;epKp3;epKsi;epKnh4;epKh2s;epp2f;epKar;epKca];
+#   epK  = [epK0, epK1, epK2, epKb, epKw, epKs, epKf, epKp1, epKp2, epKp3, epKsi, epKnh4, epKh2s, epp2f, epKar, epKca]
 #           errors of pK (1 standard deviation)
 
-# ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # subfunctions
     # ---------------------------------------------------------------------
 
@@ -83,7 +83,6 @@ def calc_pK(opt,T,S,P):
         pK0_T = -( df(TK100, a) + dg(TK100, b) * S ) * TK100_T / np.log10(10)
         pK0_S = -( g(TK100, b) ) / np.log10(10)
 
-        
         pK0_P = 0 # no pressure correction at 1atm
 
         if opt['co2press'] == 1:   # 1.01325 Bar = 1 atm
@@ -211,7 +210,7 @@ def calc_pK(opt,T,S,P):
         # All calculated on free pH scale
         # Stay on free pH scale (no conversion to SWS or total)
         if opt['KF'] == 1:
-            # Calculate Kf (Dickson and Riley 1979)
+            # calculate Kf (Dickson and Riley 1979)----------------------------
             a = 1590.2
             b = -12.641
             c = 1.525
@@ -222,7 +221,7 @@ def calc_pK(opt,T,S,P):
             pKf_S = -c * sqrtIonS_S / np.log10(10) + dpdx(1 - 0.001005 * S) * (-0.001005)
             
         elif opt['KF'] == 2:
-            # Calculate Perez and Fraga (1987)
+            # calculate Perez and Fraga (1987)---------------------------------
             # (to be used for S: 10-40, T: 9-33) (from Sharp's code)
             # "observed experimental error was not greater than pm 0.05 units
             # of lnBeta_HF" pg. 163 (assume 1sigma -MF)
@@ -321,22 +320,15 @@ def calc_pK(opt,T,S,P):
         # calculate Kw (Millero 1979)--------------------------------------
         # refit data of Harned and Owen, 1958
             a1 = [148.9802, -13847.26, -23.6521]
-            TK = 25  # Example temperature
 
-            # Define functions
             f = lambda T, a: a[0] + a[1] / T + a[2] * np.log(T)
             df = lambda T, a: -a[1] / T**2 + a[2] / T
-
-            # Constants
             LOG10 = np.log(10)
 
-            # Calculate pKw and its derivatives
             pKw = -(f(TK, a1)) / LOG10
             pKw_T = -(df(TK, a1)) / LOG10
-            pKw_S = -(0) / LOG10  # Assuming no dependence on salinity
-            pKw_P = 0  # Assuming no dependence on pressure
-
-            # Uncertainty
+            pKw_S = -(0) / LOG10 
+            pKw_P = 0 
             elnKw = 0.0014  # Table 1
             my_abs = lambda x: np.sqrt(x * x)
             epKw = my_abs(-elnKw / LOG10)  # Convert to epK with -/LOG10            
@@ -345,8 +337,6 @@ def calc_pK(opt,T,S,P):
             a1 = [148.9802, -13847.26, -23.6521]
             a2 = [-5.977, 118.67, 1.0495]
             a3 = [-0.01615, 0.0, 0.0]
-            TK = 25  # Example temperature
-            S = 35  # Example salinity
 
             # Define functions
             f = lambda T, a: a[0] + a[1] / T + a[2] * np.log(T)
@@ -355,7 +345,6 @@ def calc_pK(opt,T,S,P):
             # Constants
             LOG10 = np.log(10)
 
-            # Calculate pKw and its derivatives
             pKw = -(f(TK, a1) + f(TK, a2) * np.sqrt(S) + f(TK, a3) * S) / LOG10
             # pKw = f(Tk, a2) * (S)
             pKw_T = -(df(TK, a1) + df(TK, a2) * np.sqrt(S) + df(TK, a3) * S) / LOG10
@@ -367,7 +356,7 @@ def calc_pK(opt,T,S,P):
             my_abs = lambda x: np.sqrt(x * x)
             epKw = my_abs(-elnKw / LOG10)  # Convert to epK with -/LOG10
         gpKw = [pKw_T, pKw_S, pKw_P]
-        return gpKw
+        return [pKw, gpKw, epKw]
                 
     def calc_pKp1(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
         TK = T + 273.15 # convert to Kelvin
@@ -386,17 +375,11 @@ def calc_pK(opt,T,S,P):
             a1 = [-4576.752, 115.54, -18.453]
             a2 = [-106.736, 0.69171, 0.0]
             a3 = [-0.65643, -0.01844, 0.0]
-            TK = 25  # Example temperature
-            S = 35  # Example salinity
 
-            # Define functions
             f = lambda T, a: a[0] / T + a[1] + a[2] * np.log(T)
             df = lambda T, a: -a[0] / T**2 + a[2] / T
-
-            # Constants
             LOG10 = np.log(10)
 
-            # Calculate pKp1 and its derivatives
             pKp1 = -(f(TK, a1) + f(TK, a2) * np.sqrt(S) + f(TK, a3) * S) / LOG10
             pKp1_T = -(df(TK, a1) + df(TK, a2) * np.sqrt(S) + df(TK, a3) * S) / LOG10
             pKp1_S = -(f(TK, a2) * 0.5 / np.sqrt(S) + f(TK, a3)) / LOG10
@@ -408,8 +391,10 @@ def calc_pK(opt,T,S,P):
     
     def calc_pKp2(opt,T,S,Pbar,Pbar_P,pfH,gpfH):
         TK = T + 273.15 # convert to Kelvin
+
         if opt['K1K2'] == 7:
-        # Calculate Kp2 (Kester and Pytkowicz, 1967)
+
+        # calculate Kp2 (Kester and Pytkowicz, 1967)-----------------------
             pKp2 = -(-9.039 - 1450/TK) / LOG10
             pKp2 = pKp2 - pfH  # Convert from NBS to SWS pH scale
 
@@ -417,12 +402,11 @@ def calc_pK(opt,T,S,P):
             pKp2_S = -gpfH[1]
             pKp2_P = -gpfH[2]
         else:
-            # Calculate Kp2 (Yao and Millero 1995)
+            # calculate Kp2 (Yao and Millero 1995)-----------------------------
             a1 = [-8814.715, 172.1033, -27.927]
             a2 = [-160.34, 1.3566, 0.0]
             a3 = [0.37335, -0.05778, 0.0]
 
-            # Define function and derivatives
             f = lambda T, a: a[0] / T + a[1] + a[2] * np.log(T)
             df = lambda T, a: -a[0] / T**2 + a[2] / T
 
@@ -431,10 +415,8 @@ def calc_pK(opt,T,S,P):
             pKp2_S = -(f(TK, a2) * 0.5 / np.sqrt(S) + f(TK, a3)) / LOG10
             pKp2_P = 0
 
-        # Derivatives array
         gpKp2 = [pKp2_T, pKp2_S, pKp2_P]
 
-        # Uncertainty
         epKp2 = 0.03  # pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
         return [pKp2, gpKp2, epKp2]
 
@@ -450,7 +432,7 @@ def calc_pK(opt,T,S,P):
             pKp3_S = -gpfH[1]
             pKp3_P = -gpfH[2]
         else:
-            # Calculate Kp3 (Yao and Millero 1995)
+            # calculate Kp3 (Yao and Millero 1995)-----------------------------
             a1 = [-3070.75, -18.126]
             a2 = [17.27039, 2.81197]
             a3 = [-44.99486, -0.09984]
@@ -466,7 +448,6 @@ def calc_pK(opt,T,S,P):
 
         gpKp3 = [pKp3_T, pKp3_S, pKp3_P]
 
-        # Uncertainty
         epKp3 = 0.2  # pg 84 Yao and Millero, 1995 (assume 1 sigma -MF)
         return [pKp3, gpKp3, epKp3]
 
@@ -480,7 +461,7 @@ def calc_pK(opt,T,S,P):
         if opt['K1K2'] == 7:
             # calculate Ksi (Sillen, Martell, and Bjerrum, 1964)---------------
             Ksi = 4e-10  # from CO2SYS
-            pKsi = np.log10(Ksi) - pfH  # Convert from NBS scale to SWS pH scale
+            pKsi = np.log10(Ksi) - pfH  # also convert from NBS scale to SWS pH scale
             pKsi_T = -gpfH[0]
             pKsi_S = -gpfH[1]
             pKsi_P = 0
@@ -490,8 +471,6 @@ def calc_pK(opt,T,S,P):
             a2 = [-458.79, 3.5913, 0.0]
             a3 = [188.74, -1.5998, 0.0]
             a4 = [-12.1652, 0.07871, 0.0]
-
-            # Define function and derivatives
             f = lambda T, a: a[0] / T + a[1] + a[2] * np.log(T)
             df = lambda T, a: -a[0] / T**2 + a[2] / T
 
@@ -529,7 +508,6 @@ def calc_pK(opt,T,S,P):
             a3 = [0.08468345, 0.0, 0.0]
             a4 = [-0.00654208, 0.0, 0.0]
 
-            # Define functions and derivatives
             f = lambda T, a: a[0] + a[1] / T + a[2] * np.log(T)
             df = lambda T, a: -a[1] / T**2 + a[2] / T
 
@@ -540,8 +518,8 @@ def calc_pK(opt,T,S,P):
             pK1_S = -(f(TK, a2) * 0.5 / np.sqrt(S) + f(TK, a3) + (3/2) * f(TK, a4) * np.sqrt(S)) / LOG10 - 0.001005 * dpdx(1 - 0.001005 * S)
             pK1_S = pK1_S - gpSWS2tot[1]  # Convert from total to SWS scale
             pK1_P = 0
+            # pass all pK1 out of this function as SWS scale
 
-            # Return results
             epK1 = 0.004 / 2  # QUODcarb uses 1sigma
 
         elif opt['K1K2'] == 2: 
@@ -550,16 +528,10 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK2 is .02, or 4.5% in K2.
             # This is in Table 5 on p. 1652 and what they use in the abstract:
             a, b, c, d = 812.27, 3.356, -0.00171, 0.000091
-
-            # Calculate pK1
             pK1 = a / TK + b + c * S * np.log(TK) + d * (S**2)  # SWS scale
-
-            # Calculate derivatives
             pK1_T = -a / (TK**2) + c * S / TK
             pK1_S = c * np.log(TK) + 2 * d * S
             pK1_P = 0
-
-            # Calculate uncertainty
             epK1 = 0.011 / 2  # QUODcarb uses 1sigma
 
         elif opt['K1K2'] == 3:
@@ -578,16 +550,10 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK2 is .017, or 4.1% in K2.
             # This is from Table 4 on p. 1739.
             a, b, c, d = 851.4, 3.237, -0.0106, 0.000105
-
-            # Calculate pK1
             pK1 = a / TK + b + c * S + d * (S**2)  # SWS scale
-
-            # Calculate derivatives
             pK1_T = -a / (TK**2)
             pK1_S = c + 2 * d * S
             pK1_P = 0
-
-            # Calculate uncertainty
             epK1 = 0.013 / 2  # QUODcarb uses 1sigma
 
         elif opt['K1K2'] == 4:
@@ -602,16 +568,10 @@ def calc_pK(opt,T,S,P):
 	        # Valid for salinity 20-40.
             # This is in Table 4 on p. 1739.
             a, b, c, d, g = 3670.7, -62.008, 9.7944, -0.0118, 0.000116
-
-            # Calculate pK1
             pK1 = a / TK + b + c * np.log(TK) + d * S + g * (S**2)
-
-            # Calculate derivatives
             pK1_T = -a / (TK**2) + c / TK
             pK1_S = d + 2 * g * S
             pK1_P = 0
-
-            # Calculate uncertainty
             epK1 = 0.011 / 2  # QUODcarb uses 1sigma
 
         elif opt['K1K2'] == 5:
@@ -629,16 +589,10 @@ def calc_pK(opt,T,S,P):
 	        # Valid for salinity 20-40.
             # This is in Table 5 on p. 1740.    
             a, b, c, d = 845, 3.248, -0.0098, 0.000087
-
-            # Calculate pK1
             pK1 = a / TK + b + c * S + d * (S**2)
-
-            # Calculate derivatives
             pK1_T = -a / (TK**2)
             pK1_S = c + 2 * d * S
             pK1_P = 0
-
-            # Calculate uncertainty
             epK1 = 0.017 / 2  # QUODcarb uses 1sigma
 
         elif opt['K1K2'] == 6 or opt['K1K2'] == 7:
@@ -650,18 +604,11 @@ def calc_pK(opt,T,S,P):
 
             a, b, c, d, g = -13.7201, 0.031334, 3235.76, 1.3e-5, -0.1032
 
-            # Calculate pK1 (NBS scale)
-            pK1 = a + b * TK + c / TK + d * S * TK + g * np.sqrt(S)
-
-            # Convert from NBS to SWS pH scale
-            pK1 = pK1 - pfH
-
-            # Calculate derivatives
+            pK1 = a + b * TK + c / TK + d * S * TK + g * np.sqrt(S) # NBS scale
+            pK1 = pK1 - pfH # convert from NBS to SWS pH scale
             pK1_T = (b - c / (TK**2) + d * S) - gpfH[0]  # SWS scale
             pK1_S = (d * TK + 0.5 * g / np.sqrt(S)) - gpfH[1]  # SWS scale
             pK1_P = 0
-
-            # Calculate uncertainty
             epK1 = 0.005 / 2  # QUODcarb uses 1sigma
 
         elif opt['K1K2'] == 8:
@@ -676,16 +623,10 @@ def calc_pK(opt,T,S,P):
             # (0-50 C)
             a, b, c = 290.9097, -14554.21, -45.0575
             LOG10 = np.log(10)
-
-            # Calculate pK1
             pK1 = - (a + b / TK + c * np.log(TK)) / LOG10
-
-            # Calculate derivatives
             pK1_T = - (-b / (TK**2) + c / TK) / LOG10
             pK1_S = 0
             pK1_P = 0
-
-            # Calculate uncertainty
             elnK1 = 0.0024
             epK1 = np.sqrt((elnK1 / LOG10)**2)
         
@@ -700,20 +641,13 @@ def calc_pK(opt,T,S,P):
             # Limnol. Oceanogr. 43(4) (1998) 657-668    
             a, b, c, d, g, h, l = 3404.71, 0.032786, -14.8435, -0.071692, 0.0021487, 200.1, 0.3220
             LOG10 = np.log(10)
-
-            # Calculate intermediate value f1
             f1 = h / TK + l
 
-            # Calculate pK1
             pK1 = a / TK + b * TK + c + d * f1 * np.sqrt(S) + g * S
             pK1 = pK1 - pfH  # Convert from NBS scale to SWS scale
-
-            # Calculate derivatives
             pK1_T = (-a / (TK**2) + b + d * np.sqrt(S) * (-h / (TK**2))) - gpfH[0]  # Temp derivative convert to sws scale
             pK1_S = (0.5 * d * f1 / np.sqrt(S) + g) - gpfH[1]
-
             pK1_P = 0
-
             epK1 = 0.015
 
         elif opt['K1K2'] == 10:
@@ -725,14 +659,10 @@ def calc_pK(opt,T,S,P):
             a, b, c, d, g = 3633.86, -61.2172, 9.6777, -0.011555, 0.0001152
             LOG10 = np.log(10)
 
-            # Calculate pK1
             pK1 = a / TK + b + c * np.log(TK) + d * S + g * (S ** 2)
             pK1 = pK1 - pSWS2tot  # Convert from total scale to SWS scale
-
-            # Calculate derivatives
             pK1_T = (-a / (TK ** 2) + c / TK) - gpSWS2tot[0]
             pK1_S = (d + 2 * g * S) - gpSWS2tot[1]
-
             pK1_P = 0
             epK1 = 0.0055   
 
@@ -745,10 +675,7 @@ def calc_pK(opt,T,S,P):
             a, b, c, d, g = -43.6977,  -0.0129037, 1.364e-4, 2885.378, 7.045159
             LOG10 = np.log(10)
 
-            # Calculate pK1
             pK1 = a + b * S + c * (S ** 2) + d / TK + g * np.log(TK)
-
-            # Calculate derivatives
             pK1_T = -d / (TK ** 2) + g / TK
             pK1_S = b + 2 * c * S
             pK1_P = 0
@@ -762,11 +689,7 @@ def calc_pK(opt,T,S,P):
 	        # sigma for pK2 is reported to be 0.008
 	        # This is from page 1716
             a, b, c, d = 6.359, -0.00664, -0.01322, 4.989e-5
-
-            # Calculate pK1
             pK1 = a + b * S + c * T + d * (T ** 2)
-
-            # Derivatives
             pK1_T = c + 2 * d * T
             pK1_S = b
             pK1_P = 0
@@ -783,14 +706,10 @@ def calc_pK(opt,T,S,P):
             a2 = [6320.813, -530.123, -6.103, 0.0]
             a3 = [19.568224, -2.06950, 0.0, 0.0]
             
-            # Functions
             f = lambda S, a: a[0] + a[1] * S ** 0.5 + a[2] * S + a[3] * (S ** 2)
             df = lambda S, a: 0.5 * a[1] / S ** 0.5 + a[2] + 2 * a[3] * S
 
-            # Calculate pK1
             pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * np.log(TK)
-
-            # Derivatives
             pK1_T = -f(S, a2) / (TK ** 2) + f(S, a3) / TK
             pK1_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * np.log(TK)
             pK1_P = 0
@@ -809,18 +728,14 @@ def calc_pK(opt,T,S,P):
             a2 = [6320.813, -530.659, -5.8210, 0.0]
             a3 = [19.568224, -2.0664, 0.0, 0.0]
             
-            # Functions
             f = lambda S, a: a[0] + a[1] * S ** 0.5 + a[2] * S + a[3] * (S ** 2)
             df = lambda S, a: 0.5 * a[1] / S ** 0.5 + a[2] + 2 * a[3] * S
 
-            # Calculate pK1
-            pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * log(TK)
-
-            # Derivatives
+            pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * np.log(TK)
             pK1_T = -f(S, a2) / (TK ** 2) + f(S, a3) / TK
-            pK1_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * log(TK)
+            pK1_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * np.log(TK)
             pK1_P = 0
-            epK1 = 0.005
+            epK1 = 0.005 # pg 141
 
         elif opt['K1K2'] == 15:
         # Waters, Millero, and Woosley, 2014 ------------------------------
@@ -832,14 +747,9 @@ def calc_pK(opt,T,S,P):
             a2 = [6320.813, -531.3642, -5.713, 0.0]
             a3 = [19.568224, -2.0669166, 0.0, 0.0]
             
-            # Functions
             f = lambda S, a: a[0] + a[1] * S ** 0.5 + a[2] * S + a[3] * (S ** 2)
             df = lambda S, a: 0.5 * a[1] / S ** 0.5 + a[2] + 2 * a[3] * S
-
-            # Calculate pK1
             pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * np.log(TK)
-
-            # Derivatives
             pK1_T = -f(S, a2) / (TK ** 2) + f(S, a3) / TK
             pK1_S = df(S, a1) + df(S, a2) / TK + df(S, a3) * np.log(TK)
             pK1_P = 0
@@ -857,15 +767,11 @@ def calc_pK(opt,T,S,P):
             d = -0.011555
             g = 0.0001152
 
-            # Calculate pK1
             pK1 = a / TK + b + c * np.log(TK) + d * S + g * (S ** 2)
             pK1 = pK1 - pSWS2tot  # Convert from total to SWS scale
-
-            # Derivatives
             pK1_T = (-a / (TK ** 2) + c / TK) - gpSWS2tot[0]
             pK1_S = (d + 2 * g * S) - gpSWS2tot[1]
             pK1_P = 0
-
             K1 = q(pK1)
             eK1 = 0.025 * K1  # ~2.5 % uncertainty on K, pg 854
             epK1 = abs(p(K1 + eK1) - pK1)
@@ -881,22 +787,15 @@ def calc_pK(opt,T,S,P):
             a2 = [6320.813, -539.2304, -5.635, 0.0]
             a3 = [19.568224, -2.0901396, 0.0, 0.0]
 
-            # Functions
             def f(S, a):
                 return a[0] + a[1] * np.sqrt(S) + a[2] * S + a[3] * (S ** 2)
-
             def df(S, a):
                 return 0.5 * a[1] / np.sqrt(S) + a[2] + 2 * a[3] * S
-
-            # Calculate pK1
             pK1 = f(S, a1) + f(S, a2) / TK + f(S, a3) * np.log(TK)
             pK1 = pK1 - pSWS2tot  # Convert from total to SWS scale
-
-            # Derivatives
             pK1_T = (-f(S, a2) / (TK ** 2) + f(S, a3) / TK) - gpSWS2tot[0]
             pK1_S = (df(S, a1) + df(S, a2) / TK + df(S, a3) * np.log(TK)) - gpSWS2tot[1]
             pK1_P = 0
-
             epK1 = 0.0055  # Same as Waters and Millero formulation
         
         gpK1 = [pK1_T, pK1_S, pK1_P]
@@ -933,12 +832,9 @@ def calc_pK(opt,T,S,P):
             def df(T, a):
                 return -a[1] / T ** 2 + a[2] / T
 
-            # Calculate pK2
             pK2 = -(f(TK, a1) + f(TK, a2) * np.sqrt(S) +
                     f(TK, a3) * S + f(TK, a4) * (S ** (3 / 2))) / LOG10 + p(1 - 0.001005 * S)
             pK2 = pK2 - pSWS2tot  # Convert from total to SWS scale
-
-            # Derivatives
             pK2_T = -(df(TK, a1) + df(TK, a2) * np.sqrt(S) +
                     df(TK, a3) * S + df(TK, a4) * (S ** (3 / 2))) / LOG10
             pK2_T = pK2_T - gpSWS2tot[0]  # Convert total to SWS scale
@@ -946,7 +842,7 @@ def calc_pK(opt,T,S,P):
                     (3 / 2) * f(TK, a4) * np.sqrt(S)) / LOG10 - 0.001005 * dpdx(1 - 0.001005 * S)
             pK2_S = pK2_S - gpSWS2tot[1]  # Convert total to SWS scale
             pK2_P = 0
-
+            # pass all pK2 out of this function as SWS scale
             epK2 = 0.003 / 2  # QUODcarb uses 1sigma
 
         elif opt['K1K2'] == 2: 
@@ -955,7 +851,6 @@ def calc_pK(opt,T,S,P):
             # The 2s precision in pK2 is .02, or 4.5% in K2.
             # This is in Table 5 on p. 1652 and what they use in the abstract:
             a, b, c, d = 1450.87, 4.604, -0.00385, 0.000182
-
             pK2 = a / TK + b + c * S * np.log(TK) + d * (S ** 2)  # SWS scale
             pK2_T = -a / (TK ** 2) + c * S / TK
             pK2_S = c * np.log(TK) + 2 * d * S
@@ -1114,7 +1009,6 @@ def calc_pK(opt,T,S,P):
 
             pK2_T = (-a / (TK ** 2) + c / TK) - gpSWS2tot[0]
             pK2_S = (d + 2 * g * S) - gpSWS2tot[1]
-
             pK2_P = 0
             epK2 = 0.0100
 
@@ -1150,7 +1044,6 @@ def calc_pK(opt,T,S,P):
             b = -0.01314
             c = -0.01904
             d = 2.448e-5
-
             pK2 = a + b * S + c * T + d * (T ** 2)
             pK2_T = c + 2 * d * T
             pK2_S = b
@@ -1312,6 +1205,7 @@ def calc_pK(opt,T,S,P):
 
             pKnh4_P = 0
             gpKnh4 = [pKnh4_T, pKnh4_S, pKnh4_P]
+            
             epKnh4 = 0.00017  # pg 2416 of Clegg and Whitefield (1995)
         return [pKnh4, gpKnh4, epKnh4]
             
@@ -1504,7 +1398,7 @@ def calc_pK(opt,T,S,P):
         pFREE2tot_S = (-top_S / (top * LOG10))
         pFREE2tot_P = (-top_P / (top * LOG10))
         gpFREE2tot = [pFREE2tot_T, pFREE2tot_S, pFREE2tot_P]
-        return [pSWS2tot, gpSWS2tot]
+        return [pSWS2tot, gpSWS2tot, pFREE2tot, gpFREE2tot]
 
     def q(x):
         return 10 ** (-x)
@@ -1590,7 +1484,7 @@ def calc_pK(opt,T,S,P):
     [pp2f    , gpp2f , epp2f ] = calc_p2f(opt,T,RT,RT_T,Pbar,Pbar_P)
     [pKs     , gpKs  , epKs  ] = calc_pKs(opt,T,S,Pbar,Pbar_P)
     [pKf     , gpKf  , epKf  ] = calc_pKf(opt,T,S,Pbar,Pbar_P) 
-    [pSWS2tot, gpSWS2tot     ] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf)
+    [pSWS2tot, gpSWS2tot, pFREE2tot, gpFREE2tot     ] = calc_pSWS2tot(opt,S,pKs,gpKs,pKf,gpKf)
     [pfH     , gpfH  , epfH  ] = calc_pfH(opt,T,S)
     [pK0     , gpK0  , epK0  ] = calc_pK0(opt,T,RT,RT_T,S,Pbar,Pbar_P); 
     [pKb     , gpKb  , epKb  ] = calc_pKb(opt,T,S,Pbar,Pbar_P,pSWS2tot,gpSWS2tot,pfH,gpfH) 
@@ -1804,5 +1698,3 @@ def calc_pK(opt,T,S,P):
     # pK0, pK1, pK2, pKb, pKw, pKs = 1, 2, 3, 4, 5, 6 
     # pKf, pKp1, pKp2, pKp3, pKsi, pKnh4 = 7, 8, 9, 10, 11, 12
     # pKh2s, pp2f, pKar, pKca, pfH = 13, 14, 15, 16, 17
-
-    
