@@ -1,4 +1,5 @@
 import numpy as np
+import update_y as up
 
 def limp(z, y, w, obs, sys, opt):
     #
@@ -27,7 +28,7 @@ def limp(z, y, w, obs, sys, opt):
 
     # fill ypK, gypK, ggypK with associated calculated pK, gpK, and ggpK values
     # update the pK values based on the new estimate of (T, P)
-    y, gy, ggy = update_y(y, x, obs, sys, opt)
+    y, gy, ggy = up.update_y(y, x, obs, sys, opt)
     # Make a vector of measured quantities
     id = np.where(~np.isnan(y))[0]
     y = y[id]

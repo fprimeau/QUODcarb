@@ -55,77 +55,77 @@ def update_y(y, x, obs, sys, opt):
         ggpK[:, 2, :] = np.imag(gpK_P) / e3
         
         iTSP = [sys['tp'][i]['iT'], sys['isal'], sys['tp'][i]['iP']]
-        if np.isnan(obs.tp[i].pK0):
+        if np.isnan(obs['tp'][i]['pK0']):
             y[sys['tp'][i]['ipK0']] = pK[0]
             gy[sys['tp'][i]['ipK0'], iTSP] = gpK[0, :]
             ggy[sys['tp'][i]['ipK0'], iTSP, iTSP] = ggpK[0, :, :]
         
-        if np.isnan(obs.tp[i].pK1):
+        if np.isnan(obs['tp'][i]['pK1']):
             y[sys['tp'][i]['ipK1']] = pK[1]
             gy[sys['tp'][i]['ipK1'], iTSP] = gpK[1, :]
             ggy[sys['tp'][i]['ipK1'], iTSP, iTSP] = ggpK[1, :, :]
         
-        if np.isnan(obs.tp[i].pK2):
+        if np.isnan(obs['tp'][i]['pK2']):
             y[sys['tp'][i]['ipK2']] = pK[2]
             gy[sys['tp'][i]['ipK2'], iTSP] = gpK[2, :]
             ggy[sys['tp'][i]['ipK2'], iTSP, iTSP] = ggpK[2, :, :]
         
-        if np.isnan(obs.tp[i].pKb):
+        if np.isnan(obs['tp'][i]['pKb']):
             y[sys['tp'][i]['ipKb']] = pK[3]
             gy[sys['tp'][i]['ipKb'], iTSP] = gpK[3, :]
             ggy[sys['tp'][i]['ipKb'], iTSP, iTSP] = ggpK[3, :, :]
         
-        if np.isnan(obs.tp[i].pKw):
+        if np.isnan(obs['tp'][i]['pKw']):
             y[sys['tp'][i]['ipKw']] = pK[4]
             gy[sys['tp'][i]['ipKw'], iTSP] = gpK[4, :]
             ggy[sys['tp'][i]['ipKw'], iTSP, iTSP] = ggpK[4, :, :]
         
-        if np.isnan(obs.tp[i].pKs):
+        if np.isnan(obs['tp'][i]['pKs']):
             y[sys['tp'][i]['ipKs']] = pK[5]
             gy[sys['tp'][i]['ipKs'], iTSP] = gpK[5, :]
             ggy[sys['tp'][i]['ipKs'], iTSP, iTSP] = ggpK[5, :, :]
         
-        if np.isnan(obs.tp[i].pKf):
+        if np.isnan(obs['tp'][i]['pKf']):
             y[sys['tp'][i]['ipKf']] = pK[6]
             gy[sys['tp'][i]['ipKf'], iTSP] = gpK[6, :]
             ggy[sys['tp'][i]['ipKf'], iTSP, iTSP] = ggpK[6, :, :]
         
-        if np.isnan(obs.tp[i].pKp1):
+        if np.isnan(obs['tp'][i]['pKp1']):
             y[sys['tp'][i]['ipKp1']] = pK[7]
             gy[sys['tp'][i]['ipKp1'], iTSP] = gpK[7, :]
             ggy[sys['tp'][i]['ipKp1'], iTSP, iTSP] = ggpK[7, :, :]
         
-        if np.isnan(obs.tp[i].pKp2):
+        if np.isnan(obs['tp'][i]['pKp2']):
             y[sys['tp'][i]['ipKp2']] = pK[8]
             gy[sys['tp'][i]['ipKp2'], iTSP] = gpK[8, :]
             ggy[sys['tp'][i]['ipKp2'], iTSP, iTSP] = ggpK[8, :, :]
         
-        if np.isnan(obs.tp[i].pKp3):
+        if np.isnan(obs['tp'][i]['pKp3']):
             y[sys['tp'][i]['ipKp3']] = pK[9]
             gy[sys['tp'][i]['ipKp3'], iTSP] = gpK[9, :]
             ggy[sys['tp'][i]['ipKp3'], iTSP, iTSP] = ggpK[9, :, :]
         
-        if np.isnan(obs.tp[i].pKsi):
+        if np.isnan(obs['tp'][i]['pKsi']):
             y[sys['tp'][i]['ipKsi']] = pK[10]
             gy[sys['tp'][i]['ipKsi'], iTSP] = gpK[10, :]
             ggy[sys['tp'][i]['ipKsi'], iTSP, iTSP] = ggpK[10, :, :]
         
-        if np.isnan(obs.tp[i].pKnh4):
+        if np.isnan(obs['tp'][i]['pKnh4']):
             y[sys['tp'][i]['ipKnh4']] = pK[11]
             gy[sys['tp'][i]['ipKnh4'], iTSP] = gpK[11, :]
             ggy[sys['tp'][i]['ipKnh4'], iTSP, iTSP] = ggpK[11, :, :]
         
-        if np.isnan(obs.tp[i].pKh2s):
+        if np.isnan(obs['tp'][i]['pKh2s']):
             y[sys['tp'][i]['ipKh2s']] = pK[12]
             gy[sys['tp'][i]['ipKh2s'], iTSP] = gpK[12, :]
             ggy[sys['tp'][i]['ipKh2s'], iTSP, iTSP] = ggpK[12, :, :]
         
-        if np.isnan(obs.tp[i].pp2f):
+        if np.isnan(obs['tp'][i]['pp2f']):
             y[sys['tp'][i]['ipp2f']] = pK[13]
             gy[sys['tp'][i]['ipp2f'], iTSP] = gpK[13, :]
             ggy[sys['tp'][i]['ipp2f'], iTSP, iTSP] = ggpK[14, :, :]
         
-        if np.isnan(obs.tp[i].pKar):
+        if np.isnan(obs['tp'][i]['pKar']):
             y[sys['tp'][i]['ipKar']] = pK[15]
             gy[sys['tp'][i]]['ipKar']['iTSP'] = gpK[15, :]
             ggy[sys['tp'][i]['ipKar'], iTSP, iTSP] = ggpK[15, :, :]
