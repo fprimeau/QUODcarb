@@ -1,11 +1,17 @@
 
 % Download GOMECC-3 Data from website and parse into data structure
+options = weboptions('Timeout', 60); % Set timeout to 60 seconds
 
-% download link found at this website:
-% https://www.aoml.noaa.gov/ocd/gcc/GOMECC3/
-url = 'https://www.aoml.noaa.gov/ocd/gcc/GOMECC3/GOMECC-3%20Cruise%20Data.xlsx';
+% download link sourced from this website:
+% https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0188978
+url = 'https://www.ncei.noaa.gov/archive/archive-management-system/OAS/bin/prd/jquery/download/188978.4.4.tar.gz';
 
-T = webread(url); % reads the table into Matlab
+outfilename = '188978.4.4.tar.gz';
+websave(outfilename, url, options); % Download the file
+gunzip(outfilename);                % Unzip the downloaded file
+untar('188978.4.4');                % Untar the downloaded file
+
+T = readtable('0188978/4.4/data/0-data/G01_GOMECC3R.xlsx');
 
 nD = length(T.Sample_ID);
 
@@ -41,8 +47,8 @@ for i = 1:nD
 
                                 depth(end+1) = T.DEPTH_METER(i);
                                 pres(end+1) = T.CTDPRS_DBAR(i);
-                                temp(end+1) = T.CTDTMP_ITS90_DEG_C(i);
-                                sal(end+1) = T.CTDSAL_PSS78(i);
+                                temp(end+1) = T.CTDTMP_ITS_90_DEG_C(i);
+                                sal(end+1) = T.CTDSAL_PSS_78(i);
                                 TC(end+1) = T.DIC_UMOL_KG(i);
                                 TA(end+1) = T.TA_UMOL_KG(i);
                             end
