@@ -4418,7 +4418,7 @@ function make_headers(est,opt,fid)
     fprintf(fid, 'e = 1sigma, ', '  ');
 
     fn = fieldnames(est);
-    fnl = length(fn)-1;
+    fnl = 62;
     for i = 5:6:fnl % temperature independent totals
         fprintf(fid, '%s, ', '  '); % est
         fprintf(fid, '%s, ', '  '); % est.e
