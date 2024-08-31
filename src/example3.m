@@ -9,7 +9,7 @@ opt.KSO4 = 1;   % option for KSO4 formulation
 opt.KF   = 2;   % option for KF formulation
 opt.TB   = 2;   % option for TB formulation
 opt.phscale     = 1; % 1 = tot, 2 = sws, 3 = free, 4 = nbs
-opt.printcsv    = 0; % print output to CSV? (1=on, 0=off)
+opt.printcsv    = 1; % print output to CSV? (1=on, 0=off)
 opt.fname       = 'QUODcarb.csv'; % not used if opt.printcsv = 0
 opt.printmes    = 0; % print screen messages? (1=on, 0=off)
 opt.co2press    = 1; % pressure correction for p2f and K0 (1=on, 0=off)
@@ -77,8 +77,11 @@ save example3.mat est; % save output estimate as a mat file
 % est(1).tp(2).co3  = 118.5302;     % posterior co3
 % est(1).tp(3).T    = 20.0000;      % temperature at which pco2 was measured
 % est(1).tp(3).pco2 = 711.5998;     % posterior pco2
-% est(1).tp(4).T    = 10;           % output system
+% est(1).tp(4).T    = 10;           % output system @10degC
 % est(1).tp(4).P    = 10;
+% est(1).tp(2).OmegaAr = 1.9113;
+% est(1).tp(2).OmegaCa = 2.9162;
+% est(1).tp(2).Revelle = 13.6838;
 
 
 
