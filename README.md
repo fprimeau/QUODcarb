@@ -14,7 +14,7 @@ CO2SYS was initially developed by Lewis and Wallace (1998) for MS DOS,
  builds upon these previous versions. 
 
 ## Installation and Use
-Download the files in this repository and put them together in a directory
+Download the files in the 'src' repository and put them together in a directory
  that is accessible by MATLAB. 
 To perform CO2-system calculations, use QUODcarb.m as directed in this 
 documentation and in the comments at the top of the file. Download the
@@ -22,7 +22,7 @@ documentation and in the comments at the top of the file. Download the
  CO2SYSv3’s output.
 
 ## Quick Start
-See example scripts (example1.m, example2.m, example3.m) showing possible
+See example scripts (src/example1.m, src/example2.m, src/example3.m) showing possible
  inputs, including correct formulation and capitalization. The function
  QUODcarb requires an input observations structure (obs) and an input
  options structure (opt). All possible inputs and outputs can be found
@@ -59,7 +59,7 @@ There are a multitude of options, here are all the default settings:
 - Capitalization DOES matter, please be careful to capitalize or use
      lower case exactly as in the examples. 
 	- Example: obs.m(1).ph ≠ obs.m(1).pH
-- As with CO2SYS, QUODcarb requires two separate CO2-system measurements. The five possible inputs include: (input at least two)
+- As with CO2SYS, QUODcarb requires two separate CO2-system measurements. The possible inputs include: (input at least two)
 	- `obs.TC` (± `obs.eTC`)
 	- `obs.TA` (± `obs.eTA`)
 	- `obs.tp(1).ph` (± `obs.tp(1).eph`)
