@@ -21,19 +21,19 @@ for i = 1:nD
     TA(i)       = est26(i).TA; 
     zscore(i,2) = (TAobs(i) - TA(i))/1.78;
 
-    ph(i)       = est26(i).tp(2).ph; 
+    ph(i)       = est26(i).tp(1).ph; 
     zscore(i,3) = (phobs(i) - ph(i))/0.0004;
 
-    pco2(i)     = est26(i).tp(3).pco2; 
+    pco2(i)     = est26(i).tp(2).pco2; 
     zscore(i,4) = (pco2obs(i) - pco2(i))/(0.0021*pco2obs(i)); % 0.21%
 
-    co3(i)      = est26(i).tp(2).co3;    
+    co3(i)      = est26(i).tp(3).co3;    
     zscore(i,5) = (co3obs(i) - co3(i))/(0.02*co3obs(i)); % 2%
 end
 
 % AXES PROPERTIES
 set(groot,'defaultAxesFontName','Perpetua',...
-    'defaultAxesFontSize',15,...
+    'defaultAxesFontSize',18,...
     'defaultAxesTickLabelInterpreter','latex',...
     'defaultAxesXMinorTick','off',...
     'defaultAxesYMinorTick','off');
@@ -44,7 +44,7 @@ set(groot,'defaultTextFontName','Perpetua',...
 
 lbl = {'$C_T$', ... 
         '$A_T$',...
-        '$p$H',...
+        'pH',...
         '$p$CO$_2$',...
         '[CO$_{3}^{2-}$]$_T$'};
 
@@ -63,11 +63,12 @@ b.MarkerColor = clr;
 b.WhiskerLineColor = clr;
 
 ax = gca;
-ax.FontSize = 15;
-ylabel('\textbf{Z-scores: ( Meas - Calc ) /} $\mathbf{\sigma_{meas}}$')
+ax.FontSize = 18;
+ylabel('Z-scores: ( Meas - Calc ) / $\mathbf{\sigma_{meas}}$')
 ax.XTickMode = 'auto';
 ax.TickDir = 'out';
 xticklabels(lbl); 
+ax.YTick = [-5, -2, 0, 2,  5];
 grid on
 
 h = gcf;
@@ -81,35 +82,35 @@ print(h,'Q5_zscores_plot.pdf','-dpdf','-r0');
 
 %%
 
-% percent of points outside ±2
+% number of points outside ±2
 
-% nTC = 0; nTA = 0; npH = 0; npCO2 = 0; nCO3 = 0;
-% for i = 1:nD
-%     zTC = sqrt(zscore_m(i,1)^2);
-%     if zTC > 2
-%         nTC = nTC + 1;
-%     end
-% 
-%     zTA = sqrt(zscore_m(i,2)^2);
-%     if zTA > 2
-%         nTA = nTA + 1;
-%     end
-% 
-%     zpH = sqrt(zscore_m(i,3)^2);
-%     if zpH > 2
-%         npH = npH + 1;
-%     end
-% 
-%     zpCO2 = sqrt(zscore_m(i,4)^2);
-%     if zpCO2 > 2
-%         npCO2 = npCO2 + 1;
-%     end
-% 
-%     zCO3 = sqrt(zscore_m(i,5)^2);
-%     if zCO3 > 2
-%         nCO3 = nCO3 + 1;
-%     end
-% end
+nTC = 0; nTA = 0; npH = 0; npCO2 = 0; nCO3 = 0;
+for i = 1:nD
+    zTC = sqrt(zscore(i,1)^2);
+    if zTC > 2
+        nTC = nTC + 1;
+    end
+
+    zTA = sqrt(zscore(i,2)^2);
+    if zTA > 2
+        nTA = nTA + 1;
+    end
+
+    zpH = sqrt(zscore(i,3)^2);
+    if zpH > 2
+        npH = npH + 1;
+    end
+
+    zpCO2 = sqrt(zscore(i,4)^2);
+    if zpCO2 > 2
+        npCO2 = npCO2 + 1;
+    end
+
+    zCO3 = sqrt(zscore(i,5)^2);
+    if zCO3 > 2
+        nCO3 = nCO3 + 1;
+    end
+end
 
 % ±2
 % 46 nCO3 = 4.11%
