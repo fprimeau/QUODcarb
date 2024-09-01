@@ -1,5 +1,33 @@
 function [A] = compare(obs,est,opt,tpopt,pair,fname)
-
+%
+% OUTPUT:
+%      CSV := csv file of chosen name (fname) with QUODcarb and CO2SYS
+%               values listed next to eachother for params of interest
+%
+% INPUT:
+%      obs := obs structure as output from QUODcarb.m  
+%      est := est structure as output from QUODcarb.m
+%      opt := opt structure as output from QUODcarb.m
+%               * note! the above structures need to be output from 
+%                   QUODcarb.m because the compare.m function does not 
+%                   contain ability to parse them, as QUODcarb.m does
+%    tpopt := 1 if desired CO2SYS calculation at tp(1)
+%             2 if desired CO2SYS calculation at tp(2)
+%             3 " ^ " at tp(3), etc.
+%     pair := this tells CO2SYS which pair to look at in the obs structure
+%             1 = TC & TA
+%             2 = TC & pH
+%             3 = TA & pH
+%             4 = pH & pCO2
+%             5 = pCO2 & CO3
+%             6 = TC & CO3
+%             7 = TC & pCO2
+%             8 = TA & pCO2
+%             9 = TA & CO3
+%            10 = pH & CO3
+%    fname := the name of choice for output excel file, MUST say '.csv'
+%               e.g. 'compare_TC_TA.csv'
+%
         p = @(x) -log10(x); % use p as in "pH" to denote the negative log base 10 function
         q = @(x) 10.^(-x);  % use q, i.e., a backward p
 
