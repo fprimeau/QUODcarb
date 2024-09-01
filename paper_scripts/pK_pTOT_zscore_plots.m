@@ -19,10 +19,10 @@ nD = length(in);
 load output_mat_files/all_combos/est26.mat;
 
 % choose options for opt structure
-opt.K1K2 = 16; % option for K1K2 formulation
-opt.KSO4 = 2;  % option for KSO4 formulation
-opt.KF   = 1;  % option for KF formulation
-opt.TB   = 1;  % option for TB formulation
+opt.K1K2 = 10; % option for K1K2 formulation
+opt.KSO4 = 1;  % option for KSO4 formulation
+opt.KF   = 2;  % option for KF formulation
+opt.TB   = 2;  % option for TB formulation
 opt.phscale  = 1; % 1 = tot, 2 = sws, 3 = free, 4 = NBS
 opt.printcsv = 0; % print est to CSV? 1 = on , 0 = off
 opt.co2press = 1; % 1 = on, 0 = off
@@ -42,66 +42,93 @@ ebar = @(px,pe) (0.5 * ( q( px - pe ) - q( px + pe ) ) );
 for i = 1:nD
     sal = est26(i).sal; % posterior salinity
 
-    % tp(2) = 25C, 0dbar
+    % tp(1) = pH @ 25C, 0dbar
     % calc_pK to use formulation for pK0, pK1, pK2, pKb
-    temp_25 = est26(i).tp(2).T;
-    press_25 = est26(i).tp(2).P;
-    [pKi,~,epKi] = calc_pK(opt,temp_25,sal,press_25); % temp = 25 is tp(2)
+    temp_ph = est26(i).tp(1).T;
+    press_ph = est26(i).tp(1).P;
+    [pKi,~,epKi] = calc_pK(opt,temp_ph,sal,press_ph); % temp = 25 is tp(2)
     % pK0
-    pK0_25(i)   = pKi(1);     
-    epK0_25(i)  = epKi(1);
-    zpK0_25(i)  = (pK0_25(i) - est26(i).tp(2).pK0)/epK0_25(i);
+    pK0_ph(i)   = pKi(1);     
+    epK0_ph(i)  = epKi(1);
+    zpK0_ph(i)  = (pK0_ph(i) - est26(i).tp(1).pK0)/epK0_ph(i);
     % pK1
-    pK1_25(i)   = pKi(2);     
-    epK1_25(i)  = epKi(2);
-    zpK1_25(i)  = (pK1_25(i) - est26(i).tp(2).pK1)/epK1_25(i);
+    pK1_ph(i)   = pKi(2);     
+    epK1_ph(i)  = epKi(2);
+    zpK1_ph(i)  = (pK1_ph(i) - est26(i).tp(1).pK1)/epK1_ph(i);
     % pK2
-    pK2_25(i)   = pKi(3);     
-    epK2_25(i)  = epKi(3);
-    zpK2_25(i)  = (pK2_25(i) - est26(i).tp(2).pK2)/epK2_25(i);
+    pK2_ph(i)   = pKi(3);     
+    epK2_ph(i)  = epKi(3);
+    zpK2_ph(i)  = (pK2_ph(i) - est26(i).tp(1).pK2)/epK2_ph(i);
     % pKb
-    pKb_25(i)   = pKi(4);     
-    epKb_25(i)  = epKi(4);
-    zpKb_25(i)  = (pKb_25(i) - est26(i).tp(2).pKb)/epKb_25(i);
+    pKb_ph(i)   = pKi(4);     
+    epKb_ph(i)  = epKi(4);
+    zpKb_ph(i)  = (pKb_ph(i) - est26(i).tp(1).pKb)/epKb_ph(i);
 
-    % tp(3) = 20C, 0dbar
+    % tp(2) = pCO2 @ 20C, 0dbar
     % calc_pK to use formulation for pK0, pK1, pK2, pKb
-    temp_20 = est26(i).tp(3).T;
-    press_20 = est26(i).tp(3).P;
-    [pKi,~,epKi] = calc_pK(opt,temp_20,sal,press_20); % temp = 20 is tp(3)
+    temp_pc = est26(i).tp(2).T;
+    press_pc = est26(i).tp(2).P;
+    [pKi,~,epKi] = calc_pK(opt,temp_pc,sal,press_pc); % temp = 20 is tp(3)
     % pK0
-    pK0_20(i)   = pKi(1); 
-    epK0_20(i)  = epKi(1);
-    zpK0_20(i)  = (pK0_20(i) - est26(i).tp(3).pK0)/epK0_20(i);
+    pK0_pc(i)   = pKi(1); 
+    epK0_pc(i)  = epKi(1);
+    zpK0_pc(i)  = (pK0_pc(i) - est26(i).tp(2).pK0)/epK0_pc(i);
     % pK1
-    pK1_20(i)   = pKi(2); 
-    epK1_20(i)  = epKi(2);
-    zpK1_20(i)  = (pK1_20(i) - est26(i).tp(3).pK1)/epK1_20(i);
+    pK1_pc(i)   = pKi(2); 
+    epK1_pc(i)  = epKi(2);
+    zpK1_pc(i)  = (pK1_pc(i) - est26(i).tp(2).pK1)/epK1_pc(i);
     % pK2
-    pK2_20(i)   = pKi(3); 
-    epK2_20(i)  = epKi(3);
-    zpK2_20(i)  = (pK2_20(i) - est26(i).tp(3).pK2)/epK2_20(i);
+    pK2_pc(i)   = pKi(3); 
+    epK2_pc(i)  = epKi(3);
+    zpK2_pc(i)  = (pK2_pc(i) - est26(i).tp(2).pK2)/epK2_pc(i);
     % pKb
-    pKb_20(i)   = pKi(4); 
-    epKb_20(i)  = epKi(4);
-    zpKb_20(i)  = (pKb_20(i) - est26(i).tp(3).pKb)/epKb_20(i);
+    pKb_pc(i)   = pKi(4); 
+    epKb_pc(i)  = epKi(4);
+    zpKb_pc(i)  = (pKb_pc(i) - est26(i).tp(2).pKb)/epKb_pc(i);
+
+    % tp(3) = CO3 @ 25C, 0dbar
+    % calc_pK to use formulation for pK0, pK1, pK2, pKb
+    temp_co = est26(i).tp(3).T;
+    press_co = est26(i).tp(3).P;
+    [pKi,~,epKi] = calc_pK(opt,temp_co,sal,press_co); % temp = 20 is tp(3)
+    % pK0
+    pK0_co(i)   = pKi(1); 
+    epK0_co(i)  = epKi(1);
+    zpK0_co(i)  = (pK0_co(i) - est26(i).tp(3).pK0)/epK0_co(i);
+    % pK1
+    pK1_co(i)   = pKi(2); 
+    epK1_co(i)  = epKi(2);
+    zpK1_co(i)  = (pK1_co(i) - est26(i).tp(3).pK1)/epK1_co(i);
+    % pK2
+    pK2_co(i)   = pKi(3); 
+    epK2_co(i)  = epKi(3);
+    zpK2_co(i)  = (pK2_co(i) - est26(i).tp(3).pK2)/epK2_co(i);
+    % pKb
+    pKb_co(i)   = pKi(4); 
+    epKb_co(i)  = epKi(4);
+    zpKb_co(i)  = (pKb_co(i) - est26(i).tp(3).pKb)/epKb_co(i);
 end
 
-zscore_pK25(:,1) = zpK0_25;
-zscore_pK25(:,2) = zpK1_25;
-zscore_pK25(:,3) = zpK2_25;
-zscore_pK25(:,4) = zpKb_25;
+zscore_pKph(:,1) = zpK0_ph;
+zscore_pKph(:,2) = zpK1_ph;
+zscore_pKph(:,3) = zpK2_ph;
+zscore_pKph(:,4) = zpKb_ph;
 
-zscore_pK20(:,1) = zpK0_20;
-zscore_pK20(:,2) = zpK1_20;
-zscore_pK20(:,3) = zpK2_20;
-zscore_pK20(:,4) = zpKb_20;
+zscore_pKpc(:,1) = zpK0_pc; % pco2
+zscore_pKpc(:,2) = zpK1_pc;
+zscore_pKpc(:,3) = zpK2_pc;
+zscore_pKpc(:,4) = zpKb_pc;
+
+zscore_pKco(:,1) = zpK0_co; % CO3
+zscore_pKco(:,2) = zpK1_co;
+zscore_pKco(:,3) = zpK2_co;
+zscore_pKco(:,4) = zpKb_co;
 
 % next, plot the pK Z-scores
 
 % AXES PROPERTIES
 set(groot,'defaultAxesFontName','Perpetua',...
-    'defaultAxesFontSize',15,...
+    'defaultAxesFontSize',12,...
     'defaultAxesTickLabelInterpreter','latex',...
     'defaultAxesXMinorTick','off',...
     'defaultAxesYMinorTick','off');
@@ -114,11 +141,11 @@ lbl = {'$pK_0$','$pK_1$','$pK_2$','$pK_B$'};
 ddgreen = [0, 102/255, 0];
 clr = ddgreen;
 
-tiledlayout(1,2)
+tiledlayout(1,3)
 
 nexttile
  
-b2 = boxchart(zscore_pK25);
+b2 = boxchart(zscore_pKph);
 b2.JitterOutliers = 'on';
 b2.MarkerStyle = '.';
 b2.MarkerSize = 8;
@@ -128,18 +155,19 @@ b2.BoxFaceColor = clr;
 b2.BoxEdgeColor = clr;
 b2.MarkerColor = clr;
 b2.WhiskerLineColor = clr;
-ylim([-3 3])
+
+% ylim([-4 4])
 
 grid on
 
-t = title('$25^{\circ}$C, $1$ atm');
-t.FontSize = 18;
+t = title('pH @ $25^{\circ}$C, $1$ atm');
+t.FontSize = 12;
 xticklabels(lbl);
-ylabel('\textbf{Z-scores: ( Prior - Posterior ) /} $\mathbf{\sigma_{expm}}$');
+ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
 
 nexttile
  
-b3 = boxchart(zscore_pK20);
+b3 = boxchart(zscore_pKpc);
 b3.JitterOutliers = 'on';
 b3.MarkerStyle = '.';
 b3.MarkerSize = 8;
@@ -149,14 +177,42 @@ b3.BoxFaceColor = clr;
 b3.BoxEdgeColor = clr;
 b3.MarkerColor = clr;
 b3.WhiskerLineColor = clr;
-ylim([-3 3])
+
+% ylim([-4 4])
 
 grid on
 
-t = title('$20^{\circ}$C, $1$ atm');
-t.FontSize = 18;
+t = title('$p$CO$_2$ @ $20^{\circ}$C, $1$ atm');
+t.FontSize = 12;
 xticklabels(lbl);
-ylabel('\textbf{Z-scores: ( Prior - Posterior ) /} $\mathbf{\sigma_{expm}}$');
+ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
+
+h = gcf;
+set(h,'Units','Inches');
+pos = get(h,'Position');
+set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
+
+nexttile
+ 
+b1 = boxchart(zscore_pKco);
+b1.JitterOutliers = 'on';
+b1.MarkerStyle = '.';
+b1.MarkerSize = 8;
+b1.LineWidth = 2.0;
+b1.BoxWidth = 0.8;
+b1.BoxFaceColor = clr;
+b1.BoxEdgeColor = clr;
+b1.MarkerColor = clr;
+b1.WhiskerLineColor = clr;
+
+% ylim([-4 4])
+
+grid on
+
+t = title('[CO$_{3}^{2-}$]$_T$ @ $25^{\circ}$C, $1$ atm');
+t.FontSize = 12;
+xticklabels(lbl);
+ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
 
 h = gcf;
 set(h,'Units','Inches');
@@ -169,7 +225,14 @@ print(h,'pK_zscores_plot.pdf','-dpdf','-r0');
 
 
 
-% next, plot the pTOT Z-scores
+%% next, plot the pTOT Z-scores
+
+% AXES PROPERTIES
+set(groot,'defaultAxesFontName','Perpetua',...
+    'defaultAxesFontSize',18,...
+    'defaultAxesTickLabelInterpreter','latex',...
+    'defaultAxesXMinorTick','off',...
+    'defaultAxesYMinorTick','off');
 
 % calculate pTOT's using formulations and posterior T, S, P
 % then, calculate Z-score: ( (meas-calc)/sigma_expm )
@@ -234,7 +297,7 @@ grid on
 t = title('Measured Totals');
 t.FontSize = 18;
 xticklabels(lbl1);
-ylabel('\textbf{Z-scores: ( Meas - Calc ) /} $\mathbf{\sigma_{meas}}$');
+ylabel('Z-scores: ( Meas - Calc ) / $\mathbf{\sigma_{meas}}$');
 
 nexttile
  
@@ -254,7 +317,7 @@ grid on
 t = title('Formulated Totals');
 t.FontSize = 18;
 xticklabels(lbl2);
-ylabel('\textbf{Z-scores: ( Prior - Posterior ) /} $\mathbf{\sigma_{expm}}$');
+ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
 
 h = gcf;
 set(h,'Units','Inches');
