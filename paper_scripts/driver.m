@@ -39,35 +39,34 @@ for i = 1:nD
     obs(i).eTSi  = 0.0238; % 0.31% meas uncertainty & mean(TSi) = 7.68
 
     % first (T,P)-dependent measurement for pH
-    obs(i).tp(2).T    = 25 ; % degC
-    obs(i).tp(2).eT   = 0.05 ; % from cruise report
-    obs(i).tp(2).P    = 0.0 ;  % NOT in situ
-    obs(i).tp(2).eP   = 0.07 ;
-    obs(i).tp(2).ph   = in(9,i); % total scale
-    obs(i).tp(2).eph  = 0.001 ; % pg 60, cruise report
-    
+    obs(i).tp(1).T    = 25 ; % degC
+    obs(i).tp(1).eT   = 0.05 ; % from cruise report
+    obs(i).tp(1).P    = 0.0 ;  % NOT in situ
+    obs(i).tp(1).eP   = 0.07 ;
+    obs(i).tp(1).ph   = in(9,i); % total scale
+    obs(i).tp(1).eph  = 0.001 ; % pg 60, cruise report
 
     % second (T,P)-dependent measurement for pCO2
-    obs(i).tp(3).T     = 20 ; % degC
-    obs(i).tp(3).eT    = 0.03 ; % from cruise report
-    obs(i).tp(3).P     = 0.0 ; % dbar (surface pressure for pco2)
-    obs(i).tp(3).eP    = 0.07 ;
-    obs(i).tp(3).pco2  = in(10,i); % (µatm)
-    obs(i).tp(3).epco2 = 1.1353; % 0.21% relative std error & avg(pco2) = 540.6128
+    obs(i).tp(2).T     = 20 ; % degC
+    obs(i).tp(2).eT    = 0.03 ; % from cruise report
+    obs(i).tp(2).P     = 0.0 ; % dbar (surface pressure for pco2)
+    obs(i).tp(2).eP    = 0.07 ;
+    obs(i).tp(2).pco2  = in(10,i); % (µatm)
+    obs(i).tp(2).epco2 = 1.1353; % 0.21% relative std error & avg(pco2) = 540.6128
 
     % third (T,P)-dependent measurement for CO32-T
-    obs(i).tp(2).T    = 25 ; % degC
-    obs(i).tp(2).eT   = 0.05 ; % from cruise report
-    obs(i).tp(2).P    = 0.0 ;  % NOT in situ
-    obs(i).tp(2).eP   = 0.07 ;
-    obs(i).tp(2).co3  = in(11,i); % (µmol/kg)
-    obs(i).tp(2).eco3 = in(11,1)*0.02;  % 2% from Jon Sharp
+    obs(i).tp(3).T    = 25 ; % degC
+    obs(i).tp(3).eT   = 0.05 ; % from cruise report
+    obs(i).tp(3).P    = 0.0 ;  % NOT in situ
+    obs(i).tp(3).eP   = 0.07 ;
+    obs(i).tp(3).co3  = in(11,i); % (µmol/kg)
+    obs(i).tp(3).eco3 = in(11,1)*0.02;  % 2% from Jon Sharp
 
     % fourth (T,P)-dependent measurement IN SITU
-    obs(i).tp(1).T  = in(2,i); % deg C, CTD temp
-    obs(i).tp(1).eT = 0.02; % ±0.02 degC
-    obs(i).tp(1).P  = in(3,i); % dbar
-    obs(i).tp(1).eP = 0.63; % (max) ± 0.63 dbar
+    obs(i).tp(4).T  = in(2,i); % deg C, CTD temp
+    obs(i).tp(4).eT = 0.02; % ±0.02 degC
+    obs(i).tp(4).P  = in(3,i); % dbar
+    obs(i).tp(4).eP = 0.63; % (max) ± 0.63 dbar
 end
 
 obs_backup = obs;
@@ -86,9 +85,9 @@ save output_mat_files/all_combos/est26.mat est26; clear est; clear obs;
 % TC TA (Q2) (fid01)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(2).ph = nan;   obs(i).tp(2).eph = nan;
-    obs(i).tp(3).pco2 = nan; obs(i).tp(3).epco2 = nan;
-    obs(i).tp(2).co3 = nan;  obs(i).tp(2).eco3 = nan;
+    obs(i).tp(1).ph = nan;   obs(i).tp(1).eph = nan;
+    obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan;
+    obs(i).tp(3).co3 = nan;  obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est01  = est;
@@ -98,8 +97,8 @@ save output_mat_files/all_combos/est01.mat est01; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;         obs(i).eTA = nan;
-    obs(i).tp(3).pco2 = nan; obs(i).tp(3).epco2 = nan; % tp(3)
-    obs(i).tp(2).co3 = nan;  obs(i).tp(2).eco3 = nan; % tp(2)
+    obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan; % tp(3)
+    obs(i).tp(3).co3 = nan;  obs(i).tp(3).eco3 = nan; % tp(2)
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est02   = est;
@@ -109,8 +108,8 @@ save output_mat_files/all_combos/est02.mat est02; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;         obs(i).eTA = nan;
-    obs(i).tp(2).ph = nan;   obs(i).tp(2).eph = nan;
-    obs(i).tp(2).co3 = nan;  obs(i).tp(2).eco3 = nan;
+    obs(i).tp(1).ph = nan;   obs(i).tp(1).eph = nan;
+    obs(i).tp(3).co3 = nan;  obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est03   = est;
@@ -120,8 +119,8 @@ save output_mat_files/all_combos/est03.mat est03; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;         obs(i).eTA = nan;
-    obs(i).tp(3).pco2 = nan; obs(i).tp(3).epco2 = nan;
-    obs(i).tp(2).ph = nan;   obs(i).tp(2).eph = nan;
+    obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan;
+    obs(i).tp(3).ph = nan;   obs(i).tp(3).eph = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est04   = est;
@@ -131,8 +130,8 @@ save output_mat_files/all_combos/est04.mat est04; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan;         obs(i).eTC = nan;
-    obs(i).tp(3).pco2 = nan; obs(i).tp(3).epco2 = nan;
-    obs(i).tp(2).co3 = nan;  obs(i).tp(2).eco3 = nan;
+    obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan;
+    obs(i).tp(3).co3 = nan;  obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est05   = est;
@@ -142,8 +141,8 @@ save output_mat_files/all_combos/est05.mat est05; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan;        obs(i).eTC = nan;
-    obs(i).tp(2).ph = nan;  obs(i).tp(2).eph = nan;
-    obs(i).tp(2).co3 = nan; obs(i).tp(2).eco3 = nan;
+    obs(i).tp(1).ph = nan;  obs(i).tp(1).eph = nan;
+    obs(i).tp(3).co3 = nan; obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est06   = est;
@@ -153,8 +152,8 @@ save output_mat_files/all_combos/est06.mat est06; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan;          obs(i).eTC = nan;
-    obs(i).tp(2).ph = nan;    obs(i).tp(2).eph = nan;
-    obs(i).tp(3).pco2 = nan;  obs(i).tp(3).epco2 = nan;
+    obs(i).tp(1).ph = nan;    obs(i).tp(1).eph = nan;
+    obs(i).tp(2).pco2 = nan;  obs(i).tp(2).epco2 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est07   = est;
@@ -165,7 +164,7 @@ obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan;            obs(i).eTC = nan;
     obs(i).TA = nan;            obs(i).eTA = nan;
-    obs(i).tp(3).pco2 = nan;    obs(i).tp(3).epco2 = nan;
+    obs(i).tp(2).pco2 = nan;    obs(i).tp(2).epco2 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est08   = est;
@@ -176,7 +175,7 @@ obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan;        obs(i).eTC = nan;
     obs(i).TA = nan;        obs(i).eTA = nan;
-    obs(i).tp(2).co3 = nan; obs(i).tp(2).eco3 = nan;
+    obs(i).tp(3).co3 = nan; obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est09 = est;
@@ -187,7 +186,7 @@ obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan;        obs(i).eTC = nan;
     obs(i).TA = nan;        obs(i).eTA = nan;
-    obs(i).tp(2).ph = nan;  obs(i).tp(2).eph = nan;
+    obs(i).tp(1).ph = nan;  obs(i).tp(1).eph = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est10   = est;
@@ -199,7 +198,7 @@ save output_mat_files/all_combos/est10.mat est10; clear est; clear obs;
 % TC TA pH pco2 (Q4) (fid21)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(2).co3 = nan; obs(i).tp(2).eco3 = nan;
+    obs(i).tp(3).co3 = nan; obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est21   = est;
@@ -208,7 +207,7 @@ save output_mat_files/all_combos/est21.mat est21; clear est; clear obs;
 % % TC TA pH co3 (Q4) (fid22)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(3).pco2 = nan; obs(i).tp(3).epco2 = nan;
+    obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est22   = est;
@@ -217,7 +216,7 @@ save output_mat_files/all_combos/est22.mat est22; clear est; clear obs;
 % TC TA pco2 co3 (Q4) (fid23)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(2).ph = nan; obs(i).tp(2).eph = nan;
+    obs(i).tp(1).ph = nan; obs(i).tp(1).eph = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est23   = est;
@@ -247,8 +246,8 @@ save output_mat_files/all_combos/est25.mat est25; clear est; clear obs;
 % % TC TA pH (Q3) (fid11)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(2).co3 = nan;   obs(i).tp(2).eco3 = nan;
-    obs(i).tp(3).pco2 = nan;  obs(i).tp(3).epco2 = nan;
+    obs(i).tp(3).co3 = nan;   obs(i).tp(3).eco3 = nan;
+    obs(i).tp(2).pco2 = nan;  obs(i).tp(2).epco2 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt); 
 est11   = est;
@@ -257,8 +256,8 @@ save output_mat_files/all_combos/est11.mat est11; clear est; clear obs;
 % TC TA pco2 (Q3) (fid12)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(2).co3 = nan;  obs(i).tp(2).eco3 = nan;
-    obs(i).tp(2).ph = nan;   obs(i).tp(2).eph = nan;
+    obs(i).tp(3).co3 = nan;  obs(i).tp(3).eco3 = nan;
+    obs(i).tp(1).ph = nan;   obs(i).tp(1).eph = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est12   = est;
@@ -267,8 +266,8 @@ save output_mat_files/all_combos/est12.mat est12; clear est; clear obs;
 % TC TA co3 (Q3) (fid13)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(3).pco2 = nan; obs(i).tp(2).epco2 = nan;
-    obs(i).tp(2).ph = nan;   obs(i).tp(2).eph = nan;
+    obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan;
+    obs(i).tp(1).ph = nan;   obs(i).tp(1).eph = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est13   = est;
@@ -278,7 +277,7 @@ save output_mat_files/all_combos/est13.mat est13; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;          obs(i).eTA = nan;
-    obs(i).tp(2).co3 = nan;   obs(i).tp(2).eco3 = nan;
+    obs(i).tp(3).co3 = nan;   obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est14   = est;
@@ -288,7 +287,7 @@ save output_mat_files/all_combos/est14.mat est14; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;          obs(i).eTA = nan;
-    obs(i).tp(3).pco2 = nan;  obs(i).tp(3).epco2 = nan;
+    obs(i).tp(2).pco2 = nan;  obs(i).tp(2).epco2 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est15   = est;
@@ -298,7 +297,7 @@ save output_mat_files/all_combos/est15.mat est15; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;          obs(i).eTA = nan;
-    obs(i).tp(2).ph = nan;    obs(i).tp(2).eph = nan;
+    obs(i).tp(1).ph = nan;    obs(i).tp(1).eph = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est16   = est;
@@ -308,7 +307,7 @@ save output_mat_files/all_combos/est16.mat est16; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan;          obs(i).eTC = nan;
-    obs(i).tp(2).co3 = nan;   obs(i).tp(2).eco3 = nan;
+    obs(i).tp(3).co3 = nan;   obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est17   = est;
@@ -318,7 +317,7 @@ save output_mat_files/all_combos/est17.mat est17; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan;          obs(i).eTC = nan;
-    obs(i).tp(3).pco2 = nan;  obs(i).tp(3).epco2 = nan;
+    obs(i).tp(2).pco2 = nan;  obs(i).tp(2).epco2 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est18 = est;
@@ -328,7 +327,7 @@ save output_mat_files/all_combos/est18.mat est18; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TC = nan;          obs(i).eTC = nan;
-    obs(i).tp(2).ph = nan;    obs(i).tp(2).eph = nan;
+    obs(i).tp(1).ph = nan;    obs(i).tp(1).eph = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est19   = est;

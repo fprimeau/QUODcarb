@@ -4484,12 +4484,12 @@ function make_headers(est,opt,fid)
     % row 3
     fprintf(fid,'%s, ','(0=good)');
        
-    fprintf(fid,'%s, ', '(PSU)'); % est.sal
-    fprintf(fid,'%s, ', '(PSU)'); % est.esal
+    fprintf(fid,'%s, ', '(S_P)'); % est.sal
+    fprintf(fid,'%s, ', '(S_P)'); % est.esal
     
     for i = 3:6:fnl % temperature independent totals
-        fprintf(fid,'%s, ', '(umol/kg)');
-        fprintf(fid,'%s, ', '(umol/kg)');
+        fprintf(fid,'%s, ', 'umol/kg');
+        fprintf(fid,'%s, ', 'umol/kg');
     end
     for j = 1:nTP
         fprintf(fid, '%s, ', 'deg C'); % est.T
@@ -4497,17 +4497,17 @@ function make_headers(est,opt,fid)
         fprintf(fid, '%s, ', 'dbar'); % est.P
         fprintf(fid, '%s, ', 'dbar');
         for i = 9:6:15 % fco2, pco2
-            fprintf(fid, '%s, ', '(uatm)');
-            fprintf(fid, '%s, ', '(uatm)');
+            fprintf(fid, '%s, ', 'uatm');
+            fprintf(fid, '%s, ', 'uatm');
         end
         for i = 21:6:33 % hco3, co3, co2*;
-            fprintf(fid, '%s, ', '(umol/kg)');
-            fprintf(fid, '%s, ', '(umol/kg)');
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', 'umol/kg');
         end
-        fprintf(fid, '%s, ', '(p units)'); % ph, log10 unitless
+        fprintf(fid, '%s, ', '(-log10)'); % ph, log10 unitless
         fprintf(fid, '%s, ', '  ');
         for i = 45:6:63 % ph_free, ph_tot, ph_sws, ph_nbs
-            fprintf(fid, '%s, ', '(p units)');      % log10 unitless
+            fprintf(fid, '%s, ', '(-log10)');      % log10 unitless
             fprintf(fid, '%s, ', '  ');
         end
         for i = 69:6:75 % fH, p2f aka FugFac
@@ -4515,43 +4515,43 @@ function make_headers(est,opt,fid)
             fprintf(fid, '%s, ', '  ');
         end
         for i = 79:6:91 % pK0, pK1, pK2
-            fprintf(fid, '%s, ', '(p units)');      % log10 unitless
+            fprintf(fid, '%s, ', '(-log10)');      % log10 unitless
             fprintf(fid, '%s, ', '  ');
         end
-        fprintf(fid, '%s, ', '(umol/kg)'); % oh (97)
-        fprintf(fid, '%s, ', '(umol/kg)');
-        fprintf(fid, '%s, ', '(p units)'); % pKw (103)
+        fprintf(fid, '%s, ', 'umol/kg'); % oh (97)
+        fprintf(fid, '%s, ', 'umol/kg');
+        fprintf(fid, '%s, ', '(-log10)'); % pKw (103)
         fprintf(fid, '%s, ', '  ');
         for i = 1:3 % (boh3, boh4, pKb)(so4, hso4, pKs)(F, HF, pKf)
-            fprintf(fid, '%s, ', '(umol/kg)'); % est 1st
-            fprintf(fid, '%s, ', '(umol/kg)');
-            fprintf(fid, '%s, ', '(umol/kg)'); % est 2nd
-            fprintf(fid, '%s, ', '(umol/kg)');
-            fprintf(fid, '%s, ', '(p units)'); % est.pK
+            fprintf(fid, '%s, ', 'umol/kg'); % est 1st
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', 'umol/kg'); % est 2nd
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', '(-log10)'); % est.pK
             fprintf(fid, '%s, ', '  ');
         end
         for i = 1:4 % po4, hpo4, h2po4, h3po4
-            fprintf(fid, '%s, ', '(umol/kg)');
-            fprintf(fid, '%s, ', '(umol/kg)');
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', 'umol/kg');
         end
         for i = 1:3 % pKp1, pKp2, pKp3
-            fprintf(fid, '%s, ', '(p units)');
+            fprintf(fid, '%s, ', '(-log10)');
             fprintf(fid, '%s, ', '  ');
         end
         for i = 1:3 % (sioh4, siooh3, pKsi)(nh3, nh4, pKnh4)(HS, H2S, pKh2s)
-            fprintf(fid, '%s, ', '(umol/kg)'); % est 1st
-            fprintf(fid, '%s, ', '(umol/kg)');
-            fprintf(fid, '%s, ', '(umol/kg)'); % est 2nd
-            fprintf(fid, '%s, ', '(umol/kg)');
-            fprintf(fid, '%s, ', '(p units)'); % est.pK
+            fprintf(fid, '%s, ', 'umol/kg'); % est 1st
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', 'umol/kg'); % est 2nd
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', '(-log10)'); % est.pK
             fprintf(fid, '%s, ', '  ');
         end
-        fprintf(fid, '%s, ', '(umol/kg)'); % ca
-        fprintf(fid, '%s, ', '(umol/kg)');
+        fprintf(fid, '%s, ', 'umol/kg'); % ca
+        fprintf(fid, '%s, ', 'umol/kg');
         for i = 1:2 % (Omega_Ar, pKar)(Omega_Ca, pKca)
-            fprintf(fid, '%s, ', '(umol/kg)'); % est 1st
-            fprintf(fid, '%s, ', '(umol/kg)');
-            fprintf(fid, '%s, ', '(p units)'); % est.pK
+            fprintf(fid, '%s, ', 'umol/kg'); % est 1st
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', '(-log10)'); % est.pK
             fprintf(fid, '%s, ', '  ');
         end
         if opt.Revelle == 1
