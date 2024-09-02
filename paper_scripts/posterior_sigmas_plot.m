@@ -73,7 +73,7 @@ for k = 1:26
         inpt(5).sig(k,i) = est(i).tp(3).eco3;
     end
 end
-
+%%
 % reorder to same order as f_hat plot
 for i = 1:5
     sig = inpt(i).sig;
@@ -86,17 +86,17 @@ for i = 1:5
     sig_ord(7,:) = sig(1,:);
     sig_ord(8,:) = sig(3,:);
     sig_ord(9,:) = sig(19,:);
-    sig_ord(10,:) = sig(13,:);
-    sig_ord(11,:) = sig(12,:);
-    sig_ord(12,:) = sig(6,:);
-    sig_ord(13,:) = sig(23,:);
-    sig_ord(14,:) = sig(24,:);
-    sig_ord(15,:) = sig(4,:);
-    sig_ord(16,:) = sig(15,:);
-    sig_ord(17,:) = sig(2,:);
-    sig_ord(18,:) = sig(25,:);
-    sig_ord(19,:) = sig(17,:);
-    sig_ord(20,:) = sig(14,:);
+    sig_ord(10,:) = sig(4,:);
+    sig_ord(11,:) = sig(13,:);
+    sig_ord(12,:) = sig(12,:);
+    sig_ord(13,:) = sig(6,:);
+    sig_ord(14,:) = sig(23,:);
+    sig_ord(15,:) = sig(24,:);
+    sig_ord(16,:) = sig(14,:);
+    sig_ord(17,:) = sig(15,:);
+    sig_ord(18,:) = sig(2,:);
+    sig_ord(19,:) = sig(25,:);
+    sig_ord(20,:) = sig(17,:);
     sig_ord(21,:) = sig(18,:);
     sig_ord(22,:) = sig(5,:);
     sig_ord(23,:) = sig(21,:);
@@ -117,18 +117,18 @@ lbl = {'pH, $p$CO$_{2}$',...            % 9
     'pH, $p$CO$_{2}$, CO$_{3}$',...     % 20 
     'C$_T$, A$_T$',...                  % 1 
     'C$_T$, $p$CO$_{2}$',...            % 3
-    'A$_T$, $p$CO$_{2}$, CO$_{3}$',...  % 19   
+    'A$_T$, $p$CO$_{2}$, CO$_{3}$',...  % 19 
+    'C$_T$, CO$_{3}$', ...              % 4 
     'C$_T$, A$_T$, CO$_{3}$',...        % 13
     'C$_T$, A$_T$, $p$CO$_{2}$',...     % 12
     'A$_T$, $p$CO$_{2}$',...            % 6    
     'C$_T$, A$_T$, $p$CO$_{2}$, CO$_{3}$',...   % 23
     'C$_T$, pH, $p$CO$_{2}$, CO$_{3}$',...      % 24
-    'C$_T$, CO$_{3}$', ...                      % 4 
+    'C$_T$, pH, $p$CO$_{2}$',...                % 14
     'C$_T$, pH, CO$_{3}$',...                   % 15
     'C$_T$, pH',...                             % 2
     'A$_T$, pH, $p$CO$_{2}$, CO$_{3}$',...      % 25
     'A$_T$, pH, $p$CO$_{2}$',...                % 17
-    'C$_T$, pH, $p$CO$_{2}$',...                % 14
     'A$_T$, pH, CO$_{3}$',...                   % 18
     'A$_T$, pH',...                             % 5
     'C$_T$, A$_T$, pH, $p$CO$_{2}$',...         % 21

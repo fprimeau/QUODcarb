@@ -75,7 +75,7 @@ obs_backup = obs;
 % 26 combinations plus 9 pK formulations
 
 %% Q5: All five input
-% CT AT pH pCO2 CO3 (Q5) (fid26)
+CT AT pH pCO2 CO3 (Q5) (fid26)
 obs = obs_backup;
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est26 = est;
@@ -103,7 +103,7 @@ end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est02   = est;
 save output_mat_files/all_combos/est02.mat est02; clear est; clear obs;
- 
+
 % TC pCO2 (Q2)(fid03)
 obs = obs_backup;
 for i = 1:nD
@@ -119,8 +119,8 @@ save output_mat_files/all_combos/est03.mat est03; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;         obs(i).eTA = nan;
+    obs(i).tp(1).ph = nan;   obs(i).tp(1).eph = nan; % !!
     obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan;
-    obs(i).tp(3).ph = nan;   obs(i).tp(3).eph = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est04   = est;
@@ -246,8 +246,8 @@ save output_mat_files/all_combos/est25.mat est25; clear est; clear obs;
 % % TC TA pH (Q3) (fid11)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(3).co3 = nan;   obs(i).tp(3).eco3 = nan;
     obs(i).tp(2).pco2 = nan;  obs(i).tp(2).epco2 = nan;
+    obs(i).tp(3).co3 = nan;   obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt); 
 est11   = est;
@@ -256,8 +256,8 @@ save output_mat_files/all_combos/est11.mat est11; clear est; clear obs;
 % TC TA pco2 (Q3) (fid12)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(3).co3 = nan;  obs(i).tp(3).eco3 = nan;
     obs(i).tp(1).ph = nan;   obs(i).tp(1).eph = nan;
+    obs(i).tp(3).co3 = nan;  obs(i).tp(3).eco3 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est12   = est;
@@ -266,8 +266,8 @@ save output_mat_files/all_combos/est12.mat est12; clear est; clear obs;
 % TC TA co3 (Q3) (fid13)
 obs = obs_backup;
 for i = 1:nD
-    obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan;
     obs(i).tp(1).ph = nan;   obs(i).tp(1).eph = nan;
+    obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
 est13   = est;

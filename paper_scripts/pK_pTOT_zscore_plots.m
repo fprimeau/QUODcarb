@@ -160,7 +160,7 @@ b2.WhiskerLineColor = clr;
 
 grid on
 
-t = title('pH @ $25^{\circ}$C, $1$ atm');
+t = title('pH @ $25^{\circ}$C, $101,135 Pa$');
 t.FontSize = 12;
 xticklabels(lbl);
 ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
@@ -182,7 +182,7 @@ b3.WhiskerLineColor = clr;
 
 grid on
 
-t = title('$p$CO$_2$ @ $20^{\circ}$C, $1$ atm');
+t = title('$p$CO$_2$ @ $20^{\circ}$C, $101,135 Pa$');
 t.FontSize = 12;
 xticklabels(lbl);
 ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
@@ -209,7 +209,7 @@ b1.WhiskerLineColor = clr;
 
 grid on
 
-t = title('[CO$_{3}^{2-}$]$_T$ @ $25^{\circ}$C, $1$ atm');
+t = title('[CO$_{3}^{2-}$]$_T$ @ $25^{\circ}$C, $101,135 Pa$');
 t.FontSize = 12;
 xticklabels(lbl);
 ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
