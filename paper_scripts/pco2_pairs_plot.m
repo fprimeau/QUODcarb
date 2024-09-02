@@ -46,11 +46,11 @@ for k = 1:10
     est = input(k).est;
 
     for i = 1:nD
-        pco2(i,k)   = est(i).tp(3).pco2; % posterior pco2
-        sig(i,k)    = est(i).tp(3).epco2; % posterior error
+        pco2(i,k)   = est(i).tp(2).pco2; % posterior pco2
+        sig(i,k)    = est(i).tp(2).epco2; % posterior error
         dpco2(i,k)  = pco2obs(i) - pco2(i,k); % meas - calc
         % Z-score = ( meas - calc ) / sigma_meas
-        zpco2(i,k)  = dpco2(i,k)/(0.0021*pco2obs(i)); % sigma_meas = 0.21%
+        zpco2(i,k)  = dpco2(i,k)/(1.1353); % sigma_meas
     end
 end
 
@@ -94,7 +94,7 @@ b1.MarkerColor = clr;
 b1.WhiskerLineColor = clr;
 b1.LineWidth = 1.4;
 
-ylim([-120 120]) % dpco2
+ylim([-100 100]) % dpco2
 
 ax = gca;
 ax.FontSize = 9;
@@ -115,6 +115,8 @@ b1.BoxEdgeColor = clr;
 b1.MarkerColor = clr;
 b1.WhiskerLineColor = clr;
 b1.LineWidth = 1.4;
+
+ylim([0 80])
 
 ax = gca;
 ax.FontSize = 9;
