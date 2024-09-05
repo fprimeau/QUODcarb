@@ -47,10 +47,10 @@ for k = 1:10
 
     for i = 1:nD
         pco2(i,k)   = est(i).tp(2).pco2; % posterior pco2
-        sig(i,k)    = est(i).tp(2).epco2; % posterior error
+        sig(i,k)    = est(i).tp(2).epco2; % posterior uncertainty
         dpco2(i,k)  = pco2obs(i) - pco2(i,k); % meas - calc
         % Z-score = ( meas - calc ) / sigma_meas
-        zpco2(i,k)  = dpco2(i,k)/(1.1353); % sigma_meas
+        zpco2(i,k)  = dpco2(i,k)/(0.01*pco2obs(i)); % sigma_meas, 1% uncert
     end
 end
 
@@ -138,7 +138,7 @@ b1.MarkerColor = clr;
 b1.WhiskerLineColor = clr;
 b1.LineWidth = 1.4;
 
-ylim([-100 100]) 
+ylim([-20 20]) 
 
 ax = gca;
 ax.FontSize = 9;
@@ -154,7 +154,7 @@ set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'pco2_pairs_plot.pdf','-dpdf','-r0');
+print(h,'pco2_pairs_plo2t.pdf','-dpdf','-r0');
 
 
 
