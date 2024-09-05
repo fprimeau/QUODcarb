@@ -154,7 +154,7 @@ set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'pco2_pairs_plo2t.pdf','-dpdf','-r0');
+print(h,'pco2_pairs_plot.pdf','-dpdf','-r0');
 
 
 
