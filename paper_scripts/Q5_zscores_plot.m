@@ -22,10 +22,10 @@ for i = 1:nD
     zscore(i,2) = (TAobs(i) - TA(i))/1.78;
 
     ph(i)       = est26(i).tp(1).ph; 
-    zscore(i,3) = (phobs(i) - ph(i))/0.0004;
+    zscore(i,3) = (phobs(i) - ph(i))/0.001;
 
     pco2(i)     = est26(i).tp(2).pco2; 
-    zscore(i,4) = (pco2obs(i) - pco2(i))/(0.0021*pco2obs(i)); % 0.21%
+    zscore(i,4) = (pco2obs(i) - pco2(i))/(0.01*pco2obs(i)); % 1%
 
     co3(i)      = est26(i).tp(3).co3;    
     zscore(i,5) = (co3obs(i) - co3(i))/(0.02*co3obs(i)); % 2%
@@ -68,7 +68,7 @@ ylabel('Z-scores: ( Meas - Calc ) / $\mathbf{\sigma_{meas}}$')
 ax.XTickMode = 'auto';
 ax.TickDir = 'out';
 xticklabels(lbl); 
-ax.YTick = [-5, -2, 0, 2,  5];
+ax.YTick = [-5, -3, -2, 0, 2, 3,  5];
 grid on
 
 h = gcf;
@@ -112,12 +112,6 @@ for i = 1:nD
     end
 end
 
-% ±2
-% 46 nCO3 = 4.11%
-% 10 nTA = 0.89%
-% 13 nTC = 1.16%
 
-% ±3
-% 11 nCO3 = 0.98%
-% 3 nTA = 0.27% 
-% 6 nTC = 0.54%
+
+
