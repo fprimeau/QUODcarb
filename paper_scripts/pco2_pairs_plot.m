@@ -49,8 +49,11 @@ for k = 1:10
         pco2(i,k)   = est(i).tp(2).pco2; % posterior pco2
         sig(i,k)    = est(i).tp(2).epco2; % posterior uncertainty
         dpco2(i,k)  = pco2obs(i) - pco2(i,k); % meas - calc
+        sig_in(i,k) = 0.01*pco2obs(i);
         % Z-score = ( meas - calc ) / sigma_meas
-        zpco2(i,k)  = dpco2(i,k)/(0.01*pco2obs(i)); % sigma_meas, 1% uncert
+        zpco2(i,k)  = dpco2(i,k)/(sig_in(i,k)); % sigma_meas, 1% uncert
+
+        zsig2(i,k)  = dpco2(i,k)/(sqrt(sig(i,k)^2 + sig_in(i,k)^2));
     end
 end
 
@@ -80,7 +83,7 @@ ddgreen = [0, 102/255, 0];
 clr = ddgreen;
 %% 
 
-tiledlayout(1,3)
+tiledlayout(1,4)
 
 nexttile % delta pco2
 b1 = boxchart(dpco2);
@@ -105,16 +108,16 @@ xticklabels(lbl);
 grid on
 
 nexttile % sigma_posterior uatm
-b1 = boxchart(sig); % quodcarb
-b1.JitterOutliers = 'on';
-b1.MarkerStyle = '.';
-b1.MarkerSize = 7;
-b1.BoxWidth = 0.7;
-b1.BoxFaceColor = clr;
-b1.BoxEdgeColor = clr;
-b1.MarkerColor = clr;
-b1.WhiskerLineColor = clr;
-b1.LineWidth = 1.4;
+b2 = boxchart(sig); % quodcarb
+b2.JitterOutliers = 'on';
+b2.MarkerStyle = '.';
+b2.MarkerSize = 7;
+b2.BoxWidth = 0.7;
+b2.BoxFaceColor = clr;
+b2.BoxEdgeColor = clr;
+b2.MarkerColor = clr;
+b2.WhiskerLineColor = clr;
+b2.LineWidth = 1.4;
 
 ylim([0 80])
 
@@ -127,16 +130,16 @@ xticklabels(lbl);
 grid on
 
 nexttile 
-b1 = boxchart(zpco2);
-b1.JitterOutliers = 'on';
-b1.MarkerStyle = '.';
-b1.MarkerSize = 7;
-b1.BoxWidth = 0.7;
-b1.BoxFaceColor = clr;
-b1.BoxEdgeColor = clr;
-b1.MarkerColor = clr;
-b1.WhiskerLineColor = clr;
-b1.LineWidth = 1.4;
+b3 = boxchart(zpco2);
+b3.JitterOutliers = 'on';
+b3.MarkerStyle = '.';
+b3.MarkerSize = 7;
+b3.BoxWidth = 0.7;
+b3.BoxFaceColor = clr;
+b3.BoxEdgeColor = clr;
+b3.MarkerColor = clr;
+b3.WhiskerLineColor = clr;
+b3.LineWidth = 1.4;
 
 ylim([-20 20]) 
 
@@ -148,13 +151,34 @@ ax.XTickMode = 'auto';
 xticklabels(lbl);
 grid on
 
+nexttile 
+b4 = boxchart(zsig2);
+b4.JitterOutliers = 'on';
+b4.MarkerStyle = '.';
+b4.MarkerSize = 7;
+b4.BoxWidth = 0.7;
+b4.BoxFaceColor = clr;
+b4.BoxEdgeColor = clr;
+b4.MarkerColor = clr;
+b4.WhiskerLineColor = clr;
+b4.LineWidth = 1.4;
+
+% ylim([-20 20]) 
+
+ax = gca;
+ax.FontSize = 9;
+xlabel('QUODcarb Input') % quodcarb
+ylabel('Z-scores: ( Meas - Calc ) / ($\sigma_{meas}^2 + \sigma_{calc}^2$)$^{1/2}$')
+ax.XTickMode = 'auto';
+xticklabels(lbl);
+grid on
 
 h = gcf; % For example, h = openfig('sub_fig.fig'); Or you just ploted one figure: plot(1:10);
 set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'pco2_pairs_plot.pdf','-dpdf','-r0');
+print(h,'pco2_pairs_plot_sig2.pdf','-dpdf','-r0');
 
 
 
