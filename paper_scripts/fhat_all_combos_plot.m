@@ -39,18 +39,19 @@ end
 % calculate p(sig)
 TCm     = TCobs .* 1e-6;    eTC     = 2.01 * 1e-6; 
 TAm     = TAobs .* 1e-6;    eTA     = 1.78 * 1e-6; 
-pCO2m   = pco2obs .* 1e-6;  epCO2   = 1.1353; % 0.21%*avg(pco2)
+                            epH     = 0.001;
+pCO2m   = pco2obs .* 1e-6;  epCO2   = pCO2m .* 0.01; % 1%
 CO3m    = co3obs .* 1e-6;   eCO3    = CO3m .* 0.02; % 2%
 PO4m    = po4obs .* 1e-6;   ePO4    = 0.0019; % 0.3%*avg(TP)
 SIm     = siobs .* 1e-6;    eSI     = 0.0238; % 0.31%*avg(TSi)
 
 for i = 1:nD
-    epTC(i)     = sqrt( ( p(TCm(i)   + eTC )    - pTCobs(i)   )^2 );
-    epTA(i)     = sqrt( ( p(TAm(i)   + eTA )    - pTAobs(i)   )^2 );
-    eppCO2(i)   = sqrt( ( p(pCO2m(i) + epCO2)   - ppco2obs(i) )^2 );
-    epCO3(i)    = sqrt( ( p(CO3m(i)  + eCO3(i)) - pco3obs(i)  )^2 );
-    epTP(i)     = sqrt( ( p(PO4m(i)  + ePO4)    - ppo4obs(i)  )^2 );
-    epTSi(i)    = sqrt( ( p(SIm(i)   + eSI)     - psiobs(i)   )^2 );
+    epTC(i)     = sqrt( ( p(TCm(i)   + eTC )     - pTCobs(i)   )^2 );
+    epTA(i)     = sqrt( ( p(TAm(i)   + eTA )     - pTAobs(i)   )^2 );
+    eppCO2(i)   = sqrt( ( p(pCO2m(i) + epCO2(i)) - ppco2obs(i) )^2 );
+    epCO3(i)    = sqrt( ( p(CO3m(i)  + eCO3(i))  - pco3obs(i)  )^2 );
+    epTP(i)     = sqrt( ( p(PO4m(i)  + ePO4)     - ppo4obs(i)  )^2 );
+    epTSi(i)    = sqrt( ( p(SIm(i)   + eSI)      - psiobs(i)   )^2 );
 end
 
 % then, load all 26 combos
@@ -135,8 +136,9 @@ for j = 1:26
     est = input(j).est;
 
     for i = 1:nD
+        S = est(i).sal;
         % tp(1) for pH
-        T = est(i).tp(1).T; S = est(i).sal; P = est(i).tp(1).P;
+        T = est(i).tp(1).T; P = est(i).tp(1).P;
         [pK,~,epK] = calc_pK(opt,T,S,P);
         pK0_1(i) = pK(1);       epK0_1(i) = epK(1);
         pK1_1(i) = pK(2);       epK1_1(i) = epK(2);
@@ -155,7 +157,7 @@ for j = 1:26
         pKca_1(i) = pK(16);     epKca_1(i) = epK(16);
         
         % tp(2) for pCO2
-        T = est(i).tp(2).T; S = est(i).sal; P = est(i).tp(2).P;
+        T = est(i).tp(2).T; P = est(i).tp(2).P;
         [pK,~,epK] = calc_pK(opt,T,S,P);
         pK0_2(i) = pK(1);       epK0_2(i) = epK(1);
         pK1_2(i) = pK(2);       epK1_2(i) = epK(2);
@@ -204,9 +206,9 @@ for j = 1:26
 
     for i = 1:nD
         %       z2( meas, calc, sig) = (meas - calc / sig)^2
-        zpTC  = z2( pTCobs(i),  est(i).pTC,  epTC(i));
-        zpTA  = z2( pTAobs(i),  est(i).pTA,  epTA(i));
-        zpTB  = z2( pTB(i),     est(i).pTB,  epTB(i));
+        zpTC(j,i)  = z2( pTCobs(i),  est(i).pTC,  epTC(i));
+        zpTA(j,i)  = z2( pTAobs(i),  est(i).pTA,  epTA(i));
+        zpTB(j,i)  = z2( pTB(i),     est(i).pTB,  epTB(i));
         zpTS  = z2( pTS(i),     est(i).pTS,  epTS(i));
         zpTF  = z2( pTF(i),     est(i).pTF,  epTF(i));
         zpTCa = z2( pTCa(i),    est(i).pTCa, epTCa(i));
@@ -264,9 +266,9 @@ for j = 1:26
         zpKar_3     = z2( pKar_3(i),  est(i).tp(3).pKar,  epKar_3(i));
         zpKca_3     = z2( pKca_3(i),  est(i).tp(3).pKca,  epKca_3(i));
 
-        zpH     = z2( phobs(i),    est(i).tp(1).ph,    0.0004);
-        zppCO2  = z2( ppco2obs(i), est(i).tp(2).ppco2, eppCO2(i));
-        zpCO3   = z2( pco3obs(i),  est(i).tp(3).pco3,  epCO3(i));
+        zpH(j,i)     = z2( phobs(i),    est(i).tp(1).ph,    epH);
+        zppCO2(j,i)  = z2( ppco2obs(i), est(i).tp(2).ppco2, eppCO2(i));
+        zpCO3(j,i)   = z2( pco3obs(i),  est(i).tp(3).pco3,  epCO3(i));
 
         zsal     = z2( sobs(i), est(i).sal,     0.001);
         ztemp_1  = z2( 25,      est(i).tp(1).T, 0.05);
@@ -276,7 +278,8 @@ for j = 1:26
         zpress_2 = z2( 0,       est(i).tp(2).P, 0.07);
         zpress_3 = z2( 0,       est(i).tp(3).P, 0.07);
 
-        zall = [ zpTC, zpTA, zpTB, zpTS, zpTF, zpTCa, zpTP, zpTSi, ...
+        zall = [ zpTC(j,i), zpTA(j,i), zpTB(j,i), zpTS, ...
+            zpTF, zpTCa, zpTP, zpTSi, ...
             zpK0_1, zpK1_1, zpK2_1, zpKb_1, zpKw_1, zpKs_1, ...
             zpKf_1, zpKp1_1, zpKp2_1, zpKp3_1, zpKsi_1, ...
             zpKnh4_1, zpKh2s_1, zpKar_1, zpKca_1, ...
@@ -286,7 +289,8 @@ for j = 1:26
         zpK0_3, zpK1_3, zpK2_3, zpKb_3, zpKw_3, zpKs_3, ...
             zpKf_3, zpKp1_3, zpKp2_3, zpKp3_3, zpKsi_3, ...
             zpKnh4_3, zpKh2s_3, zpKar_3, zpKca_3, ...
-            zpH, zppCO2, zpCO3, zsal, ztemp_1, ztemp_2, ztemp_3, ...
+            zpH(j,i), zppCO2(j,i), zpCO3(j,i), ...
+            zsal, ztemp_1, ztemp_2, ztemp_3, ...
             zpress_1, zpress_2, zpress_3];
 
         f_calc(j,i) = sum(zall)/2; % b/c f = 0.5 * sum (zscores^2);
@@ -300,32 +304,31 @@ f_26 = f_calc;
 f_ord = zeros(26,nD);
 
 f_ord(1,:)  = f_26(9,:);    % 287.5142
-f_ord(2,:)  = f_26(8,:);    % 209.1059
-f_ord(3,:)  = f_26(10,:);   % 206.4764
-f_ord(4,:)  = f_26(7,:);    % 146.3020
-f_ord(5,:)  = f_26(16,:);   % 135.446
-f_ord(6,:)  = f_26(20,:);   % 131.1740
-f_ord(7,:)  = f_26(1,:);    % 126.1490
-f_ord(8,:)  = f_26(3,:);    % 113.9206
-f_ord(9,:)  = f_26(19,:);   % 112.8240
-f_ord(10,:) = f_26(4,:);    % 107.7540
-f_ord(11,:) = f_26(13,:);   % 96.4236
-f_ord(12,:) = f_26(12,:);   % 88.0537
-f_ord(13,:) = f_26(6,:);    % 86.0904
-f_ord(14,:) = f_26(23,:);   % 68.0923
-f_ord(15,:) = f_26(24,:);   % 3.3736
-f_ord(16,:) = f_26(14,:);   % 3.2054
-f_ord(17,:) = f_26(15,:);   % 2.6987
-f_ord(18,:) = f_26(2,:);    % 2.6046
-f_ord(19,:) = f_26(25,:);   % 2.3689 
-f_ord(20,:) = f_26(17,:);   % 2.3287
-f_ord(21,:) = f_26(18,:);   % 2.0354
-f_ord(22,:) = f_26(5,:);    % 1.9145
-f_ord(23,:) = f_26(21,:);   % 1.2915 
-f_ord(24,:) = f_26(26,:);   % 1.2511 
-f_ord(25,:) = f_26(11,:);   % 0.8017
-f_ord(26,:) = f_26(22,:);   % 0.728
-
+f_ord(2,:)  = f_26(8,:);    % 215.5009
+f_ord(3,:)  = f_26(20,:);   % 126.6170
+f_ord(4,:)  = f_26(10,:);   % 75.6964
+f_ord(5,:)  = f_26(7,:);    % 29.6025
+f_ord(6,:)  = f_26(16,:);   % 29.3410
+f_ord(7,:)  = f_26(3,:);    % 26.9975
+f_ord(8,:)  = f_26(1,:);    % 23.7402
+f_ord(9,:)  = f_26(19,:);   % 23.6582
+f_ord(10,:) = f_26(13,:);   % 18.3538
+f_ord(11,:) = f_26(6,:);    % 18.1367
+f_ord(12,:) = f_26(12,:);   % 15.9128
+f_ord(13,:) = f_26(23,:);   % 12.5794
+f_ord(14,:) = f_26(15,:);   % 5.1016
+f_ord(15,:) = f_26(4,:);    % 5.1016
+f_ord(16,:) = f_26(2,:);    % 4.8340
+f_ord(17,:) = f_26(18,:);   % 4.2657
+f_ord(18,:) = f_26(5,:);    % 3.9884
+f_ord(19,:) = f_26(24,:);   % 3.2492
+f_ord(20,:) = f_26(11,:);   % 3.1809
+f_ord(21,:) = f_26(14,:);   % 3.0715
+f_ord(22,:) = f_26(22,:);   % 2.8116
+f_ord(23,:) = f_26(25,:);   % 2.3267 
+f_ord(24,:) = f_26(17,:);   % 2.3242
+f_ord(25,:) = f_26(21,:);   % 1.1685
+f_ord(26,:) = f_26(26,:);   % 1.1190 
 
 %% 
 
@@ -342,30 +345,30 @@ set(groot,'defaultTextFontName','Perpetua',...
 
 lbl = {'pH, $p$CO$_{2}$',...            % 9 
     'pH, CO$_{3}$',...                  % 8 
+    'pH, $p$CO$_{2}$, CO$_{3}$',...     % 20
     '$p$CO$_{2}$, CO$_{3}$',...         % 10
     'A$_T$, CO$_{3}$',...               % 7
     'C$_T$, $p$CO$_{2}$, CO$_{3}$',...  % 16
-    'pH, $p$CO$_{2}$, CO$_{3}$',...     % 20 
+    'C$_T$, $p$CO$_{2}$',...            % 3 
     'C$_T$, A$_T$',...                  % 1 
-    'C$_T$, $p$CO$_{2}$',...            % 3
     'A$_T$, $p$CO$_{2}$, CO$_{3}$',...  % 19 
-    'C$_T$, CO$_{3}$', ...              % 4 
     'C$_T$, A$_T$, CO$_{3}$',...        % 13
+    'A$_T$, $p$CO$_{2}$',...            % 6 
     'C$_T$, A$_T$, $p$CO$_{2}$',...     % 12
-    'A$_T$, $p$CO$_{2}$',...            % 6    
     'C$_T$, A$_T$, $p$CO$_{2}$, CO$_{3}$',...   % 23
-    'C$_T$, pH, $p$CO$_{2}$, CO$_{3}$',...      % 24
-    'C$_T$, pH, $p$CO$_{2}$',...                % 14
     'C$_T$, pH, CO$_{3}$',...                   % 15
+    'C$_T$, CO$_{3}$', ...                      % 4 
     'C$_T$, pH',...                             % 2
-    'A$_T$, pH, $p$CO$_{2}$, CO$_{3}$',...      % 25
-    'A$_T$, pH, $p$CO$_{2}$',...                % 17
     'A$_T$, pH, CO$_{3}$',...                   % 18
     'A$_T$, pH',...                             % 5
+    'C$_T$, pH, $p$CO$_{2}$, CO$_{3}$',...      % 24
+    'C$_T$, A$_T$, pH',...                      % 11 
+    'C$_T$, pH, $p$CO$_{2}$',...                % 14
+    'C$_T$, A$_T$, pH, CO$_{3}$',...            % 22
+    'A$_T$, pH, $p$CO$_{2}$, CO$_{3}$',...      % 25
+    'A$_T$, pH, $p$CO$_{2}$',...                % 17   
     'C$_T$, A$_T$, pH, $p$CO$_{2}$',...         % 21
-    'C$_T$, A$_T$, pH, $p$CO$_{2}$, CO$_{3}$', ... % 26
-    'C$_T$, A$_T$, pH',...                      % 11    
-    'C$_T$, A$_T$, pH, CO$_{3}$'};              % 22
+    'C$_T$, A$_T$, pH, $p$CO$_{2}$, CO$_{3}$'}; % 26
 
 ddgreen = [0, 102/255, 0];
 clr = ddgreen;
