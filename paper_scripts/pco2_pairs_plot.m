@@ -119,7 +119,7 @@ b2.MarkerColor = clr;
 b2.WhiskerLineColor = clr;
 b2.LineWidth = 1.4;
 
-ylim([0 80])
+% ylim([0 80])
 
 ax = gca;
 ax.FontSize = 9;
@@ -178,7 +178,7 @@ set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'pco2_pairs_plot_sig2.pdf','-dpdf','-r0');
+print(h,'pco2_pairs_plot_sept19.pdf','-dpdf','-r0');
 
 
 
