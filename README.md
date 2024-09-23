@@ -19,7 +19,7 @@ Download the files in the 'src' repository and put them together in a directory
 To perform CO2-system calculations, use QUODcarb.m as directed in this 
 documentation and in the comments at the top of the file. Download the
  compare.m file only if you would like to compare the QUODcarb output to
- CO2SYSv3’s output.
+ CO2SYSv3’s output (see example_compare.m for example use of compare.m).
 
 ## Quick Start
 See example scripts (src/example1.m, src/example2.m, src/example3.m) showing possible
