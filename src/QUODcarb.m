@@ -31,7 +31,7 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %
 %   opt.K1K2        = 10;           % (Lueker et al 2000)
 %   opt.KSO4        = 1;            % (Dickson et al 1990a) 
-%   opt.KF          = 2;            % (Perez and Fraga 1987
+%   opt.KF          = 2;            % (Perez and Fraga 1987)
 %   opt.TB          = 2;            % (Lee et al. 2010)
 %   opt.phscale     = 1;            % (1=tot, 2=free, 3=sws, 4=nbs)
 %   opt.printcsv    = 1;            % (1=on, 0=off)
