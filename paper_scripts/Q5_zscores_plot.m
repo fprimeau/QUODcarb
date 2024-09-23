@@ -76,7 +76,7 @@ set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'Q5_zscores_plot.pdf','-dpdf','-r0');
+print(h,'Q5_zscores_plot_sept19.pdf','-dpdf','-r0');
 
 
 
