@@ -109,20 +109,31 @@ for i = 1:nD
     zpKb_co(i)  = (pKb_co(i) - est26(i).tp(3).pKb)/epKb_co(i);
 end
 
-zscore_pKph(:,1) = zpK0_ph;
-zscore_pKph(:,2) = zpK1_ph;
-zscore_pKph(:,3) = zpK2_ph;
-zscore_pKph(:,4) = zpKb_ph;
+% combine tp(1) and tp(3), both at 25C & 0dbar
+zpK0_25 = [zpK0_ph, zpK0_co];
+zpK1_25 = [zpK1_ph, zpK1_co];
+zpK2_25 = [zpK2_ph, zpK2_co];
+zpKb_25 = [zpKb_ph, zpKb_co];
+
+% zscore_pKph(:,1) = zpK0_ph;
+% zscore_pKph(:,2) = zpK1_ph;
+% zscore_pKph(:,3) = zpK2_ph;
+% zscore_pKph(:,4) = zpKb_ph;
+
+zscore_pK25(:,1) = zpK0_25;
+zscore_pK25(:,2) = zpK1_25;
+zscore_pK25(:,3) = zpK2_25;
+zscore_pK25(:,4) = zpKb_25;
 
 zscore_pKpc(:,1) = zpK0_pc; % pco2
 zscore_pKpc(:,2) = zpK1_pc;
 zscore_pKpc(:,3) = zpK2_pc;
 zscore_pKpc(:,4) = zpKb_pc;
 
-zscore_pKco(:,1) = zpK0_co; % CO3
-zscore_pKco(:,2) = zpK1_co;
-zscore_pKco(:,3) = zpK2_co;
-zscore_pKco(:,4) = zpKb_co;
+% zscore_pKco(:,1) = zpK0_co; % CO3
+% zscore_pKco(:,2) = zpK1_co;
+% zscore_pKco(:,3) = zpK2_co;
+% zscore_pKco(:,4) = zpKb_co;
 
 % next, plot the pK Z-scores
 
@@ -141,11 +152,12 @@ lbl = {'$pK_0$','$pK_1$','$pK_2$','$pK_B$'};
 ddgreen = [0, 102/255, 0];
 clr = ddgreen;
 
-tiledlayout(1,3)
+tiledlayout(1,2)
 
 nexttile
  
-b2 = boxchart(zscore_pKph);
+% b2 = boxchart(zscore_pKph);
+b2 = boxchart(zscore_pK25);
 b2.JitterOutliers = 'on';
 b2.MarkerStyle = '.';
 b2.MarkerSize = 8;
@@ -160,8 +172,8 @@ b2.WhiskerLineColor = clr;
 
 grid on
 
-t = title('pH @ $25^{\circ}$C, $101,135 Pa$');
-t.FontSize = 12;
+t = title('$25^{\circ}$C, $101,135 Pa$');
+t.FontSize = 15;
 xticklabels(lbl);
 ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
 
@@ -182,45 +194,40 @@ b3.WhiskerLineColor = clr;
 
 grid on
 
-t = title('$p$CO$_2$ @ $20^{\circ}$C, $101,135 Pa$');
-t.FontSize = 12;
+t = title('$20^{\circ}$C, $101,135 Pa$');
+t.FontSize = 15;
 xticklabels(lbl);
 ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
+
+% nexttile
+% 
+% b1 = boxchart(zscore_pKco);
+% b1.JitterOutliers = 'on';
+% b1.MarkerStyle = '.';
+% b1.MarkerSize = 8;
+% b1.LineWidth = 2.0;
+% b1.BoxWidth = 0.8;
+% b1.BoxFaceColor = clr;
+% b1.BoxEdgeColor = clr;
+% b1.MarkerColor = clr;
+% b1.WhiskerLineColor = clr;
+% 
+% % ylim([-4 4])
+% 
+% grid on
+% 
+% t = title('[CO$_{3}^{2-}$]$_T$ @ $25^{\circ}$C, $101,135 Pa$');
+% t.FontSize = 12;
+% xticklabels(lbl);
+% ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
 
 h = gcf;
 set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-nexttile
- 
-b1 = boxchart(zscore_pKco);
-b1.JitterOutliers = 'on';
-b1.MarkerStyle = '.';
-b1.MarkerSize = 8;
-b1.LineWidth = 2.0;
-b1.BoxWidth = 0.8;
-b1.BoxFaceColor = clr;
-b1.BoxEdgeColor = clr;
-b1.MarkerColor = clr;
-b1.WhiskerLineColor = clr;
 
-% ylim([-4 4])
-
-grid on
-
-t = title('[CO$_{3}^{2-}$]$_T$ @ $25^{\circ}$C, $101,135 Pa$');
-t.FontSize = 12;
-xticklabels(lbl);
-ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
-
-h = gcf;
-set(h,'Units','Inches');
-pos = get(h,'Position');
-set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
-
-
-print(h,'pK_zscores_plot.pdf','-dpdf','-r0');
+print(h,'pK_zscores_plot_sept19.pdf','-dpdf','-r0');
 
 
 
@@ -259,8 +266,8 @@ for i = 1:nD
     zTCa(i) = (TCa(i) - est26(i).TCa)/eTCa(i);
 
     % measured TP and TSi
-    zTP(i)= (tpobs(i) - est26(i).TP)/(tpobs(i)*0.001); % 0.1%
-    zTSi(i) = (siobs(i) - est26(i).TSi)/(siobs(i)*0.02); % 2%
+    zTP(i)= (tpobs(i) - est26(i).TP)/(0.0019);
+    zTSi(i) = (siobs(i) - est26(i).TSi)/(0.0238); % 2%
 end
 
 % measured totals: TP, TSi
@@ -325,7 +332,7 @@ pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
 
-print(h,'pTOT_zscores_plot.pdf','-dpdf','-r0');
+print(h,'pTOT_zscores_plot_sept19.pdf','-dpdf','-r0');
 
 
 
