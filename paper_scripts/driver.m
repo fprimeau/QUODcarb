@@ -60,13 +60,13 @@ for i = 1:nD
     obs(i).tp(3).P    = 0.0 ;  % NOT in situ
     obs(i).tp(3).eP   = 0.07 ;
     obs(i).tp(3).co3  = in(11,i); % (µmol/kg)
-    obs(i).tp(3).eco3 = in(11,1)*0.02;  % 2% from Jon Sharp
+    obs(i).tp(3).eco3 = in(11,i)*0.0200;  % 2% from Jon Sharp
 
-    % fourth (T,P)-dependent measurement IN SITU
-    obs(i).tp(4).T  = in(2,i); % deg C, CTD temp
-    obs(i).tp(4).eT = 0.02; % ±0.02 degC
-    obs(i).tp(4).P  = in(3,i); % dbar
-    obs(i).tp(4).eP = 0.63; % (max) ± 0.63 dbar
+    % % fourth (T,P)-dependent measurement IN SITU
+    % obs(i).tp(4).T  = in(2,i); % deg C, CTD temp
+    % obs(i).tp(4).eT = 0.02; % ±0.02 degC
+    % obs(i).tp(4).P  = in(3,i); % dbar
+    % obs(i).tp(4).eP = 0.63; % (max) ± 0.63 dbar
 end
 
 obs_backup = obs;
@@ -119,7 +119,7 @@ save output_mat_files/all_combos/est03.mat est03; clear est; clear obs;
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;         obs(i).eTA = nan;
-    obs(i).tp(1).ph = nan;   obs(i).tp(1).eph = nan; % !!
+    obs(i).tp(1).ph = nan;   obs(i).tp(1).eph = nan; 
     obs(i).tp(2).pco2 = nan; obs(i).tp(2).epco2 = nan;
 end
 [est,~,~,~,~] = QUODcarb(obs,opt);
