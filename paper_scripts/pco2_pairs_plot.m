@@ -119,12 +119,12 @@ b2.MarkerColor = clr;
 b2.WhiskerLineColor = clr;
 b2.LineWidth = 1.4;
 
-% ylim([0 80])
+ylim([0 65])
 
 ax = gca;
 ax.FontSize = 9;
 xlabel('QUODcarb Input') % quodcarb
-ylabel('$p$CO$_2$ $\sigma_{posterior}$ ($\mu$atm)') % epco2
+ylabel('$p$CO$_2$ $u_{posterior}$ ($\mu$atm)') % epco2
 ax.XTickMode = 'auto';
 xticklabels(lbl);
 grid on
@@ -146,7 +146,7 @@ ylim([-20 20])
 ax = gca;
 ax.FontSize = 9;
 xlabel('QUODcarb Input') % quodcarb
-ylabel('Z-scores: ( Meas - Calc ) / $\sigma_{meas}$')
+ylabel('Z-scores: ( Meas - Calc ) / $u_{meas}$')
 ax.XTickMode = 'auto';
 xticklabels(lbl);
 grid on
@@ -168,7 +168,7 @@ b4.LineWidth = 1.4;
 ax = gca;
 ax.FontSize = 9;
 xlabel('QUODcarb Input') % quodcarb
-ylabel('Z-scores: ( Meas - Calc ) / ($\sigma_{meas}^2 + \sigma_{calc}^2$)$^{1/2}$')
+ylabel('Z-scores: ( Meas - Calc ) / ($u_{meas}^2 + u_{calc}^2$)$^{1/2}$')
 ax.XTickMode = 'auto';
 xticklabels(lbl);
 grid on
@@ -178,7 +178,7 @@ set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'pco2_pairs_plot_sept19.pdf','-dpdf','-r0');
+print(h,'pco2_pairs_plot_sept24.pdf','-dpdf','-r0');
 
 
 
