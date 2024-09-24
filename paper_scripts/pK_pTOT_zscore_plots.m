@@ -175,7 +175,7 @@ grid on
 t = title('$25^{\circ}$C, $101,135 Pa$');
 t.FontSize = 15;
 xticklabels(lbl);
-ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
+ylabel('Z-scores: ( Prior - Posterior ) / ${u_{expm}}$');
 
 nexttile
  
@@ -197,7 +197,7 @@ grid on
 t = title('$20^{\circ}$C, $101,135 Pa$');
 t.FontSize = 15;
 xticklabels(lbl);
-ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
+ylabel('Z-scores: ( Prior - Posterior ) / ${u_{expm}}$');
 
 % nexttile
 % 
@@ -227,7 +227,7 @@ pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
 
-print(h,'pK_zscores_plot_sept19.pdf','-dpdf','-r0');
+print(h,'pK_zscores_plot_sept24.pdf','-dpdf','-r0');
 
 
 
@@ -304,7 +304,7 @@ grid on
 t = title('Measured Totals');
 t.FontSize = 18;
 xticklabels(lbl1);
-ylabel('Z-scores: ( Meas - Calc ) / $\mathbf{\sigma_{meas}}$');
+ylabel('Z-scores: ( Meas - Calc ) / ${u_{meas}}$');
 
 nexttile
  
@@ -324,7 +324,7 @@ grid on
 t = title('Formulated Totals');
 t.FontSize = 18;
 xticklabels(lbl2);
-ylabel('Z-scores: ( Prior - Posterior ) / $\mathbf{\sigma_{expm}}$');
+ylabel('Z-scores: ( Prior - Posterior ) / ${u_{expm}}$');
 
 h = gcf;
 set(h,'Units','Inches');
@@ -332,7 +332,7 @@ pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
 
-print(h,'pTOT_zscores_plot_sept19.pdf','-dpdf','-r0');
+print(h,'pTOT_zscores_plot_sept24.pdf','-dpdf','-r0');
 
 
 
