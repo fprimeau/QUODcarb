@@ -16,13 +16,13 @@ load output_mat_files/all_combos/est26.mat;
 % calculate Z-scores = (meas - calc)/sigma_meas
 for i = 1:nD
     TC(i)       = est26(i).TC;  
-    zscore(i,1) = (TCobs(i) - TC(i))/2.01; 
+    zscore(i,1) = (TCobs(i) - TC(i))/2.00; 
 
     TA(i)       = est26(i).TA; 
-    zscore(i,2) = (TAobs(i) - TA(i))/1.78;
+    zscore(i,2) = (TAobs(i) - TA(i))/2.00;
 
     ph(i)       = est26(i).tp(1).ph; 
-    zscore(i,3) = (phobs(i) - ph(i))/0.001;
+    zscore(i,3) = (phobs(i) - ph(i))/0.010;
 
     pco2(i)     = est26(i).tp(2).pco2; 
     zscore(i,4) = (pco2obs(i) - pco2(i))/(0.01*pco2obs(i)); % 1%
@@ -64,11 +64,12 @@ b.WhiskerLineColor = clr;
 
 ax = gca;
 ax.FontSize = 18;
-ylabel('Z-scores: ( Meas - Calc ) / $\mathbf{\sigma_{meas}}$')
+ylabel('Z-scores: ( Meas - Calc ) / ${u_{meas}}$')
 ax.XTickMode = 'auto';
 ax.TickDir = 'out';
 xticklabels(lbl); 
 ax.YTick = [-5, -3, -2, 0, 2, 3,  5];
+ylim([-5 5])
 grid on
 
 h = gcf;
@@ -76,7 +77,7 @@ set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'Q5_zscores_plot_sept19.pdf','-dpdf','-r0');
+print(h,'Q5_zscores_plot_sept24.pdf','-dpdf','-r0');
 
 
 
@@ -87,27 +88,27 @@ print(h,'Q5_zscores_plot_sept19.pdf','-dpdf','-r0');
 nTC = 0; nTA = 0; npH = 0; npCO2 = 0; nCO3 = 0;
 for i = 1:nD
     zTC = sqrt(zscore(i,1)^2);
-    if zTC > 2
+    if zTC > 3
         nTC = nTC + 1;
     end
 
     zTA = sqrt(zscore(i,2)^2);
-    if zTA > 2
+    if zTA > 3
         nTA = nTA + 1;
     end
 
     zpH = sqrt(zscore(i,3)^2);
-    if zpH > 2
+    if zpH > 3
         npH = npH + 1;
     end
 
     zpCO2 = sqrt(zscore(i,4)^2);
-    if zpCO2 > 2
+    if zpCO2 > 3
         npCO2 = npCO2 + 1;
     end
 
     zCO3 = sqrt(zscore(i,5)^2);
-    if zCO3 > 2
+    if zCO3 > 3
         nCO3 = nCO3 + 1;
     end
 end
