@@ -27,16 +27,16 @@ opt.printmes = 0; % 1 = on, 0 = off
 for i = 1:nD   
     % measurements that are independent of (T,P)
     obs(i).TC    = in(5,i); % (umol/kg)
-    obs(i).eTC   = 2.01;    % TC error ±2.01 umol/kg
+    obs(i).eTC   = 2.00;
     obs(i).TA    = in(6,i);
-    obs(i).eTA   = 1.78; % TA error ±2.01 umol/kg
+    obs(i).eTA   = 2.00;
     obs(i).sal   = in(1,i); % PSU
     obs(i).esal  = 0.001; % 1 new as of 1/23 old = 0.002
     % nutrients P and Si also independent of (T,P)
     obs(i).TP    = in(7,i);
-    obs(i).eTP   = 0.0019; % 0.30% meas precision & mean(TP) = 0.6408
+    obs(i).eTP   = in(7,i)*0.02; % 2%
     obs(i).TSi   = in(8,i);
-    obs(i).eTSi  = 0.0238; % 0.31% meas uncertainty & mean(TSi) = 7.68
+    obs(i).eTSi  = in(8,i)*0.02; % 2%
 
     % first (T,P)-dependent measurement for pH
     obs(i).tp(1).T    = 25 ; % degC
@@ -44,7 +44,7 @@ for i = 1:nD
     obs(i).tp(1).P    = 0.0 ;  % NOT in situ
     obs(i).tp(1).eP   = 0.07 ;
     obs(i).tp(1).ph   = in(9,i); % total scale
-    obs(i).tp(1).eph  = 0.001 ; % pg 60, cruise report
+    obs(i).tp(1).eph  = 0.010; 
 
     % second (T,P)-dependent measurement for pCO2
     obs(i).tp(2).T     = 20 ; % degC
@@ -52,7 +52,7 @@ for i = 1:nD
     obs(i).tp(2).P     = 0.0 ; % dbar (surface pressure for pco2)
     obs(i).tp(2).eP    = 0.07 ;
     obs(i).tp(2).pco2  = in(10,i); % (µatm)
-    obs(i).tp(2).epco2 = 1.1353; % 0.21% relative std error & avg(pco2) = 540.6128
+    obs(i).tp(2).epco2 = in(10,i)*0.01; % 1%
 
     % third (T,P)-dependent measurement for CO32-T
     obs(i).tp(3).T    = 25 ; % degC
@@ -60,7 +60,7 @@ for i = 1:nD
     obs(i).tp(3).P    = 0.0 ;  % NOT in situ
     obs(i).tp(3).eP   = 0.07 ;
     obs(i).tp(3).co3  = in(11,i); % (µmol/kg)
-    obs(i).tp(3).eco3 = in(11,i)*0.0200;  % 2% from Jon Sharp
+    obs(i).tp(3).eco3 = in(11,i)*0.02;  % 2% from Jon Sharp
 
     % % fourth (T,P)-dependent measurement IN SITU
     % obs(i).tp(4).T  = in(2,i); % deg C, CTD temp
@@ -93,7 +93,7 @@ end
 est01  = est;
 save output_mat_files/all_combos/est01.mat est01; clear est; clear obs;
 
-% % TC ph (Q2) (fid02)
+% TC ph (Q2) (fid02)
 obs = obs_backup;
 for i = 1:nD
     obs(i).TA = nan;         obs(i).eTA = nan;
