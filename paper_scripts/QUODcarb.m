@@ -108,12 +108,12 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 
     opt = check_opt(opt);                   % check opt structure
 
-    sys = mksys(obs(1),opt.phscale);        % create indexing
+    sys = mksys(obs(1),opt.phscale,opt.pKalpha,opt.pKbeta);
     nD  = length(obs);  
     nv  = size(sys.K,2);
 
     % populate obs, yobs, wobs at each datapoint
-    [obs,yobs,wobs] = parse_input(obs,sys,opt,nD);
+    [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD);
 
     for i = 1:nD % loop over the full data set
 
@@ -2108,7 +2108,7 @@ end
 % mksys
 % ----------------------------------------------------------------------
 
-function sys = mksys(obs,phscale)
+function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
 %
 % Private function for QUODcarb.m
 % it creates the K and M matrices
@@ -2161,25 +2161,37 @@ function sys = mksys(obs,phscale)
     ipTF = i;  sys.ipTF = ipTF; % p(total fluoride)
     
     % phosphate: Kp1 = [h][h2po4]/[h3po4], Kp2 = [h][hpo4]/[h2po4], Kp3 = [h][po4]/[hpo4]
-    i = i+1;
+    i = i + 1;
     ipTP = i; sys.ipTP = ipTP; % p(total phosphate)
 
     % KSi = [h][siooh3]/[sioh4]
-    i = i+1;
+    i = i + 1;
     ipTSi = i; sys.ipTSi = ipTSi; % p(total silicate)
     
     % Knh4 = [h][nh3]/[nh4]
-    i = i+1;
+    i = i + 1;
     ipTNH4 = i; sys.ipTNH4 = ipTNH4; % p(total amonia)
     
     % Kh2s = [h][hs]/[h2s]
-    i = i+1;
+    i = i + 1;
     ipTH2S = i; sys.ipTH2S = ipTH2S; % p(total sulfide)
     
     % Kar = [co3][ca]/OmegaAr
     % Kca = [co3][ca]/OmegaCa
-    i = i+1;
+    i = i + 1;
     ipTCa = i; sys.ipTCa = ipTCa ; % p(total calcium)
+
+    if optpKalpha == 1
+        % Kalpha = [alpha][H]/[Halpha] unknown alkalinity
+        i = i + 1;
+        ipTAlpha = i; sys.ipTAlpha = ipTAlpha;
+    end
+
+    if optpKbeta == 1
+        % Kbeta = [beta][H]/[Hbeta] unknown alkalinity
+        i = i + 1;
+        ipTBeta = i; sys.ipTBeta = ipTBeta;
+    end
 
     nTP = length(obs.tp); % number of different (T,P) sub systems
     for j = 1:nTP % loop over (T,P) sub systems
@@ -2273,7 +2285,24 @@ function sys = mksys(obs,phscale)
         tp(j).iph_sws  = i;   i = i + 1;
         tp(j).iph_nbs  = i;
         % changing the order in this for loop messes up the code -MF 5/2/24
+
+        if optpKalpha == 1
+            % Kalpha = [alpha][H]/[Halpha] unknown alkalinity
+            nrk = nrk + 1;          i = i + 1;
+            tp(j).ipKalpha = i;     i = i + 1; % K(alpha)
+            tp(j).ipalpha  = i;     i = i + 1; % p(alpha)
+            tp(j).iphalpha = i;                % H-alpha
+        end
+
+        if optpKbeta == 1
+            % Kbeta = [beta][H]/[Hbeta] unknown alkalinity
+            nrk = nrk + 1;          i = i + 1;
+            tp(j).ipKbeta  = i;     i = i + 1; % K(beta)
+            tp(j).ipbeta   = i;     i = i + 1; % p(beta)
+            tp(j).iphbeta  = i;                % H-beta
+        end
     end
+
     nv = i;
     K = sparse(nTP*(nrk+2),nv);
     row = 0;
@@ -2399,6 +2428,28 @@ function sys = mksys(obs,phscale)
         K(row,[ tp(j).iph_nbs, tp(j).iph_sws, tp(j).ipfH ]) = [ 1, -1, -1 ];
         kc = union(kc, [ tp(j).iph_nbs, tp(j).iph_sws, tp(j).ipfH]);            
         kr = [kr, row];
+
+        nr = 12; % TA, TC, TB, TS, TF, TP, TSi, TNH4, TH2S, TCa, 
+                 % ph_tot to ph_free, ph_sws to ph_free
+
+        if optpKalpha == 1
+            % Kalpha = [alpha][H]/[Halpha] -> -pKalpha + palpha + pH - pHalpha = 0
+            row = row + 1;
+            K(row, [tp(j).ipKalpha, tp(j).ipalpha, tp(j).iph, tp(j).iphalpha]) = [-1, 1, 1, -1];
+            kc = union(kc,[ tp(j).ipKalpha, tp(j).ipalpha, tp(j).iph, tp(j).iphalpha]);
+            kr = [kr, row];
+            nr = nr + 1;
+        end
+
+        if optpKbeta == 1
+            % Kbeta = [beta][H]/[Hbeta] -> -pKbeta + pbeta + pH - pHbeta = 0
+            row = row + 1;
+            K(row, [tp(j).ipKbeta, tp(j).ipbeta, tp(j).iph, tp(j).iphbeta]) = [-1, 1, 1, -1];
+            kc = union(kc,[ tp(j).ipKbeta, tp(j).ipbeta, tp(j).iph, tp(j).iphbeta]);
+            kr = [kr, row];
+            nr = nr + 1;
+        end
+
         tp(j).kr = kr;
         tp(j).kc = kc;
         nr = 12; % TA, TC, TB, TS, TF, TP, TSi TNH4 TH2S TCa ph_tot ph_sws ph_nbs
@@ -2414,6 +2465,7 @@ function sys = mksys(obs,phscale)
         % Total alkalinity: TA - [HCO3] - 2[CO3] ( - [OH] )...
         row = row + 1;
         row_alk = row;
+        tp(j).row_alk = row_alk;
         mr = [mr, row];
 
         % carbonate alkalinity
@@ -2475,7 +2527,7 @@ function sys = mksys(obs,phscale)
         M(row,:) = M(row,:)*1e6;
         
         % Total amonia
-        row = row+1;
+        row = row + 1;
         M(row, [ ipTNH4, tp(j).ipnh4, tp(j).ipnh3 ]) = [ 1, -1, -1 ];
         mc = union(mc,[ipTNH4, tp(j).ipnh4, tp(j).ipnh3]);
         M(row_alk,tp(j).ipnh3) = -1; 
@@ -2484,7 +2536,7 @@ function sys = mksys(obs,phscale)
         M(row,:) = M(row,:)*1e8;
         
         % Total sulfide
-        row = row+1;
+        row = row + 1;
         M(row,[ ipTH2S, tp(j).ipH2S, tp(j).ipHS ]) = [ 1, -1, -1 ];
         mc = union(mc,[ipTH2S, tp(j).ipH2S, tp(j).ipHS]);
         M(row_alk,tp(j).ipHS) = -1; 
@@ -2513,11 +2565,35 @@ function sys = mksys(obs,phscale)
         M(row,[ tp(j).iph_sws, tp(j).iph_free, tp(j).iphso4, tp(j).ipHF ]) = [ 1, -1, -1, -1 ];
         mc = union(mc,[tp(j).iph_sws, tp(j).iph_free, tp(j).iphso4, tp(j).ipHF]);
         mr = [mr,row];
-        tp(j).mr = mr;
-        tp(j).mc = mc.';
         % rescale row
         M(row,:) = M(row,:)*1e8;
 
+        if optpKalpha == 1
+            % Kalpha = [alpha][H]/[Halpha] unknown alkalinity TAlpha
+            row = row + 1;
+            M(row,[ ipTAlpha, tp(j).ipalpha, tp(j).iphalpha]) = [1, -1, -1];
+            mc = union(mc, [ipTAlpha, tp(j).ipalpha, tp(j).iphalpha]);
+            mr = [mr,row];
+            M(row_alk, [tp(j).ipalpha,tp(j).iphalpha] ) = [-1, +1]; % or -, +?
+            % rescale
+            M(row,:) = M(row,:)*1e5; % 1e5 for 1umol order
+            M(row_alk,:) = M(row_alk,:)*1e1; % 1e2 for TS 0.1 order
+        end
+
+        if optpKbeta == 1
+            % Kbeta = [beta][H]/[Hbeta] unknown alkalinity TBeta
+            row = row + 1;
+            M(row,[ ipTBeta, tp(j).ipbeta, tp(j).iphbeta]) = [1, -1, -1];
+            mc = union(mc, [ipTBeta, tp(j).ipbeta, tp(j).iphbeta]);
+            mr = [mr,row];
+            M(row_alk, [tp(j).ipbeta,tp(j).iphbeta] ) = [-1, +1]; 
+            % rescale
+            M(row,:) = M(row,:)*1e5; % 1e5 for 1umol order
+            M(row_alk,:) = M(row_alk,:)*1e1; % 1e2 for TS 0.1 order
+        end
+
+        tp(j).mr = mr;
+        tp(j).mc = mc.';
     end
     for j = 1:nTP
         % STUFF needed to compute the Revelle buffer factor
@@ -2525,6 +2601,14 @@ function sys = mksys(obs,phscale)
         ifixed = [ifixed, tp(j).ipK0,  tp(j).ipK1,  tp(j).ipK2,  tp(j).ipKb,  tp(j).ipKw, tp(j).ipKs,  tp(j).ipKf, ...
                  tp(j).ipKp1, tp(j).ipKp2, tp(j).ipKp3, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
                  tp(j).ipp2f, tp(j).ipKar, tp(j).ipKca, tp(j).ipfH,  tp(j).iP, tp(j).iT];
+        if optpKalpha == 1
+            ifixed(end) = ipTAlpha;
+            ifixed(end) = tp(j).ipKalpha;
+        end
+        if optpKbeta == 1
+            ifixed(end) = ipTBeta;
+            ifixed(end) = tp(j).ipKbeta;
+        end
         tp(j).ifixed = ifixed;
         tp(j).ifree = setdiff(union(tp(j).mc,tp(j).kc),ifixed);
 
@@ -2540,6 +2624,14 @@ function sys = mksys(obs,phscale)
         jfixed = [jfixed, tp(j).ipK0,  tp(j).ipK1,  tp(j).ipK2,  tp(j).ipKb,  tp(j).ipKw, tp(j).ipKs,  tp(j).ipKf, ...
                  tp(j).ipKp1, tp(j).ipKp2, tp(j).ipKp3, tp(j).ipKsi, tp(j).ipKnh4, tp(j).ipKh2s,...
                  tp(j).ipp2f, tp(j).ipKar, tp(j).ipKca, tp(j).ipfH,  tp(j).iP, tp(j).iT];
+        if optpKalpha == 1
+            jfixed(end) = ipTAlpha;
+            jfixed(end) = tp(j).ipKalpha;
+        end
+        if optpKbeta == 1
+            jfixed(end) = ipTBeta;
+            jfixed(end) = tp(j).ipKbeta;
+        end
         tp(j).jfixed = jfixed;
         tp(j).jfree = setdiff(union(tp(j).mc,tp(j).kc),jfixed);
 
@@ -2575,8 +2667,7 @@ function [opt] = check_opt(opt)
     elseif opt.K1K2 > 18 || opt.K1K2 < 1 || ...
                 opt.K1K2 == 6 || opt.K1K2 == 7 || opt.K1K2 == 8
         if opt.printmes ~= 0
-            fprintf(['Invalid K1K2 formulation chosen. ' ...
-                'Assuming opt.K1K2 = 4\n']);
+            error('Invalid K1K2 formulation chosen. ');
         end
         opt.K1K2 = 4; % default K1K2 setting
     end
@@ -2657,6 +2748,23 @@ function [opt] = check_opt(opt)
             fprintf('No opt.Revelle chosen. Assuming opt.Revelle = 0 (off). \n');
         end
     end
+    % opt.turnoff totals (only got TB to work)
+    if ~isfield(opt.turnoff,'TB') || isbad(opt.turnoff.TB)
+        opt.turnoff.TB = 0; % default = not turned off
+    end
+    if ~isfield(opt.turnoff,'pK1') || isbad(opt.turnoff.pK1)
+        opt.turnoff.pK1 = 0; % default = not turned off
+    end
+    if ~isfield(opt.turnoff,'pK2') || isbad(opt.turnoff.pK2)
+        opt.turnoff.pK2 = 0; % default = not turned off
+    end
+    % organic alkalinity
+    if ~isfield(opt,'pKalpha') || isbad(opt.pKalpha)
+        opt.pKalpha = 0; % off
+    end
+    if ~isfield(opt,'pKbeta') || isbad(opt.pKbeta)
+        opt.pKbeta = 0; % off
+    end
     if ~isfield(opt,'mpk')
         mpk0 = @(T,S,P) 1;
         mpk1 = @(T,S,P) 1;
@@ -2701,8 +2809,8 @@ end
 % parse_input
 % ----------------------------------------------------------------------
 
-function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
-
+function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
+    % ORG ALK
     isgood  = @(thing) (~isempty(thing) & ~sum(isnan(thing)));
     p       = sys.p;
     q       = sys.q;
@@ -2874,8 +2982,9 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.ipTNH4)  = p(obs(i).TNH4*1e-6);
         end
         if (~isfield(obs(i), 'eTNH4'))  || (~isgood(obs(i).eTNH4))
+            eTNH4               = 5e-4; % µmol/kg
+            wobs(i,sys.ipTNH4)  = w(1e-3,eTNH4); % mol/kg
             obs(i).eTNH4        = nan;
-            wobs(i,sys.ipTNH4)  = w(1e-3,5e-4); % 5e-4 umol/kg = 1 sigma
             if (isgood(obs(i).TNH4)) && opt.printmes ~= 0
                 fprintf('Warning, no obs.eTNH4 input with obs.eTNH4. Assuming 5e-4 umol/kg.\n' )
             end
@@ -2894,8 +3003,9 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             yobs(i,sys.ipTH2S)  = p(obs(i).TH2S*1e-6);
         end
         if (~isfield(obs(i), 'eTH2S'))  || (~isgood(obs(i).eTH2S))
+            eTH2S               = 5e-4; % µmol/kg
+            wobs(i,sys.ipTH2S)  = w(1e-3,eTH2S); % mol/kg
             obs(i).eTH2S        = nan;
-            wobs(i,sys.ipTH2S)  = w(1e-3,5e-4); % 5e-4 umol/kg = 1 sigma
             if (isgood(obs(i).TH2S)) && opt.printmes ~= 0
                 fprintf(' Warning, no obs.eTH2S input with obs.eTNH4. Assuming 5e-4 umol/kg.\n' )
             end
@@ -2921,6 +3031,44 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             end
         else
             wobs(i,sys.ipTCa)   = w(obs(i).TCa,obs(i).eTCa);
+        end
+
+        if opt.pKalpha == 1
+            % Organic Alkalinity Alpha
+            if (~isfield(obs(i), 'TAlpha')) || (~isgood(obs(i).TAlpha))
+                obs(i).TAlpha           = nan; 
+                yobs(i,sys.ipTAlpha)    = p(5e-6); % guess 5 umol/kg
+            else
+                if ((obs(i).TAlpha) == 0)
+                    obs(i).TAlpha       = 1e-9;
+                end
+                yobs(i,sys.ipTAlpha)    = p(obs(i).TAlpha*1e-6);
+            end
+            if (~isfield(obs(i), 'eTAlpha')) || (~isgood(obs(i).eTAlpha))
+                obs(i).eTAlpha          = nan; 
+                wobs(i,sys.ipTAlpha)    = w(5,2); % 5 ± 2 umol/kg
+            else
+                wobs(i,sys.ipTAlpha)    = w(obs(i).TAlpha,obs(i).eTAlpha);
+            end
+        end
+
+        if opt.pKbeta == 1
+            % Organic Alkalinity Beta
+            if (~isfield(obs(i),'TBeta')) || (~isgood(obs(i).TBeta))
+                obs(i).TBeta        = nan;
+                yobs(i,sys.ipTBeta) = p(5e-6);
+            else
+                if ((obs(i).TBeta) == 0)
+                    obs(i).TBeta    = 1e-9;
+                end
+                yobs(i,sys.ipTBeta) = p(obs(i).TBeta*1e-6);
+            end
+            if (~isfield(obs(i),'eTBeta')) || (~isgood(obs(i).eTBeta))
+                obs(i).eTBeta       = nan;
+                wobs(i,sys.ipTBeta) = w(5,2);
+            else
+                wobs(i,sys.ipTBeta) = w(obs(i).TBeta,obs(i).eTBeta);
+            end
         end
 
         for j = 1:nTP % loop over (T,P) systems
@@ -3012,25 +3160,51 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
             % carbonate system
             if (~isfield(obs(i).tp(j),'pK1')) || (~isgood(obs(i).tp(j).pK1))
                 obs(i).tp(j).pK1       = nan;
-                yobs(i,sys.tp(j).ipK1) = pK1;
+                if opt.turnoff.pK1 == 1 % do not input pK1
+                    if nTP > 1
+                        error(['opt.turnoff.pK1 only works with one tp, not 2+. ' ...
+                                'Must input at tp(1) only.']);
+                    else
+                        yobs(i,sys.tp(j).ipK1) = nan;
+                    end
+                else % do input pK1
+                    yobs(i,sys.tp(j).ipK1) = pK1;
+                end
             else
                 yobs(i,sys.tp(j).ipK1) = obs(i).tp(j).pK1;
             end
             if (~isfield(obs(i).tp(j),'epK1')) || (~isgood(obs(i).tp(j).epK1))
                 obs(i).tp(j).epK1      = nan;
-                wobs(i,sys.tp(j).ipK1) = (epK1)^(-2);
+                if opt.turnoff.pK1 == 1
+                    wobs(i,sys.tp(j).ipK1) = nan;
+                else
+                    wobs(i,sys.tp(j).ipK1) = (epK1)^(-2);
+                end
             else
                 wobs(i,sys.tp(j).ipK1) = (obs(i).tp(j).epK1)^(-2);
             end
             if (~isfield(obs(i).tp(j),'pK2')) || (~isgood(obs(i).tp(j).pK2))
                 obs(i).tp(j).pK2       = nan;
-                yobs(i,sys.tp(j).ipK2) = pK2;
+                if opt.turnoff.pK2 == 1
+                    if nTP > 1
+                        error(['opt.turnoff.pK2 only works with one tp, not 2+. ' ...
+                                'Must input at tp(1) only.']);
+                    else
+                        yobs(i,sys.tp(j).ipK2) = nan;
+                    end
+                else
+                    yobs(i,sys.tp(j).ipK2) = pK2;
+                end
             else
                 yobs(i,sys.tp(j).ipK2) = obs(i).tp(j).pK2;
             end
             if (~isfield(obs(i).tp(j),'epK2')) || (~isgood(obs(i).tp(j).epK2))
                 obs(i).tp(j).epK2      = nan;
-                wobs(i,sys.tp(j).ipK2) = (epK2)^(-2);
+                if opt.turnoff.pK2 == 1
+                    wobs(i,sys.tp(j).ipK2) = nan;
+                else
+                    wobs(i,sys.tp(j).ipK2) = (epK2)^(-2);
+                end
             else
                 wobs(i,sys.tp(j).ipK2) = (obs(i).tp(j).epK2)^(-2);
             end
@@ -3533,10 +3707,80 @@ function [obs,yobs,wobs] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(j).ipca)  = w(obs(i).tp(j).ca,obs(i).tp(j).eca);
             end
 
-        end
+            if opt.pKalpha == 1
+                % pKalpha system
+                if (~isfield(obs(i).tp(j),'pKalpha')) || (~isgood(obs(i).tp(j).pKalpha))
+                    obs(i).tp(j).pKalpha        = nan;
+                    pKalpha = 4.0; % default
+                    yobs(i,sys.tp(j).ipKalpha)  = pKalpha; 
+                else
+                    pKalpha = obs(i).tp(j).pKalpha;
+                    yobs(i,sys.tp(j).ipKalpha)  = obs(i).tp(j).pKalpha;
+                end
+                if (~isfield(obs(i).tp(j),'epKalpha')) || (~isgood(obs(i).tp(j).epKalpha))
+                    pKalpha = 4.0; % default
+                    Kalpha     = q(pKalpha); % default
+                    % pKalpha    = (4.0); % default
+                    obs(i).tp(j).epKalpha       = nan;
+                    wobs(i,sys.tp(j).ipKalpha)  = w(Kalpha,0.10*Kalpha); % 10%
+                    % wobs(i,sys.tp(j).ipKalpha)  = (0.1*pKalpha)^(-2);
+                else
+                    wobs(i,sys.tp(j).ipKalpha)  = (obs(i).tp(j).pKalpha)^(-2);
+                end
+                if (pKalpha > 4.5) % > from Kerr, < from Humphreys
+                    sys.M(sys.tp(j).row_alk, sys.tp(j).ipalpha) = 0;
+                else
+                    sys.M(sys.tp(j).row_alk, sys.tp(j).iphalpha) = 0;
+                end
+                % other unknowns in system
+                obs(i).tp(j).palpha         = nan; % p(alpha)
+                yobs(i,sys.tp(j).ipalpha)   = nan;
+                obs(i).tp(j).epalpha        = nan;
+                wobs(i,sys.tp(j).ipalpha)   = nan;
+                obs(i).tp(j).phalpha        = nan; % p(H-alpha)
+                yobs(i,sys.tp(j).iphalpha)  = nan;
+                obs(i).tp(j).ephalpha       = nan;
+                wobs(i,sys.tp(j).iphalpha)  = nan;
+            end
+
+            if opt.pKbeta == 1
+                % pKbeta system
+                if (~isfield(obs(i).tp(j),'pKbeta')) || (~isgood(obs(i).tp(j).pKbeta))
+                    pKbeta                  = 6.95; % default
+                    obs(i).tp(j).pKbeta         = nan;
+                    yobs(i,sys.tp(j).ipKbeta)   = pKbeta; 
+                else
+                    pKbeta                      = obs(i).tp(j).pKbeta;
+                    yobs(i,sys.tp(j).ipKbeta)   = obs(i).tp(j).pKbeta;
+                end
+                if (~isfield(obs(i).tp(j),'epKbeta')) || (~isgood(obs(i).tp(j).epKbeta))
+                    pKbeta                      = 6.95; % default
+                    Kbeta                       = q(pKbeta);
+                    obs(i).tp(j).epKbeta        = nan;
+                    wobs(i,sys.tp(j).ipKbeta)   = w(Kbeta,0.1*Kbeta);
+                else
+                    wobs(i,sys.tp(j).ipKbeta)   = (obs(i).tp(j).pKbeta)^(-2);
+                end
+                if (pKbeta > 4.5)
+                    sys.M(sys.tp(j).row_alk, sys.tp(j).ipbeta) = 0;
+                else
+                    sys.M(sys.tp(j).row_alk, sys.tp(j).iphbeta) = 0;
+                end
+                % other unknowns in system
+                obs(i).tp(j).pbeta          = nan; % p(beta)
+                yobs(i,sys.tp(j).ipbeta)    = nan;
+                obs(i).tp(j).epbeta         = nan;
+                wobs(i,sys.tp(j).ipbeta)    = nan;
+                obs(i).tp(j).phbeta         = nan; % p(H-beta)
+                yobs(i,sys.tp(j).iphbeta)   = nan;
+                obs(i).tp(j).ephbeta        = nan;
+                wobs(i,sys.tp(j).iphbeta)   = nan;
+            end
+
+        end % for j = 1:nTP
+
     end
 end
-   
 
 % ----------------------------------------------------------------------
 % update_y
@@ -3560,9 +3804,11 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
     pTCa = pT(4); gpTCa = gpT(4); ggpTCa = ggpT(4);
     % update y
     if (isnan(obs.TB))
-        y(sys.ipTB)                     = pTB;
-        gy(sys.ipTB,sys.isal)           = gpTB;
-        ggy(sys.ipTB,sys.isal,sys.isal) = ggpTB;
+        if opt.turnoff.TB ~= 1
+            y(sys.ipTB)                     = pTB;
+            gy(sys.ipTB,sys.isal)           = gpTB;
+            ggy(sys.ipTB,sys.isal,sys.isal) = ggpTB;
+        end
     end
     if (isnan(obs.TS))
         y(sys.ipTS)                     = pTS;
@@ -3600,14 +3846,18 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
             ggy(sys.tp(i).ipK0,iTSP,iTSP) = ggpK(1,:,:);
         end
         if (isnan(obs.tp(i).pK1))
-            y(sys.tp(i).ipK1)             = pK(2);
-            gy(sys.tp(i).ipK1,iTSP)       = gpK(2,:);
-            ggy(sys.tp(i).ipK1,iTSP,iTSP) = ggpK(2,:,:);
+            if opt.turnoff.pK1 ~= 1
+                y(sys.tp(i).ipK1)             = pK(2);
+                gy(sys.tp(i).ipK1,iTSP)       = gpK(2,:);
+                ggy(sys.tp(i).ipK1,iTSP,iTSP) = ggpK(2,:,:);
+            end
         end
         if (isnan(obs.tp(i).pK2))
-            y(sys.tp(i).ipK2)             = pK(3);
-            gy(sys.tp(i).ipK2,iTSP)       = gpK(3,:);
-            ggy(sys.tp(i).ipK2,iTSP,iTSP) = ggpK(3,:,:);
+            if opt.turnoff.pK2 ~=1
+                y(sys.tp(i).ipK2)             = pK(3);
+                gy(sys.tp(i).ipK2,iTSP)       = gpK(3,:);
+                ggy(sys.tp(i).ipK2,iTSP,iTSP) = ggpK(3,:,:);
+            end
         end   
         if (isnan(obs.tp(i).pKb))
             y(sys.tp(i).ipKb)             = pK(4);
@@ -3668,6 +3918,8 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
             y(sys.tp(i).ipKar)             = pK(15);
             gy(sys.tp(i).ipKar,iTSP)       = gpK(15,:);
             ggy(sys.tp(i).ipKar,iTSP,iTSP) = ggpK(15,:,:);
+        end
+        if (isnan(obs.tp(i).pKca))
             y(sys.tp(i).ipKca)             = pK(16);
             gy(sys.tp(i).ipKca,iTSP)       = gpK(16,:);
             ggy(sys.tp(i).ipKca,iTSP,iTSP) = ggpK(16,:,:);
@@ -3695,12 +3947,21 @@ function z0 = init(opt,yobs,sys)
         alk         = 2200e-6;
         y0(sys.ipTA) = p(alk);
     end
+    % calculate totals
+    S = yobs(sys.isal);
+    [pT,~,~,~] = calc_pTOT(opt,S);
+    pTB  = pT(1);
 
     % calculate tp-independent vars
     gam     = dic/alk;
 
-    TB = q(yobs(sys.ipTB));
-    y0(sys.ipTB) = p(TB);
+    if opt.turnoff.TB == 1
+        TB = q(pTB);
+        y0(sys.ipTB) = pTB;
+    else
+        TB = q(yobs(sys.ipTB));
+        y0(sys.ipTB) = p(TB);
+    end
 
     TS      = q(yobs(sys.ipTS));
     y0(sys.ipTS) = p(TS);
@@ -3723,12 +3984,39 @@ function z0 = init(opt,yobs,sys)
     TCa     = q(yobs(sys.ipTCa));
     y0(sys.ipTCa) = p(TCa);
 
+    if opt.pKalpha == 1 
+        TAlpha = q(yobs(sys.ipTAlpha));
+        y0(sys.ipTAlpha) = p(TAlpha);
+    end
+    if opt.pKbeta == 1
+        TBeta = q(yobs(sys.ipTBeta));
+        y0(sys.ipTBeta) = p(TBeta);
+    end
+
     nTP = length(sys.tp);
     for i = 1:nTP
+        % calculate pK1
+        T = y0(sys.tp(i).iT); P = y0(sys.tp(i).iP);
+        [pK,~,~] = calc_pK(opt,T,S,P);
+        if opt.turnoff.pK1 == 1
+            pK1 = pK(2);
+            K1  = q(pK1);
+            y0(sys.tp(i).ipK1) = pK1;
+        else
+            K1  = q(y0(sys.tp(i).ipK1));
+        end
+        if opt.turnoff.pK2 == 1
+            pK2 = pK(3);
+            K2  = q(pK2);
+            y0(sys.tp(i).ipK2) = pK2;
+        else
+            K2  = q(y0(sys.tp(i).ipK2));
+        end
+
         % solve for the [H+] using only the carbonate alkalinity
         K0      = q(y0(sys.tp(i).ipK0));
-        K1      = q(y0(sys.tp(i).ipK1));
-        K2      = q(y0(sys.tp(i).ipK2));
+        % K1      = q(y0(sys.tp(i).ipK1));
+        % K2      = q(y0(sys.tp(i).ipK2));
         h       = 0.5*( ( gam - 1 ) * K1 + ( ( 1 - gam )^2 * ...
                                              K1^2 - 4 * K1 * K2 * ( 1 - 2 * gam ) ).^0.5 ) ;
         hco3    = h * alk / (h + 2 * K2 );
@@ -3754,9 +4042,9 @@ function z0 = init(opt,yobs,sys)
         
         Ks      = q(y0(sys.tp(i).ipKs));
         
-        h_tot = h * ( 1 + TS / Ks );
-        h_free = h;
-        hso4 = h_tot - h_free;
+        h_tot   = h * ( 1 + TS / Ks );
+        h_free  = h;
+        hso4    = h_tot - h_free;
         so4     = Ks * hso4 / h;
         y0(sys.tp(i).iphso4)    = p(hso4);
         y0(sys.tp(i).ipso4)     = p(so4);
@@ -3764,14 +4052,14 @@ function z0 = init(opt,yobs,sys)
         Kf      = q(y0(sys.tp(i).ipKf));
         HF      = TF / ( 1 + Kf / h_free );
         F       = Kf * HF / h_free;
-        h_sws = h_tot + HF;
+        h_sws   = h_tot + HF;
         y0(sys.tp(i).ipF)    = p(F);
         y0(sys.tp(i).ipHF)   = p(HF);
         
         Kp1     = q(y0(sys.tp(i).ipKp1));
         Kp2     = q(y0(sys.tp(i).ipKp2));
         Kp3     = q(y0(sys.tp(i).ipKp3));
-        d = ( h^3 + Kp1 * h^2 + Kp1 * Kp2 * h + Kp1 * Kp2 * Kp3);
+        d       = ( h^3 + Kp1 * h^2 + Kp1 * Kp2 * h + Kp1 * Kp2 * Kp3);
         h3po4   = TP * h^3 / d;
         h2po4   = TP * Kp1 * h^2 / d;
         hpo4    = TP * Kp1 * Kp2 * h / d;
@@ -3811,12 +4099,31 @@ function z0 = init(opt,yobs,sys)
         y0(sys.tp(i).ipOmegaAr)  = p(OmegaAr);
         y0(sys.tp(i).ipOmegaCa)  = p(OmegaCa);
                 
-        y0(sys.tp(i).iph_tot) = p(h_tot);
-        y0(sys.tp(i).iph_sws) = p(h_sws);
-        y0(sys.tp(i).iph_free) = p(h_free);
-        fH = q(y0(sys.tp(i).ipfH));
-        h_nbs = h_free*fH;
-        y0(sys.tp(i).iph_nbs) = p(h_nbs);
+        y0(sys.tp(i).iph_tot)   = p(h_tot);
+        y0(sys.tp(i).iph_sws)   = p(h_sws);
+        y0(sys.tp(i).iph_free)  = p(h_free);
+        fH      = q(y0(sys.tp(i).ipfH));
+        h_nbs   = h_free*fH;
+        y0(sys.tp(i).iph_nbs)   = p(h_nbs);
+
+        if opt.pKalpha == 1
+            Kalpha = q(y0(sys.tp(i).ipKalpha));   
+            alpha = (Kalpha*TAlpha)/(h+Kalpha);
+            halpha = TAlpha - alpha;
+            % alpha = (1/2)*Talpha; % make a function of pH
+            % halpha = (1/2)*Talpha;
+            y0(sys.tp(i).ipalpha) = p(alpha);
+            y0(sys.tp(i).iphalpha) = p(halpha);
+        end
+        if opt.pKbeta == 1
+            Kbeta = q(y0(sys.tp(i).ipKbeta));
+            beta = (Kbeta*TBeta)/(h+Kbeta);
+            hbeta = TBeta - beta;
+            % beta = (1/2)*Tbeta;
+            % hbeta = (1/2)*Tbeta;
+            y0(sys.tp(i).ipbeta) = p(beta);
+            y0(sys.tp(i).iphbeta) = p(hbeta);
+        end
     end
     nlam    = size(sys.M,1) + size(sys.K,1);
     lam     = zeros(nlam,1);
@@ -3932,6 +4239,19 @@ function [est] = parse_output(z,sigx,sys,f,C)
     est.eTCa_l     = ebar_l(sys.ipTCa)*1e6; 
     est.eTCa_u     = ebar_u(sys.ipTCa)*1e6;
     
+    if (isfield(sys,'ipTAlpha'))
+        est.pTAlpha     = z(sys.ipTAlpha);
+        est.epTAlpha    = sigx(sys.ipTAlpha);
+        est.TAlpha      = q(z(sys.ipTAlpha))*1e6;
+        est.eTAlpha     = ebar(sys.ipTAlpha)*1e6;
+    end
+    if (isfield(sys,'ipTBeta'))
+        est.pTBeta      = z(sys.ipTBeta);
+        est.epTBeta     = sigx(sys.ipTBeta);
+        est.TBeta       = q(z(sys.ipTBeta))*1e6;
+        est.eTBeta      = ebar(sys.ipTBeta)*1e6;
+    end
+
     nTP = length(sys.tp);
     for i = 1:nTP
         % temp (deg C)
@@ -4319,10 +4639,42 @@ function [est] = parse_output(z,sigx,sys,f,C)
         est.tp(i).eKca      = ebar(sys.tp(i).ipKca);
         est.tp(i).eKca_l    = ebar_l(sys.tp(i).ipKca);
         est.tp(i).eKca_u    = ebar_u(sys.tp(i).ipKca);
-    end
-    % PLEASE ADD NEW VARIABLES HERE AT END
+
+        if (isfield(sys,'ipTAlpha'))
+            % pKalpha
+            est.tp(i).pKalpha   = z(sys.tp(i).ipKalpha);
+            est.tp(i).epKalpha  = sigx(sys.tp(i).ipKalpha);
+            % alpha
+            est.tp(i).palpha    = z(sys.tp(i).ipalpha);
+            est.tp(i).epalpha   = sigx(sys.tp(i).ipalpha);
+            est.tp(i).alpha     = q(z(sys.tp(i).ipalpha))*1e6;
+            est.tp(i).ealpha    = ebar(sys.tp(i).ipalpha)*1e6;
+            % halpha
+            est.tp(i).phalpha   = z(sys.tp(i).iphalpha);
+            est.tp(i).ephalpha  = sigx(sys.tp(i).iphalpha);
+            est.tp(i).halpha    = q(z(sys.tp(i).iphalpha))*1e6;
+            est.tp(i).ehalpha   = ebar(sys.tp(i).iphalpha)*1e6;
+        end
+
+        if (isfield(sys,'ipTBeta'))
+            % pKbeta
+            est.tp(i).pKbeta = z(sys.tp(i).ipKbeta);
+            est.tp(i).epKbeta = sigx(sys.tp(i).ipKbeta);
+            % beta
+            est.tp(i).pbeta = z(sys.tp(i).ipbeta);
+            est.tp(i).epbeta = sigx(sys.tp(i).ipbeta);
+            est.tp(i).beta = q(z(sys.tp(i).ipbeta))*1e6;
+            est.tp(i).ebeta = ebar(sys.tp(i).ipbeta)*1e6;
+            % hbeta
+            est.tp(i).phbeta = z(sys.tp(i).iphbeta);
+            est.tp(i).ephbeta = sigx(sys.tp(i).iphbeta);
+            est.tp(i).hbeta = q(z(sys.tp(i).iphbeta))*1e6;
+            est.tp(i).ehbeta = ebar(sys.tp(i).iphbeta)*1e6;
+        end
+    % PLEASE ADD NEW VARIABLES HERE AT END (for PrintCSV's sake)
     est.f       = f; % residual f value, from limp
     est.C       = C;
+    end
 end
 
 % ----------------------------------------------------------------------
