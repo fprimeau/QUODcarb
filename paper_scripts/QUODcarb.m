@@ -84,6 +84,41 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %           1 = on                      (DEFAULT)
 %           2 = off
 %
+%   opt.pKalpha -> turn on the organic alk pKalpha system, where: 
+%                   Kalpha = [alpha][H]/[Halpha]
+%                   TAlpha = [Halpha^+] + [alpha^-].
+%                   Contributes to alkalinity via:
+%                   OrgAlk = +[Halpha] if pKalpha =< 4.5
+%                          = -[alpha] if pKalpha > 4.5
+%           0 = off  (DEFAULT)
+%           1 = on
+%
+%   opt.pKbeta -> turn on the organic alk pKbeta system, see 
+%                   description for pKalpha above, replacing alpha w/ beta
+%           0 = off  (DEFAULT)
+%           1 = on
+%
+%   opt.turnoff.TB -> turn off the formulation of TB wrt salinity
+%           must still choose opt.TB to fill in prior, TB is treated as
+%           unknown so need at least two other measurements
+%           0 = formulation  (DEFAULT)
+%           1 = no formulation, treat as unknown
+%
+%   opt.turnoff.pK1 -> turn off the formulation of pK1 wrt T,S,P
+%           must still choose opt.K1K2 to fill in prior, pK1 is treated
+%           as unknown so need at least two other measurements all within
+%           a single tp(1) (tp(2) not possible)
+%           0 = formulation  (DEFAULT)
+%           1 = no formulation, treat as unknown
+%
+%   opt.turnoff.pK2 -> turn off the formulation of pK2 wrt T,S,P
+%           must still choose opt.K1K2 to fill in prior, pK2 is treated
+%           as unknown so need at least two other measurements all within
+%           a single tp(1) (tp(2) not possible, not possible to combine 
+%           with opt.turnoff.pK1)
+%           0 = formulation  (DEFAULT)
+%           1 = no formulation, treat as unknown
+%
 %--------------------------------------------------------------------------
 %
 % OUTPUT:
@@ -2747,7 +2782,14 @@ function [opt] = check_opt(opt)
             fprintf('No opt.Revelle chosen. Assuming opt.Revelle = 0 (off). \n');
         end
     end
-    % opt.turnoff totals (only got TB to work)
+    % organic alkalinity
+    if ~isfield(opt,'pKalpha') || isbad(opt.pKalpha)
+        opt.pKalpha = 0; % off
+    end
+    if ~isfield(opt,'pKbeta') || isbad(opt.pKbeta)
+        opt.pKbeta = 0; % off
+    end
+    % opt.turnoff 
     if ~isfield(opt,'turnoff') || isbad(opt.turnoff)
         opt.turnoff.TB = 0;
         opt.turnoff.pK1 = 0;
@@ -2762,13 +2804,10 @@ function [opt] = check_opt(opt)
     if ~isfield(opt.turnoff,'pK2') || isbad(opt.turnoff.pK2)
         opt.turnoff.pK2 = 0; % default = not turned off
     end
-    % organic alkalinity
-    if ~isfield(opt,'pKalpha') || isbad(opt.pKalpha)
-        opt.pKalpha = 0; % off
+    if opt.turnoff.pK1 == 1 && opt.turnoff.pK2 == 1
+        error('opt.turnoff can only turn off pK1 or pK2, not both')
     end
-    if ~isfield(opt,'pKbeta') || isbad(opt.pKbeta)
-        opt.pKbeta = 0; % off
-    end
+    % mpk, gmpk, umpk
     if ~isfield(opt,'mpk')
         mpk0 = @(T,S,P) 1;
         mpk1 = @(T,S,P) 1;
@@ -2806,7 +2845,7 @@ function [opt] = check_opt(opt)
         umpk = [umpk0;umpk1;umpk2;1;1;1;1;1;1;1;1;1;1;1;1;1;1];
         opt.umpk = umpk;
     end
-    % opt.turnoff
+    
 end
 
 % ----------------------------------------------------------------------
@@ -2826,18 +2865,14 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
     wobs    = nan(nD,nv);
 
     if (~isfield(obs,'tp'))
-        if opt.printmes ~= 0
-            error('Need to provide temperature and pressure measurement.')
-        end
+        error('Need to provide temperature and pressure measurement.')
     end
     
     nTP = length(obs(1).tp); 
     for i = 1:nD % loop over all the stations
         % make sure all the required fields in the obs struct exist
         if (~isfield(obs(i), 'sal'))
-            if opt.printmes ~= 0
-                error('Need to provide salinity measurement.');
-            end
+            error('Need to provide salinity measurement.');
         else
             yobs(i,sys.isal) = obs(i).sal;
         end
@@ -3076,10 +3111,18 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
         end
 
         for j = 1:nTP % loop over (T,P) systems
+            if (~isfield(obs(i).tp(j),'T')) || (~isgood(obs(i).tp(j).T))
+                error('Must supply temperature at obs.tp(%d).T',j)
+            end
             yobs(i,sys.tp(j).iT)   = obs(i).tp(j).T;
-            yobs(i,sys.tp(j).iP)   = obs(i).tp(j).P;
             wobs(i,sys.tp(j).iT)   = (obs(i).tp(j).uT)^(-2);
+            if (~isfield(obs(i).tp(j),'P')) || (~isgood(obs(i).tp(j).P))
+                error('Must supply pressure at obs.tp(%d).T',j)
+            end
+            yobs(i,sys.tp(j).iP)   = obs(i).tp(j).P;
             wobs(i,sys.tp(j).iP)   = (obs(i).tp(j).uP)^(-2);
+
+            % calculate the equilibrium constants
             [pK,~,upK] = calc_pK(opt,obs(i).tp(j).T,obs(i).sal,obs(i).tp(j).P); % T, S, P
 
             pK0   = pK(1);      pK1  = pK(2);     pK2   = pK(3);  
