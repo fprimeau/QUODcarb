@@ -272,7 +272,7 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     % -(-1/2 sum of squares) + constraint eqns, minimize f => grad(f) = 0
     dcdx = [ M * diag( sys.dqdx( x ) ); ...
              K  ];
- 
+
     %iTSP = [[sys.tp(:).iT], sys.isal, [sys.tp(:).iP]];
     g    = [ e.' * W * ge + lam.' * dcdx,  c.' ];
 
@@ -2792,7 +2792,7 @@ function [opt] = check_opt(opt)
         opt.pKbeta = 0; % off
     end
     % opt.turnoff 
-    if ~isfield(opt,'turnoff') || isbad(opt.turnoff)
+    if ~isfield(opt,'turnoff')
         opt.turnoff.TB = 0;
         opt.turnoff.pK1 = 0;
         opt.turnoff.pK2 = 0;
@@ -2857,6 +2857,7 @@ end
 function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
     % ORG ALK
     isgood  = @(thing) (~isempty(thing) & ~sum(isnan(thing)));
+    iszero  = @(thing) (isequal(thing,0));
     p       = sys.p;
     q       = sys.q;
     % convert x+/-e into precision for p(x) (precision = 1/variance)
@@ -2878,7 +2879,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
         else
             yobs(i,sys.isal) = obs(i).sal;
         end
-        if (~isfield(obs(i), 'usal')) || (iszero(obs(i).usal))
+        if (~isfield(obs(i), 'usal')) || (~isgood(obs(i).usal)) || (iszero(obs(i).usal))
             obs(i).usal         = 0.002; % 1std = 0.002 PSU
             wobs(i,sys.isal)    = (obs(i).usal)^(-2);
             if opt.printmes ~= 0
@@ -3828,11 +3829,11 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                     pKalpha = obs(i).tp(j).pKalpha;
                     yobs(i,sys.tp(j).ipKalpha)  = obs(i).tp(j).pKalpha;
                 end
-                if (~isfield(obs(i).tp(j),'epKalpha')) || (~isgood(obs(i).tp(j).upKalpha))
+                if (~isfield(obs(i).tp(j),'upKalpha')) || (~isgood(obs(i).tp(j).upKalpha))
                     obs(i).tp(j).upKalpha       = nan;
                     wobs(i,sys.tp(j).ipKalpha)  = nan;
                 else
-                    wobs(i,sys.tp(j).ipKalpha)  = (obs(i).tp(j).pKalpha)^(-2);
+                    wobs(i,sys.tp(j).ipKalpha)  = (obs(i).tp(j).upKalpha)^(-2);
                 end
                 if (pKalpha > 4.5) % > from Kerr, < from Humphreys
                     sys.M(sys.tp(j).row_alk, sys.tp(j).ipalpha) = 0;
@@ -3863,7 +3864,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                     obs(i).tp(j).upKbeta        = nan;
                     wobs(i,sys.tp(j).ipKbeta)   = nan;
                 else
-                    wobs(i,sys.tp(j).ipKbeta)   = (obs(i).tp(j).pKbeta)^(-2);
+                    wobs(i,sys.tp(j).ipKbeta)   = (obs(i).tp(j).upKbeta)^(-2);
                 end
                 if (pKbeta > 4.5)
                     sys.M(sys.tp(j).row_alk, sys.tp(j).ipbeta) = 0;
@@ -4348,12 +4349,16 @@ function [est] = parse_output(z,sigx,sys,f,C)
         est.upTAlpha    = sigx(sys.ipTAlpha);
         est.TAlpha      = q(z(sys.ipTAlpha))*1e6;
         est.uTAlpha     = ebar(sys.ipTAlpha)*1e6;
+        est.uTAlpha_l   = ebar_l(sys.ipTAlpha)*1e6;
+        est.uTAlpha_u   = ebar_u(sys.ipTAlpha)*1e6;
     end
     if (isfield(sys,'ipTBeta'))
         est.pTBeta      = z(sys.ipTBeta);
         est.upTBeta     = sigx(sys.ipTBeta);
         est.TBeta       = q(z(sys.ipTBeta))*1e6;
         est.uTBeta      = ebar(sys.ipTBeta)*1e6;
+        est.uTBeta_l   = ebar_l(sys.ipTBeta)*1e6;
+        est.uTBeta_u   = ebar_u(sys.ipTBeta)*1e6;
     end
 
     nTP = length(sys.tp);
@@ -4405,7 +4410,7 @@ function [est] = parse_output(z,sigx,sys,f,C)
         % CO2*
         est.tp(i).co2st     = q(z(sys.tp(i).ipco2st)); % convt mol/kg to µmol/kg
         est.tp(i).uco2st    = ebar(sys.tp(i).ipco2st);
-        ust.tp(i).uco2st_l  = ebar_l(sys.tp(i).ipco2st);
+        est.tp(i).uco2st_l  = ebar_l(sys.tp(i).ipco2st);
         est.tp(i).uco2st_u  = ebar_u(sys.tp(i).ipco2st);
         est.tp(i).pco2st    = z(sys.tp(i).ipco2st);
         est.tp(i).upco2st   = sigx(sys.tp(i).ipco2st);
@@ -4742,33 +4747,46 @@ function [est] = parse_output(z,sigx,sys,f,C)
         est.tp(i).Kca       = q(z(sys.tp(i).ipKca));
         est.tp(i).uKca      = ebar(sys.tp(i).ipKca);
         est.tp(i).uKca_l    = ebar_l(sys.tp(i).ipKca);
-        est.tp(i).uKca_u    = ebar_u(sys.tp(i).ipKca);
+        est.tp(i).uKca_u    = ebar_u(sys.tp(i).ipKca); % #288 in CSV
 
         if (isfield(sys,'ipTAlpha'))
-            % pKalpha
+            % alpha
+            est.tp(i).alpha     = q(z(sys.tp(i).ipalpha))*1e6;
+            est.tp(i).ualpha    = ebar(sys.tp(i).ipalpha)*1e6;
+            est.tp(i).ualpha_l  = ebar_l(sys.tp(i).ipalpha)*1e6;
+            est.tp(i).ualpha_u  = ebar_u(sys.tp(i).ipalpha)*1e6;
+            est.tp(i).palpha    = z(sys.tp(i).ipalpha);
+            est.tp(i).upalpha   = sigx(sys.tp(i).ipalpha);
+            % halpha
+            est.tp(i).halpha    = q(z(sys.tp(i).iphalpha))*1e6;
+            est.tp(i).uhalpha   = ebar(sys.tp(i).iphalpha)*1e6;
+            est.tp(i).uhalpha_l = ebar_l(sys.tp(i).iphalpha)*1e6;
+            est.tp(i).uhalpha_u = ebar_u(sys.tp(i).iphalpha)*1e6;
+            est.tp(i).phalpha   = z(sys.tp(i).iphalpha);
+            est.tp(i).uphalpha  = sigx(sys.tp(i).iphalpha);% pKalpha
             est.tp(i).pKalpha   = z(sys.tp(i).ipKalpha);
             est.tp(i).upKalpha  = sigx(sys.tp(i).ipKalpha);
             est.tp(i).Kalpha    = q(z(sys.tp(i).ipKalpha));
             est.tp(i).uKalpha   = ebar(sys.tp(i).ipKalpha);
             est.tp(i).uKalpha_l = ebar_l(sys.tp(i).ipKalpha);
             est.tp(i).uKalpha_u = ebar_u(sys.tp(i).ipKalpha);
-            % alpha
-            est.tp(i).palpha    = z(sys.tp(i).ipalpha);
-            est.tp(i).upalpha   = sigx(sys.tp(i).ipalpha);
-            est.tp(i).alpha     = q(z(sys.tp(i).ipalpha))*1e6;
-            est.tp(i).ualpha    = ebar(sys.tp(i).ipalpha)*1e6;
-            est.tp(i).ualpha_l  = ebar_l(sys.tp(i).ipalpha)*1e6;
-            est.tp(i).ualpha_u  = ebar_u(sys.tp(i).ipalpha)*1e6;
-            % halpha
-            est.tp(i).phalpha   = z(sys.tp(i).iphalpha);
-            est.tp(i).uphalpha  = sigx(sys.tp(i).iphalpha);
-            est.tp(i).halpha    = q(z(sys.tp(i).iphalpha))*1e6;
-            est.tp(i).uhalpha   = ebar(sys.tp(i).iphalpha)*1e6;
-            est.tp(i).uhalpha_l = ebar_l(sys.tp(i).iphalpha)*1e6;
-            est.tp(i).uhalpha_u = ebar_u(sys.tp(i).iphalpha)*1e6;
         end
 
         if (isfield(sys,'ipTBeta'))
+            % beta
+            est.tp(i).beta      = q(z(sys.tp(i).ipbeta))*1e6;
+            est.tp(i).ubeta     = ebar(sys.tp(i).ipbeta)*1e6;
+            est.tp(i).ubeta_l   = ebar_l(sys.tp(i).ipbeta)*1e6;
+            est.tp(i).ubeta_u   = ebar_u(sys.tp(i).ipbeta)*1e6;
+            est.tp(i).pbeta     = z(sys.tp(i).ipbeta);
+            est.tp(i).upbeta    = sigx(sys.tp(i).ipbeta);
+            % hbeta
+            est.tp(i).hbeta     = q(z(sys.tp(i).iphbeta))*1e6;
+            est.tp(i).uhbeta    = ebar(sys.tp(i).iphbeta)*1e6;
+            est.tp(i).uhbeta_l  = ebar_l(sys.tp(i).iphbeta)*1e6;
+            est.tp(i).uhbeta_u  = ebar_u(sys.tp(i).iphbeta)*1e6;
+            est.tp(i).phbeta    = z(sys.tp(i).iphbeta);
+            est.tp(i).uphbeta   = sigx(sys.tp(i).iphbeta);
             % pKbeta
             est.tp(i).pKbeta    = z(sys.tp(i).ipKbeta);
             est.tp(i).upKbeta   = sigx(sys.tp(i).ipKbeta);
@@ -4776,20 +4794,6 @@ function [est] = parse_output(z,sigx,sys,f,C)
             est.tp(i).uKbeta    = ebar(sys.tp(i).ipKbeta);
             est.tp(i).uKbeta_l  = ebar_l(sys.tp(i).ipKbeta);
             est.tp(i).uKbeta_u  = ebar_u(sys.tp(i).ipKbeta);
-            % beta
-            est.tp(i).pbeta     = z(sys.tp(i).ipbeta);
-            est.tp(i).upbeta    = sigx(sys.tp(i).ipbeta);
-            est.tp(i).beta      = q(z(sys.tp(i).ipbeta))*1e6;
-            est.tp(i).ubeta     = ebar(sys.tp(i).ipbeta)*1e6;
-            est.tp(i).ubeta_l   = ebar_l(sys.tp(i).ipbeta)*1e6;
-            est.tp(i).ubeta_u   = ebar_u(sys.tp(i).ipbeta)*1e6;
-            % hbeta
-            est.tp(i).phbeta    = z(sys.tp(i).iphbeta);
-            est.tp(i).uphbeta   = sigx(sys.tp(i).iphbeta);
-            est.tp(i).hbeta     = q(z(sys.tp(i).iphbeta))*1e6;
-            est.tp(i).uhbeta    = ebar(sys.tp(i).iphbeta)*1e6;
-            est.tp(i).uhbeta_l  = ebar_l(sys.tp(i).iphbeta)*1e6;
-            est.tp(i).uhbeta_u  = ebar_u(sys.tp(i).iphbeta)*1e6;
         end
 
     % PLEASE ADD NEW VARIABLES HERE AT END (for PrintCSV's sake)
@@ -4888,10 +4892,10 @@ function make_headers(est,opt,fid)
     % row 1
     fprintf(fid, '%s, ', '  ');
     fprintf(fid, 'est = output, ');
-    fprintf(fid, 'u = 1sigma, ', '  ');
+    fprintf(fid, 'u = 1sigma, ');
 
     fn = fieldnames(est);
-    fnl = 62;
+    fnl = length(fn)-3; 
     for i = 5:6:fnl % temperature independent totals
         fprintf(fid, '%s, ', '  '); % est
         fprintf(fid, '%s, ', '  '); % est.u
@@ -4926,7 +4930,7 @@ function make_headers(est,opt,fid)
 
     for i = 5:6:fnl % temperature independent totals
         fprintf(fid,'est.%s, ',fn{i} );
-        fprintf(fid,'est.u%s, ',fn{i} ); % e
+        fprintf(fid,'est.u%s, ',fn{i} ); % u
     end
     for j = 1:nTP
         fnj = fieldnames(est.tp(j));
@@ -4942,9 +4946,23 @@ function make_headers(est,opt,fid)
             fprintf(fid,'est.%s, ',  fnj{i});
             fprintf(fid,'est.u%s, ', fnj{i}); % u = uncertainty
         end
-        for i = 79:6:288 % all the rest (except Revelle if on)
+        for i = 79:6:288 % all the rest of the regulars
             fprintf(fid,'est.%s, ',  fnj{i});
             fprintf(fid,'est.u%s, ', fnj{i}); % u = uncertainty
+        end
+        n = 0;
+        if opt.pKalpha == 1
+            for i = 289:6:306
+                fprintf(fid,'est.%s, ',  fnj{i});
+                fprintf(fid,'est.u%s, ', fnj{i}); % u = uncertainty
+            end
+            n = 18; 
+        end
+        if opt.pKbeta == 1
+           for i = n+(289:6:306) 
+               fprintf(fid,'est.%s, ',  fnj{i});
+                fprintf(fid,'est.u%s, ', fnj{i}); % u = uncertainty
+           end
         end
         if opt.Revelle == 1
             fprintf(fid,'est.%s, ', fnj{end-1}); % Revelle
@@ -5027,6 +5045,22 @@ function make_headers(est,opt,fid)
             fprintf(fid, '%s, ', '(-log10)'); % est.pK
             fprintf(fid, '%s, ', '  ');
         end
+        if opt.pKalpha == 1 % (alpha, halpha, pKalpha)
+            fprintf(fid, '%s, ', 'umol/kg'); % est 1st
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', 'umol/kg'); % est 2nd
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', '(-log10)'); % est.pK
+            fprintf(fid, '%s, ', '  ');
+        end
+        if opt.pKbeta == 1 % (beta, hbeta, pKbeta)
+            fprintf(fid, '%s, ', 'umol/kg'); % est 1st
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', 'umol/kg'); % est 2nd
+            fprintf(fid, '%s, ', 'umol/kg');
+            fprintf(fid, '%s, ', '(-log10)'); % est.pK
+            fprintf(fid, '%s, ', '  ');
+        end
         if opt.Revelle == 1
             fprintf(fid, '%s, ', '(unitless)'); % Revelle
             fprintf(fid, '%s, ', '  ');         % dpfco2dpTA
@@ -5082,6 +5116,17 @@ function parse_CSV(varargin)
     % TCa calcium solubility
     fprintf(fid,'%f, ', est.TCa);
     fprintf(fid,'%f, ', est.uTCa);
+
+    if opt.pKalpha == 1
+        % TAlpha
+        fprintf(fid,'%f, ', est.TAlpha);
+        fprintf(fid,'%f, ', est.uTAlpha);
+    end
+    if opt.pKbeta == 1
+        % TBeta
+        fprintf(fid,'%f, ', est.TBeta);
+        fprintf(fid,'%f, ', est.uTBeta);
+    end
 
     for j = 1:nTP
         % Temp
@@ -5191,7 +5236,7 @@ function parse_CSV(varargin)
         fprintf(fid,'%f, ', est.tp(j).uh3po4);
         % pKp1 = [h][h2po4]/[h3po4]
         fprintf(fid,'%f, ', est.tp(j).pKp1);
-        fprintf(fid,'%f, ', est.tp(j).epKp1);
+        fprintf(fid,'%f, ', est.tp(j).upKp1);
         % pKp2 = [h][hpo4]/[h2po4]
         fprintf(fid,'%f, ', est.tp(j).pKp2);
         fprintf(fid,'%f, ', est.tp(j).upKp2);
@@ -5245,6 +5290,28 @@ function parse_CSV(varargin)
         fprintf(fid,'%f, ', est.tp(j).pKca); 
         fprintf(fid,'%f, ', est.tp(j).upKca);
 
+        if opt.pKalpha == 1
+            % alpha
+            fprintf(fid,'%f, ', est.tp(j).alpha);
+            fprintf(fid,'%f, ', est.tp(j).ualpha);
+            % halpha
+            fprintf(fid,'%f, ', est.tp(j).halpha);
+            fprintf(fid,'%f, ', est.tp(j).uhalpha);
+            % pKalpha = [h][alpha]/[halpha]
+            fprintf(fid,'%f, ', est.tp(j).pKalpha);
+            fprintf(fid,'%f, ', est.tp(j).upKalpha);
+        end
+        if opt.pKbeta == 1
+            % beta
+            fprintf(fid,'%f, ', est.tp(j).beta);
+            fprintf(fid,'%f, ', est.tp(j).ubeta);
+            % hbeta
+            fprintf(fid,'%f, ', est.tp(j).hbeta);
+            fprintf(fid,'%f, ', est.tp(j).uhbeta);
+            % pKbeta = [h][beta]/[hbeta]
+            fprintf(fid,'%f, ', est.tp(j).pKbeta);
+            fprintf(fid,'%f, ', est.tp(j).upKbeta);
+        end
         if opt.Revelle == 1
             fprintf(fid,'%f, ', est.tp(j).Revelle);
             fprintf(fid,'%f, ', est.tp(j).dpfco2dpTA);
