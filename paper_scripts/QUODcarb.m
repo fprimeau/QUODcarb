@@ -4748,33 +4748,50 @@ function [est] = parse_output(z,sigx,sys,f,C)
             % pKalpha
             est.tp(i).pKalpha   = z(sys.tp(i).ipKalpha);
             est.tp(i).upKalpha  = sigx(sys.tp(i).ipKalpha);
+            est.tp(i).Kalpha    = q(z(sys.tp(i).ipKalpha));
+            est.tp(i).uKalpha   = ebar(sys.tp(i).ipKalpha);
+            est.tp(i).uKalpha_l = ebar_l(sys.tp(i).ipKalpha);
+            est.tp(i).uKalpha_u = ebar_u(sys.tp(i).ipKalpha);
             % alpha
             est.tp(i).palpha    = z(sys.tp(i).ipalpha);
             est.tp(i).upalpha   = sigx(sys.tp(i).ipalpha);
             est.tp(i).alpha     = q(z(sys.tp(i).ipalpha))*1e6;
             est.tp(i).ualpha    = ebar(sys.tp(i).ipalpha)*1e6;
+            est.tp(i).ualpha_l  = ebar_l(sys.tp(i).ipalpha)*1e6;
+            est.tp(i).ualpha_u  = ebar_u(sys.tp(i).ipalpha)*1e6;
             % halpha
             est.tp(i).phalpha   = z(sys.tp(i).iphalpha);
             est.tp(i).uphalpha  = sigx(sys.tp(i).iphalpha);
             est.tp(i).halpha    = q(z(sys.tp(i).iphalpha))*1e6;
             est.tp(i).uhalpha   = ebar(sys.tp(i).iphalpha)*1e6;
+            est.tp(i).uhalpha_l = ebar_l(sys.tp(i).iphalpha)*1e6;
+            est.tp(i).uhalpha_u = ebar_u(sys.tp(i).iphalpha)*1e6;
         end
 
         if (isfield(sys,'ipTBeta'))
             % pKbeta
-            est.tp(i).pKbeta = z(sys.tp(i).ipKbeta);
-            est.tp(i).upKbeta = sigx(sys.tp(i).ipKbeta);
+            est.tp(i).pKbeta    = z(sys.tp(i).ipKbeta);
+            est.tp(i).upKbeta   = sigx(sys.tp(i).ipKbeta);
+            est.tp(i).Kbeta     = q(z(sys.tp(i).ipKbeta));
+            est.tp(i).uKbeta    = ebar(sys.tp(i).ipKbeta);
+            est.tp(i).uKbeta_l  = ebar_l(sys.tp(i).ipKbeta);
+            est.tp(i).uKbeta_u  = ebar_u(sys.tp(i).ipKbeta);
             % beta
-            est.tp(i).pbeta = z(sys.tp(i).ipbeta);
-            est.tp(i).upbeta = sigx(sys.tp(i).ipbeta);
-            est.tp(i).beta = q(z(sys.tp(i).ipbeta))*1e6;
-            est.tp(i).ubeta = ebar(sys.tp(i).ipbeta)*1e6;
+            est.tp(i).pbeta     = z(sys.tp(i).ipbeta);
+            est.tp(i).upbeta    = sigx(sys.tp(i).ipbeta);
+            est.tp(i).beta      = q(z(sys.tp(i).ipbeta))*1e6;
+            est.tp(i).ubeta     = ebar(sys.tp(i).ipbeta)*1e6;
+            est.tp(i).ubeta_l   = ebar_l(sys.tp(i).ipbeta)*1e6;
+            est.tp(i).ubeta_u   = ebar_u(sys.tp(i).ipbeta)*1e6;
             % hbeta
-            est.tp(i).phbeta = z(sys.tp(i).iphbeta);
-            est.tp(i).uphbeta = sigx(sys.tp(i).iphbeta);
-            est.tp(i).hbeta = q(z(sys.tp(i).iphbeta))*1e6;
-            est.tp(i).uhbeta = ebar(sys.tp(i).iphbeta)*1e6;
+            est.tp(i).phbeta    = z(sys.tp(i).iphbeta);
+            est.tp(i).uphbeta   = sigx(sys.tp(i).iphbeta);
+            est.tp(i).hbeta     = q(z(sys.tp(i).iphbeta))*1e6;
+            est.tp(i).uhbeta    = ebar(sys.tp(i).iphbeta)*1e6;
+            est.tp(i).uhbeta_l  = ebar_l(sys.tp(i).iphbeta)*1e6;
+            est.tp(i).uhbeta_u  = ebar_u(sys.tp(i).iphbeta)*1e6;
         end
+
     % PLEASE ADD NEW VARIABLES HERE AT END (for PrintCSV's sake)
     est.f       = f; % residual f value, from limp
     est.C       = C;
