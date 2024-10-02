@@ -17,17 +17,17 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %
 % SYNTAX example:
 %   obs.sal         = salinity;     (PSU)           
-%   obs.usal        = sal_error;    (±sigma)        
+%   obs.usal        = sal_error;    (±sigma) (default 0.001)     
 %   obs.TC          = total_c;      (umol/kg-SW)    
-%   obs.uTC         = TC_error;     (±sigma)        
+%   obs.uTC         = TC_error;     (±sigma) (default 2 umol/kg)
 %   obs.TA          = total_alk;    (umol/kg-SW)    
-%   obs.uTA         = alk_error;    (±sigma)        
+%   obs.uTA         = alk_error;    (±sigma) (default 2 umol/kg)
 %   obs.tp(1).T     = temp;         (deg C)         
-%   obs.tp(1).uT    = temp_error;   (±sigma)        
+%   obs.tp(1).uT    = temp_error;   (±sigma) (default 0.1 degC)
 %   obs.tp(1).P     = pressure;     (dbar, 0 = surface)          
-%   obs.tp(1).uP    = pres_error;   (±sigma)     
+%   obs.tp(1).uP    = pres_error;   (±sigma) (default 0.1 dbar)
 %   obs.tp(1).ph    = ph_meas;      
-%   obs.tp(1).uph   = ph_error;     (±sigma)
+%   obs.tp(1).uph   = ph_error;     (±sigma) (default 0.010)
 %
 %   opt.K1K2        = 10;           % (Lueker et al 2000)
 %   opt.KSO4        = 1;            % (Dickson et al 1990a) 
@@ -84,7 +84,8 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %           1 = on                      (DEFAULT)
 %           2 = off
 %
-%   opt.pKalpha -> turn on the organic alk pKalpha system, where: 
+%   opt.pKalpha -> turn on the organic alkalinity pKalpha system, 
+%                   requires TAlpha and pKalpha input, where: 
 %                   Kalpha = [alpha][H]/[Halpha]
 %                   TAlpha = [Halpha^+] + [alpha^-].
 %                   Contributes to alkalinity via:
@@ -93,8 +94,9 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %           0 = off  (DEFAULT)
 %           1 = on
 %
-%   opt.pKbeta -> turn on the organic alk pKbeta system, see 
-%                   description for pKalpha above, replacing alpha w/ beta
+%   opt.pKbeta -> turn on the organic alk pKbeta system, requires TBeta
+%                   and pKbeta input, see description for pKalpha above, 
+%                   replacing alpha w/ beta (or TAlpha with TBeta)
 %           0 = off  (DEFAULT)
 %           1 = on
 %
@@ -2695,9 +2697,9 @@ function [opt] = check_opt(opt)
     % opt.K1K2
     if ~isfield(opt,'K1K2') || isbad(opt.K1K2)
         if opt.printmes ~= 0
-            fprintf('No K1K2 formulation chosen. Assuming opt.K1K2 = 4\n');
+            fprintf('No K1K2 formulation chosen. Assuming opt.K1K2 = 10\n');
         end
-        opt.K1K2 = 4; % default K1K2 setting
+        opt.K1K2 = 10; % default K1K2 setting
     elseif opt.K1K2 > 18 || opt.K1K2 < 1 || ...
                 opt.K1K2 == 6 || opt.K1K2 == 7 || opt.K1K2 == 8
         if opt.printmes ~= 0
@@ -2876,7 +2878,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
         else
             yobs(i,sys.isal) = obs(i).sal;
         end
-        if (~isfield(obs(i), 'usal'))
+        if (~isfield(obs(i), 'usal')) || (iszero(obs(i).usal))
             obs(i).usal         = 0.002; % 1std = 0.002 PSU
             wobs(i,sys.isal)    = (obs(i).usal)^(-2);
             if opt.printmes ~= 0
@@ -2891,9 +2893,15 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
         else
             yobs(i,sys.ipTC) = p((obs(i).TC)*1e-6); % convt to mol/kg
         end
-        if (~isfield(obs(i),'uTC')) || (~isgood(obs(i).uTC))
+        if (~isfield(obs(i),'uTC')) || (~isgood(obs(i).uTC)) || (iszero(obs(i).uTC))
             obs(i).uTC       = nan;
             wobs(i,sys.ipTC) = nan;
+            if (isgood(obs(i).TC))
+                if opt.printmes ~= 0
+                fprintf('Warning: Assuming TC uncertainty is 2.00 umol/kg\n');
+                end
+                wobs(i,sys.ipTC) = w(obs(i).TC,2.00);
+            end
         else
             wobs(i,sys.ipTC) = w(obs(i).TC,obs(i).uTC); % std u -> w
         end
@@ -2903,9 +2911,15 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
         else
             yobs(i,sys.ipTA) = p((obs(i).TA)*1e-6); % convt to mol/kg
         end
-        if (~isfield(obs(i),'uTA'))  || (~isgood(obs(i).uTA))
+        if (~isfield(obs(i),'uTA'))  || (~isgood(obs(i).uTA)) || (iszero(obs(i).uTA))
             obs(i).uTA       = nan;
             wobs(i,sys.ipTA) = nan;
+            if (isgood(obs(i).TA))
+                if opt.printmes ~= 0
+                fprintf('Warning: Assuming TA uncertainty is 2.00 umol/kg\n');
+                end
+                wobs(i,sys.ipTA) = w(obs(i).TA,2.00);
+            end
         else
             wobs(i,sys.ipTA) = w(obs(i).TA,obs(i).uTA); % std u -> w
         end
@@ -3074,9 +3088,13 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
 
         if opt.pKalpha == 1
             % Organic Alkalinity Alpha
+            if nTP > 1
+                error(['opt.pKalpha only works with one tp, not 2+.'...
+                        'Must input at tp(1) only.']);
+            end
             if (~isfield(obs(i), 'TAlpha')) || (~isgood(obs(i).TAlpha))
                 obs(i).TAlpha           = nan; 
-                yobs(i,sys.ipTAlpha)    = p(5e-6); % guess 5 umol/kg
+                yobs(i,sys.ipTAlpha)    = nan;
             else
                 if ((obs(i).TAlpha) == 0)
                     obs(i).TAlpha       = 1e-9;
@@ -3085,7 +3103,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             end
             if (~isfield(obs(i), 'uTAlpha')) || (~isgood(obs(i).uTAlpha))
                 obs(i).uTAlpha          = nan; 
-                wobs(i,sys.ipTAlpha)    = w(5,2); % 5 ± 2 umol/kg
+                wobs(i,sys.ipTAlpha)    = nan; 
             else
                 wobs(i,sys.ipTAlpha)    = w(obs(i).TAlpha,obs(i).uTAlpha);
             end
@@ -3093,9 +3111,13 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
 
         if opt.pKbeta == 1
             % Organic Alkalinity Beta
+            if nTP > 1
+                error(['opt.pKbeta only works with one tp, not 2+.'...
+                        'Must input at tp(1) only.']);
+            end
             if (~isfield(obs(i),'TBeta')) || (~isgood(obs(i).TBeta))
                 obs(i).TBeta        = nan;
-                yobs(i,sys.ipTBeta) = p(5e-6);
+                yobs(i,sys.ipTBeta) = nan;
             else
                 if ((obs(i).TBeta) == 0)
                     obs(i).TBeta    = 1e-9;
@@ -3104,7 +3126,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             end
             if (~isfield(obs(i),'uTBeta')) || (~isgood(obs(i).uTBeta))
                 obs(i).uTBeta       = nan;
-                wobs(i,sys.ipTBeta) = w(5,2);
+                wobs(i,sys.ipTBeta) = nan;
             else
                 wobs(i,sys.ipTBeta) = w(obs(i).TBeta,obs(i).uTBeta);
             end
@@ -3115,11 +3137,26 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                 error('Must supply temperature at obs.tp(%d).T',j)
             end
             yobs(i,sys.tp(j).iT)   = obs(i).tp(j).T;
+            if (~isfield(obs(i).tp(j),'uT')) || (~isgood(obs(i).tp(j).uT)) ...
+                    || (iszero(obs(i).tp(j).uT))
+                if opt.printmes ~= 0
+                fprintf('Warning: Assuming obs.tp(%d).uT 0.1 deg Celsius\n',j);
+                end
+                obs(i).tp(j).uT = 0.1;
+            end
             wobs(i,sys.tp(j).iT)   = (obs(i).tp(j).uT)^(-2);
+
             if (~isfield(obs(i).tp(j),'P')) || (~isgood(obs(i).tp(j).P))
-                error('Must supply pressure at obs.tp(%d).T',j)
+                error('Must supply pressure at obs.tp(%d).P',j)
             end
             yobs(i,sys.tp(j).iP)   = obs(i).tp(j).P;
+            if (~isfield(obs(i).tp(j),'uP')) || (~isgood(obs(i).tp(j).uP)) ...
+                    || (iszero(obs(i).tp(j).uP))
+                if opt.printmes ~= 0
+                fprintf('Warning: Assuming obs.tp(%d).uP is 0.1 dbar\n',j);
+                end
+                obs(i).tp(j).uP = 0.1;
+            end
             wobs(i,sys.tp(j).iP)   = (obs(i).tp(j).uP)^(-2);
 
             % calculate the equilibrium constants
@@ -3173,9 +3210,16 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             else
                 yobs(i,sys.tp(j).ipfco2)    = p(obs(i).tp(j).fco2*1e-6); % convt µatm to atm
             end
-            if (~isfield(obs(i).tp(j),'ufco2')) || (~isgood(obs(i).tp(j).ufco2))
+            if (~isfield(obs(i).tp(j),'ufco2')) || (~isgood(obs(i).tp(j).ufco2)) ...
+                    || (iszero(obs(i).tp(j).ufco2))
                 obs(i).tp(j).ufco2          = nan;
                 wobs(i,sys.tp(j).ipfco2)    = nan;
+                if (isgood(obs(i).tp(j).fco2))
+                    if opt.printmes ~= 0
+                        fprintf('Warning: Assuming obs.tp(%d).ufco2 is 1%\n',j);
+                    end
+                    wobs(i,sys.tp(j).ipfco2) = w(obs(i).tp(j).fco2,0.01*obs(i).tp(j).fco2);
+                end
             else
                 wobs(i,sys.tp(j).ifco2) = w(obs(i).tp(j).fco2, obs(i).tp(j).ufco2);
             end
@@ -3197,9 +3241,16 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             else
                 yobs(i,sys.tp(j).ippco2)   = p(obs(i).tp(j).pco2*1e-6); % convt µatm to atm
             end
-            if (~isfield(obs(i).tp(j),'upco2')) || (~isgood(obs(i).tp(j).upco2))
+            if (~isfield(obs(i).tp(j),'upco2')) || (~isgood(obs(i).tp(j).upco2)) ...
+                    || (iszero(obs(i).tp(j).upco2))
                 obs(i).tp(j).upco2         = nan;
                 wobs(i,sys.tp(j).ippco2)   = nan;
+                if (isgood(obs(i).tp(j).pco2))
+                    if opt.printmes ~= 0
+                        fprintf('Warning: Assuming obs.tp(%d).upco2 is 1%\n',j);
+                    end
+                    wobs(i,sys.tp(j).ippco2) = w(obs(i).tp(j).pco2,0.01*obs(i).tp(j).pco2);
+                end
             else
                 wobs(i,sys.tp(j).ippco2) = w(obs(i).tp(j).pco2,obs(i).tp(j).upco2);
             end
@@ -3273,9 +3324,16 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             else
                 yobs(i,sys.tp(j).ipco3) = p(obs(i).tp(j).co3*1e-6); % convt µmol/kg to mol/kg
             end
-            if (~isfield(obs(i).tp(j),'uco3')) || (~isgood(obs(i).tp(j).uco3))
+            if (~isfield(obs(i).tp(j),'uco3')) || (~isgood(obs(i).tp(j).uco3)) ...
+                    || (iszero(obs(i).tp(j).uco3))
                 obs(i).tp(j).uco3          = nan;
                 wobs(i,sys.tp(j).ipco3)    = nan;
+                if (isgood(obs(i).tp(j).co3))
+                    if opt.printmes ~= 0
+                        fprintf('Warning: Assuming obs.tp(%d).uco3 is 2%\n',j);
+                    end
+                    wobs(i,sys.tp(j).ipco3) = w(obs(i).tp(j).co3,0.02*obs(i).tp(j).co3);
+                end
             else
                 wobs(i,sys.tp(j).ipco3) = w(obs(i).tp(j).co3,obs(i).tp(j).uco3);
             end
@@ -3285,9 +3343,16 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             else
                 yobs(i,sys.tp(j).iph)  = obs(i).tp(j).ph;
             end
-            if (~isfield(obs(i).tp(j),'uph')) || (~isgood(obs(i).tp(j).uph))
+            if (~isfield(obs(i).tp(j),'uph')) || (~isgood(obs(i).tp(j).uph)) ...
+                    || (iszero(obs(i).tp(j).uph))
                 obs(i).tp(j).uph       = nan;
                 wobs(i,sys.tp(j).iph)  = nan;
+                if (isgood(obs(i).tp(j).ph))
+                    if opt.printmes ~= 0
+                        fprintf('Warning: Assuming obs.tp(%d).uph is 0.010\n',j);
+                    end
+                    wobs(i,sys.tp(j).iph) = w(obs(i).tp(j).ph,0.010);
+                end
             else
                 wobs(i,sys.tp(j).iph)  = (obs(i).tp(j).uph).^(-2);
             end
@@ -3758,19 +3823,14 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                 % pKalpha system
                 if (~isfield(obs(i).tp(j),'pKalpha')) || (~isgood(obs(i).tp(j).pKalpha))
                     obs(i).tp(j).pKalpha        = nan;
-                    pKalpha = 4.0; % default
-                    yobs(i,sys.tp(j).ipKalpha)  = pKalpha; 
+                    yobs(i,sys.tp(j).ipKalpha)  = nan; 
                 else
                     pKalpha = obs(i).tp(j).pKalpha;
                     yobs(i,sys.tp(j).ipKalpha)  = obs(i).tp(j).pKalpha;
                 end
                 if (~isfield(obs(i).tp(j),'epKalpha')) || (~isgood(obs(i).tp(j).upKalpha))
-                    pKalpha = 4.0; % default
-                    Kalpha     = q(pKalpha); % default
-                    % pKalpha    = (4.0); % default
                     obs(i).tp(j).upKalpha       = nan;
-                    wobs(i,sys.tp(j).ipKalpha)  = w(Kalpha,0.10*Kalpha); % 10%
-                    % wobs(i,sys.tp(j).ipKalpha)  = (0.1*pKalpha)^(-2);
+                    wobs(i,sys.tp(j).ipKalpha)  = nan;
                 else
                     wobs(i,sys.tp(j).ipKalpha)  = (obs(i).tp(j).pKalpha)^(-2);
                 end
@@ -3793,18 +3853,15 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             if opt.pKbeta == 1
                 % pKbeta system
                 if (~isfield(obs(i).tp(j),'pKbeta')) || (~isgood(obs(i).tp(j).pKbeta))
-                    pKbeta                  = 6.95; % default
                     obs(i).tp(j).pKbeta         = nan;
-                    yobs(i,sys.tp(j).ipKbeta)   = pKbeta; 
+                    yobs(i,sys.tp(j).ipKbeta)   = nan; 
                 else
                     pKbeta                      = obs(i).tp(j).pKbeta;
                     yobs(i,sys.tp(j).ipKbeta)   = obs(i).tp(j).pKbeta;
                 end
                 if (~isfield(obs(i).tp(j),'upKbeta')) || (~isgood(obs(i).tp(j).upKbeta))
-                    pKbeta                      = 6.95; % default
-                    Kbeta                       = q(pKbeta);
                     obs(i).tp(j).upKbeta        = nan;
-                    wobs(i,sys.tp(j).ipKbeta)   = w(Kbeta,0.1*Kbeta);
+                    wobs(i,sys.tp(j).ipKbeta)   = nan;
                 else
                     wobs(i,sys.tp(j).ipKbeta)   = (obs(i).tp(j).pKbeta)^(-2);
                 end
