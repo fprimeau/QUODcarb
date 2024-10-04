@@ -148,6 +148,7 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
     sys = mksys(obs(1),opt.phscale,opt.pKalpha,opt.pKbeta);
     nD  = length(obs);  
     nv  = size(sys.K,2);
+    nlam = size(sys.K,1)+size(sys.M,1);
 
     % populate obs, yobs, wobs at each datapoint
     [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD);
@@ -166,9 +167,20 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 
         % find the maximum of the posterior probability 
         [zhat,J,iflag(i)] = newtn(z0,fun,tol);
+        if (sys.freshwater)
+            z = z0;
+            y = zeros(nv1,1);
+            lamM = zeros(sys.nMr_,1);
+            lamK = zeros(sys.nKr_,1);
+            y = zhat(sys.ic);
+            lamM(sys.iMr) = zhat(sys.nKc+(1:sys.nMr));
+            lamK(sys.iKr) = zaht((sys.nKc+sys.Mr)+(1:sys.nKr));
+            zhat = [y;lamM;lamK];
+        end
         if (iflag(i) ~=0) && (opt.printmes ~= 0)
             fprintf('Newton''s method iflag = %i at i = %i \n',iflag(i),i);
         end
+        
         [~,~,f] = limp(zhat,yobs(i,:),wobs(i,:),obs(i),sys,opt);
         % residual f value, to tack onto est
 
@@ -239,16 +251,12 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     M   = sys.M;    
     K   = sys.K;
     if (sys.freshwater)
-        [nr,nc] = size(M);
-        ic = setdiff(1:nc,sys.iremove_cols);
-        ir = setdiff(1:nr,sys.iremove_Mrows);
-        M = M(ic,:);
-        M = M(:,ir);
-        
-        [nr,nc] = size(K);
-        ic = setdiff(1:nc,sys.iremove_Krows);
-        K = K(ic,:);
-        K = K(:,ir);        
+        % remove the relationships for the unused mass totals
+        M = M(sys.iMr,:);
+        M = M(:,sys.ic);
+        % remove the relationships for the unused mass action laws 
+        K = K(sys.iKr,:);
+        K = K(:,sys.ic);        
     end
         
     nrk     = size(K,1);
@@ -260,11 +268,12 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     % update the pK values based on the new estimate of (T,P)
 
     [y, gy, ggy ] = update_y(y,x,obs,sys,opt);
-    if freshwater
-        y = y(ir);
-        gy = gy(ir,:);
-        ggy = ggy(ir,:,:);
-        x = x(ir);
+    if (sys.freshwater)
+        % remove the unused system state variables
+        y = y(sys.ic);
+        gy = gy(sys.ic,:);
+        ggy = ggy(sys.ic,:,:);
+        x = x(sys.ic);
     end
 
     % Make a vector of measured quantities
@@ -274,8 +283,9 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     ggy = ggy(id,:,:);
     
     % Make a precision matrix
-    if (freshwater)
-        w = w(ir);
+    if (fsys.reshwater)
+        % remove the precisions for the unused state variables
+        w = w(sys.ic);
     end       
     W   = diag(w(id));
 
@@ -315,10 +325,6 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
              dcdx            ,  zeros(nlam)  ]; % derivatives wrt var's
     g = g(:); % make sure g is returned as a column vector
 end
-
-% ----------------------------------------------------------------------
-% calc_pK
-% ----------------------------------------------------------------------
 
 function [pK,gpK,upK] = calc_pK(opt,T,S,P)
 % base equations COPIED FROM co2sys.m Orr et al. (2018)  Github
@@ -2164,6 +2170,7 @@ function [pT,gpT,ggpT,upT] = calc_pTOT(opt,S)
 
 end
 
+
 % ----------------------------------------------------------------------
 % mksys
 % ----------------------------------------------------------------------
@@ -2764,9 +2771,40 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
     sys.K  = K;
     sys.tp = tp;
     sys.freshwater = freshwater;
-    sys.iremove_cols = iremove_cols;
-    sys.iremove_Krows = iremove_Krows;
-    sys.iremove_Mrows = iremove_Mrows;
+    if freshwater
+        [nKr_,nKc_] = size(K);
+        [nMr_,nMc_] = size(M);
+
+        ic = setdiff(1:nMc,sys.iremove_cols);
+        iMr = setdiff(1:nMr,sys.iremove_Mrows);
+        M = M(iMr,:);
+        M = M(:,ic);
+
+        
+        [nr,nc] = size(K);
+        iKr = setdiff(1:nKr,sys.iremove_Krows);
+        K = K(iKr,:);
+        K = K(:,ic);        
+
+        
+        [nKr,nKc] = size(K);
+        [nMr,nMc] = size(M);
+
+        sys.iremove_cols = iremove_cols;
+        sys.iremove_Krows = iremove_Krows;
+        sys.iremove_Mrows = iremove_Mrows;
+        sys.ic = ic;
+        sys.iMr = iMr;
+        sys.iKr = iKr;
+        sys.nKr_ = nKr_;
+        sys.nKc_ = nKc_;
+        sys.nMr_ = nMr_;
+        sys.nMc_ = nMc_;
+        sys.nKr = nKr;
+        sys.nKc = nKc;
+        sys.nMr = nMr;
+        sys.nMc = nMc;        
+    end
 end
 
 
