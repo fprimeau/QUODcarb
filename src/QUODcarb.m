@@ -3597,6 +3597,7 @@ function [y,gy,ggy] = update_y(y,x,obs,sys,opt)
         if (isnan(obs.tp(i).pK0))
             y(sys.tp(i).ipK0)             = pK(1); 
             gy(sys.tp(i).ipK0,iTSP)       = gpK(1,:);
+            keyboard
             ggy(sys.tp(i).ipK0,iTSP,iTSP) = ggpK(1,:,:);
         end
         if (isnan(obs.tp(i).pK1))

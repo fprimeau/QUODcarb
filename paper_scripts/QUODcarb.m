@@ -238,6 +238,19 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     q   = sys.q;
     M   = sys.M;    
     K   = sys.K;
+    if (sys.freshwater)
+        [nr,nc] = size(M);
+        ic = setdiff(1:nc,sys.iremove_cols);
+        ir = setdiff(1:nr,sys.iremove_Mrows);
+        M = M(ic,:);
+        M = M(:,ir);
+        
+        [nr,nc] = size(K);
+        ic = setdiff(1:nc,sys.iremove_Krows);
+        K = K(ic,:);
+        K = K(:,ir);        
+    end
+        
     nrk     = size(K,1);
     nTP     = length(sys.tp); 
     nv      = size(M,2);
@@ -247,6 +260,13 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     % update the pK values based on the new estimate of (T,P)
 
     [y, gy, ggy ] = update_y(y,x,obs,sys,opt);
+    if freshwater
+        y = y(ir);
+        gy = gy(ir,:);
+        ggy = ggy(ir,:,:);
+        x = x(ir);
+    end
+
     % Make a vector of measured quantities
     id  = find(~isnan(y));
     y   = y(id).';
@@ -254,6 +274,9 @@ function [g,H,f] = limp(z,y,w,obs,sys,opt)
     ggy = ggy(id,:,:);
     
     % Make a precision matrix
+    if (freshwater)
+        w = w(ir);
+    end       
     W   = diag(w(id));
 
     % Build a matrix that Picks out the measured components of x
@@ -2168,7 +2191,7 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
     if (~isfield(obs,'tp'))
         error('Need to provide temperature and pressure measurement.')
     end
-    field_names = union( fieldnames(obs), fieldnames(obs.tp) );
+    field_names = union( fieldnames(obs), fieldnames(obs.tp) );    
     if ~ismember('sal',field_names)
         error('Error no salinity specified (obs.sal is missing).')
     end
@@ -2178,10 +2201,20 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
     if ~ismember('P',field_names)
         error('Error no pressure specified (obs.tp(:).P is missing).')
     end
+    if (obs.sal == 0) %freshwater case
+        freshwater = true;
+        iremove_cols = [];
+        iremove_Krows = [];
+        iremove_Mrows = [];
+    else
+        freshwater = false;
+    end
+        
     % carbonate:
     isal = 1;  sys.isal  = isal;   % salinity
     ipTC = 2;  sys.ipTC  = ipTC;   % p(total carbonate)
     ipTA = 3;  sys.ipTA  = ipTA;   % p(total alkalinity)
+
 
     i = 3;
 
@@ -2229,7 +2262,10 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
         i = i + 1;
         ipTBeta = i; sys.ipTBeta = ipTBeta;
     end
-
+    if (freshwater)
+        iremove_cols = union(iremove_cols,[isal,ipTB,ipTH2S,ipTNH4,ipTSi,ipTP]);
+    end
+        
     nTP = length(obs.tp); % number of different (T,P) sub systems
     for j = 1:nTP % loop over (T,P) sub systems
         i = i + 1;    iT = i;     tp(j).iT = iT;  % temperature
@@ -2338,6 +2374,17 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
             tp(j).ipbeta   = i;     i = i + 1; % p(beta)
             tp(j).iphbeta  = i;                % H-beta
         end
+        if (freshwater)
+            iremove_cols = ...
+                union(iremove_cols,...
+                      [tp(j).ipKb,tp(j).ipboh4,tp(j).ipboh3,...
+                       tp(j).ipKp1,tp(j).ipKp2,tp(j).ipKp3,tp(j).iph3po4,tp(j).iph2po4,tp(j).iphpo4,tp(j).ippo4,...
+                       tp(j).ipKsi,tp(j).ipsiooh3,tp(j).ipsioh4,...
+                       tp(j).ipKnh4,tp(j).ipnh3,tp(j).ipnh4,...
+                       tp(j).ipKh2s,tp(j).ipHS,tp(j).ipH2S
+                      ]);
+        end
+            
     end
 
     nv = i;
@@ -2375,7 +2422,10 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
         K(row,[ tp(j).ipKb, tp(j).iph, tp(j).ipboh4, tp(j).ipboh3 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[tp(j).ipKb, tp(j).iph, tp(j).ipboh4, tp(j).ipboh3]);
         kr = [kr, row];
-
+        if (freshwater)
+            iremove_Krows = union(iremove_Krows,row);
+        end
+        
         % Ks  = [H]free[SO4]/[HSO4] 
         row = row+1;
         K(row,[ tp(j).ipKs, tp(j).iph_free, tp(j).ipso4, tp(j).iphso4 ]) = [ -1, 1, 1, -1 ];
@@ -2393,36 +2443,55 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
         K(row,[ tp(j).ipKp1, tp(j).iph, tp(j).iph2po4, tp(j).iph3po4]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKp1, tp(j).iph, tp(j).iph2po4, tp(j).iph3po4]);
         kr = [kr, row];
+        if (freshwater)
+            iremove_Krows = union(iremove_Krows,row);
+        end
+
         
         % Kp2 = [H][HPO4]/[H2PO4]
         row = row + 1;
         K(row,[ tp(j).ipKp2, tp(j).iph, tp(j).iphpo4, tp(j).iph2po4 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKp2, tp(j).iph, tp(j).iphpo4, tp(j).iph2po4] );
         kr = [kr, row];
-        
+        if (freshwater)
+            iremove_Krows = union(iremove_Krows,row);
+        end
+
         % Kp3 = [H][PO4]/[HPO4]        
         row = row + 1;
         K(row,[ tp(j).ipKp3, tp(j).iph, tp(j).ippo4,tp(j).iphpo4 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKp3, tp(j).iph, tp(j).ippo4, tp(j).iphpo4]);
         kr = [kr, row];       
+        if (freshwater)
+            iremove_Krows = union(iremove_Krows,row);
+        end
             
         % KSi = [H][SiO(OH)3]/[Si(OH)4]
         row = row + 1;
         K(row,[ tp(j).ipKsi, tp(j).iph, tp(j).ipsiooh3, tp(j).ipsioh4 ]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKsi, tp(j).iph, tp(j).ipsiooh3, tp(j).ipsioh4]);
         kr = [kr, row];
+        if (freshwater)
+            iremove_Krows = union(iremove_Krows,row);
+        end
         
         % Knh4 = [H][NH3]/[NH4+]
         row = row + 1;
         K(row,[ tp(j).ipKnh4, tp(j).iph, tp(j).ipnh3, tp(j).ipnh4]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKnh4, tp(j).iph, tp(j).ipnh3, tp(j).ipnh4]);
         kr = [kr, row];
+        if (freshwater)
+            iremove_Krows = union(iremove_Krows,row);
+        end
         
         % Kh2s = [H][HS]/[H2S]
         row = row + 1;
         K(row,[ tp(j).ipKh2s, tp(j).iph, tp(j).ipHS, tp(j).ipH2S]) = [ -1, 1, 1, -1 ];
         kc = union(kc,[ tp(j).ipKh2s, tp(j).iph, tp(j).ipHS, tp(j).ipH2S]);
         kr = [kr, row];
+        if (freshwater)
+            iremove_Krows = union(iremove_Krows,row);
+        end
             
         % fco2 = pco2 * p2f;
         row = row + 1;
@@ -2525,7 +2594,10 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
         mr = [mr,row];
         % rescale row
         M(row,:) = M(row,:)*1e3;
-        
+        if (freshwater)
+            iremove_Mrows = union(iremove_Mrows,row);
+        end
+
         % Total sulfate
         row = row + 1;
         M(row, [ ipTS, tp(j).iphso4, tp(j).ipso4 ])   =  [ 1, -1, -1 ];
@@ -2552,7 +2624,10 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
         mr = [mr,row];
         % rescale row
         M(row,:) = M(row,:)*1e7;
-        
+        if (freshwater)
+            iremove_Mrows = union(iremove_Mrows,row);
+        end
+
         % Total silicate
         row = row + 1;
         M(row, [ ipTSi, tp(j).ipsioh4, tp(j).ipsiooh3]) = [ 1, -1, -1 ];
@@ -2561,6 +2636,9 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
         mr = [mr,row];
         % rescale row
         M(row,:) = M(row,:)*1e6;
+        if (freshwater)
+            iremove_Mrows = union(iremove_Mrows,row);
+        end
         
         % Total amonia
         row = row + 1;
@@ -2570,6 +2648,9 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
         mr = [mr,row];
         % rescale row
         M(row,:) = M(row,:)*1e8;
+        if (freshwater)
+            iremove_Mrows = union(iremove_Mrows,row);
+        end
         
         % Total sulfide
         row = row + 1;
@@ -2580,6 +2661,9 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
         % rescale row
         M(row,:) = M(row,:)*1e8;
         M(row_alk,:) = M(row_alk,:)*1e2;
+        if (freshwater)
+            iremove_Mrows = union(iremove_Mrows,row);
+        end
         
         % total Ca
         row = row + 1;
@@ -2679,6 +2763,10 @@ function sys = mksys(obs,phscale,optpKalpha,optpKbeta) % ORG ALK
     sys.M  = M;
     sys.K  = K;
     sys.tp = tp;
+    sys.freshwater = freshwater;
+    sys.iremove_cols = iremove_cols;
+    sys.iremove_Krows = iremove_Krows;
+    sys.iremove_Mrows = iremove_Mrows;
 end
 
 
