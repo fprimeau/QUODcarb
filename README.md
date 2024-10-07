@@ -48,24 +48,24 @@ There are a multitude of options, here are all the default settings:
  - `opt.Revelle = 0`		Calculate the Revelle factor?
 	- Default setting is off/do not calculate Revelle factor
 ###	`obs` structure
- - `obs.esal` = 0.002 (1 sigma, PSU)
- - `obs.eTC` = 5 (1 sigma, µmol/kg-SW)
- - `obs.eTA` = 5 (1 sigma, µmol/kg-SW)
- - `obs.tp(i).eph` = 0.02	(1 sigma, -log10 scale)
- - `obs.tp(i).epco2` = 5 (1 sigma, µatm)
- - `obs.tp(i).eco3` = 5 (1 sigma, µmol/kg-SW)
+ - `obs.usal` = 0.002 (1 sigma, PSU)
+ - `obs.uTC` = 5 (1 sigma, µmol/kg-SW)
+ - `obs.uTA` = 5 (1 sigma, µmol/kg-SW)
+ - `obs.tp(i).uph` = 0.02	(1 sigma, -log10 scale)
+ - `obs.tp(i).upco2` = 5 (1 sigma, µatm)
+ - `obs.tp(i).uco3` = 5 (1 sigma, µmol/kg-SW)
 
 ## Tips for Success
 - Capitalization DOES matter, please be careful to capitalize or use
      lower case exactly as in the examples. 
 	- Example: obs.m(1).ph ≠ obs.m(1).pH
 - As with CO2SYS, QUODcarb requires two separate CO2-system measurements. The possible inputs include: (input at least two)
-	- `obs.TC` (± `obs.eTC`)
-	- `obs.TA` (± `obs.eTA`)
-	- `obs.tp(1).ph` (± `obs.tp(1).eph`)
-	- `obs.tp(2).pco2` (± `obs.tp(2).epco2`)
-		- (or `obs.tp(2).fco2` ± `obs.tp(2).efco2`)
-	- `obs.tp(3).co3` (± `obs.tp(3).eco3`)
+	- `obs.TC` (± `obs.uTC`)
+	- `obs.TA` (± `obs.uTA`)
+	- `obs.tp(1).ph` (± `obs.tp(1).uph`)
+	- `obs.tp(2).pco2` (± `obs.tp(2).upco2`)
+		- (or `obs.tp(2).fco2` ± `obs.tp(2).ufco2`)
+	- `obs.tp(3).co3` (± `obs.tp(3).uco3`)
         - pCO2 and CO3 can also go into tp(1) if they are at the same
           temperature
         - This does not show the salinity, nor the tp(1) through tp(3)
@@ -80,11 +80,11 @@ There are a multitude of options, here are all the default settings:
 Not published yet, documentation will be updated when available.
 
 ## References
-Lewis and Wallace (1998)
-Sharp et al (2023)
-Pierrot (2006)
-Van Heuven (2011)
-Orr et al (2018)
+Lewis, E., & Wallace, D. W. R. (1998). Program developed for CO2 system calculations. ORNL/CDIAC-105. Carbon Dioxide Information Analysis Center, Oak Ridge National Laboratory, Oak Ridge, TN.
+Sharp, J. D., Pierrot, D., Humphreys, M. P., Epitalon, J. M., Orr, J. C., Lewis, E. R., & Wallace, D. W. R. (2023). CO2SYSv3 for MATLAB (Version v3.2.1). http://doi.org/10.5281/zenodo.3950562
+Pierrot, D., Lewis, E., & Wallace, D. W. R. (2006). CO2SYS DOS Program developed for CO2 system calculations. ORNL/CDIAC-105. Carbon Dioxide Information Analysis Center, Oak Ridge National Laboratory, US Department of Energy, Oak Ridge, TN.
+Van Heuven, S., Pierrot, D., Rae, J. W. N., Lewis, E., & Wallace, D. W. R. (2011). MATLAB Program developed for CO2 system calculations. ORNL/CDIAC-105b. Carbon Dioxide Information Analysis Center, Oak Ridge National Laboratory, Oak Ridge, TN.
+Orr. J. C., Epitalon, J. M., Dickson, A. G., & Gattuso, J. P. (2018). Routine uncertainty propagation for the marine carbon dioxide system. Marine Chemistry 207, 84-107.
 
 
 
