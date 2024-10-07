@@ -21,6 +21,31 @@ documentation and in the comments at the top of the file. Download the
  compare.m file only if you would like to compare the QUODcarb output to
  CO2SYSv3’s output (see example_compare.m for example use of compare.m).
 
+## Syntax Example
+- obs.sal      	= salinity;
+- obs.usal     	= sal_uncertainty; 	% (± sigma)
+- obs.TC       	= total_c; 		% DIC (umol/kg)
+- obs.uTB      	= TC_uncertainty;	% (± sigma)
+- obs.TA 	= total_alk;		% (umol/kg)
+- obs.uTA	= TA_uncertainty;	% (± sigma)
+- obs.tp(1).T 	= temp;			% deg Celcius
+- obs.tp(1).uT	= temp_uncertainty;	% (± sigma)
+- obs.tp(1).P	= pressure;		% (dbar)
+- obs.tp(1).uP	= press_uncertainty;	% (± sigma)
+- obs.tp(1).ph  = ph_meas;		% any ph scale
+- obs.tp(1).uph = ph_uncertainty;	% (± sigma)
+
+- opt.K1K2 	= 10;			% Lueker et al., 2000
+- opt.KSO4	= 1; 			% Dickson et al., 1990a
+- opt.KF	= 2;			% Perez and Fraga, 1987
+- opt.TB	= 1;			% Lee et al., 2010
+- opt.phscale  	= 1;			% (1=tot, 2=free, 3=sws, 4=nbs)
+- opt.printcsv	= 1;			% (1=on, 2=off)
+- opt.fname 	= 'output.csv'		% CSV filename
+- opt.printmes  = 1;			% (1=on, 2=off)
+- opt.co2press 	= 1;			% (1=on, 2=off)
+- opt.Revelle	= 1; 			% (1=on, 2 = off) Calculate Revelle factor?
+
 ## Quick Start
 See example scripts (src/example1.m, src/example2.m, src/example3.m) showing possible
  inputs, including correct formulation and capitalization. The function
@@ -28,32 +53,8 @@ See example scripts (src/example1.m, src/example2.m, src/example3.m) showing pos
  options structure (opt). All possible inputs and outputs can be found
  in the document ‘QUODcarb_inputs_outputs’.
 
-## Default Settings
-There are a multitude of options, here are all the default settings:
-### `opt` structure
-- `opt.K1K2 = 4`	K1K2 formulation
- 	- Mehrbach et al. (1973) refit by Dickson and Millero (1987)
-- `opt.KSO4 = 1`		KSO4 formulaation
- 	- Dickson et al. (1990a)
- - `opt.KF = 2`			KF formulation
-	- Perez and Fraga (1987)
- - `opt.TB = 2`			Total Borate formulation
-	- Lee et al. (2010)
- - `opt.printcsv = 0`		Print output to CSV file?
-	- Default setting is off/not printing to csv
- - `opt.printmes = 1`		Print messages to screen?
-	- Default setting is on/do print to screen
- - `opt.co2press = 0`		Pressure correction on P2F (FugFac) and K0
-	- Default setting is off/not correcting these for pressure
- - `opt.Revelle = 0`		Calculate the Revelle factor?
-	- Default setting is off/do not calculate Revelle factor
-###	`obs` structure
- - `obs.usal` = 0.002 (1 sigma, PSU)
- - `obs.uTC` = 5 (1 sigma, µmol/kg-SW)
- - `obs.uTA` = 5 (1 sigma, µmol/kg-SW)
- - `obs.tp(i).uph` = 0.02	(1 sigma, -log10 scale)
- - `obs.tp(i).upco2` = 5 (1 sigma, µatm)
- - `obs.tp(i).uco3` = 5 (1 sigma, µmol/kg-SW)
+## Recreate Fennell & Primeau 2024 Figures
+To recreate the figures from the first QUODcarb paper, see the directory 'paper_scripts'. Start by running 'parse_gomecc_data.m' to load the GOMECC-3 Dataset to your local computer. Then run 'driver.m' to run QUODcarb through all 1119 datapoints 26 times, one for each possible calculation. This requires making new directories on your device to store the output .mat files. The code takes ~8hrs to run on my (M. Fennell's) local device. Once the 26 .mat files are loaded you may choose any of the plotting scripts to plot the desired figures. 
 
 ## Tips for Success
 - Capitalization DOES matter, please be careful to capitalize or use
@@ -75,6 +76,7 @@ There are a multitude of options, here are all the default settings:
         - This is the same as CO2SYS, just formatted differently.
 - The input to QUODcarb must always start at `obs(1)` or else it does not
  initialize properly, do not try to give it `obs(2)` with an empty `obs(1)`.
+- The input uncertainty must be a non-zero number as log10(0) is undefined and breaks the code.
 
 ## Citation
 Not published yet, documentation will be updated when available.
