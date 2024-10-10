@@ -1,8 +1,11 @@
 ## About
-This repository includes software compatible with MATLAB for calculating 
- marine CO2-system variables in the exactly-determined and over-determined 
- cases. The calculation also estimates the posterior uncertainties and 
- requires input measurement uncertainties.
+This repository includes QUODcarb software compatible with MATLAB for 
+ calculating marine CO2-system variables in the exactly-determined and
+ over-determined cases. QUODcarb, as presented in Fennell & Primeau 
+ (2024), stands for Quantifying Uncertainty in an Over-Determined marine
+ CARBonate dataset. The calculation also estimates the posterior 
+ uncertainties and requires input measurement uncertainties. See 
+ Fennell & Primeau (2024) for methods and introduction to the solver. 
 
 ## History
 CO2SYS was initially developed by Lewis and Wallace (1998) for MS DOS, 
@@ -11,61 +14,80 @@ CO2SYS was initially developed by Lewis and Wallace (1998) for MS DOS,
  et al. (2011). Options for error propagation were added by Orr et al. 
  (2018). The CO2SYSv3 update by Sharp (2022, 2023) added numerous options 
  and extended capabilities of the MATLAB software. The QUODcarb software
- builds upon these previous versions. 
+ builds upon these previous versions. We intend for QUODcarb to have the
+ same capabilities as CO2SYSv3, in addition to the following improvements:
+ - Allows over-determined input
+ 	- i.e. two, three, four, or five (and beyond) measurements of a single water parcel may be input into a single QUODcarb calculation
+ - Allows multiple input temperatures and pressures
+ 	-  i.e. pH at 25 Celsius and pCO2 at 20 Celsius input in tp(1) and tp(2) for a single QUODcarb calculation
+ - Uncertainty calculation inherent to the solver
+ 	- allows for self-consistent uncertainty estimates in the over-determined cases
+  - Possibility for the output values to change based on the measured system for the equilibrium constants and mass balance totals
+  	-  pK1, pK2, TB etc., in the over-determined cases only
+  - Possibility to turn 'off' the pK1, pK2, or TB formulations
+  	- when three or more measurements are available AT A SINGLE TEMPERTURE AND PRESSURE (tp(1) only, no tp(2))
+   	- see top of 'src/QUODcarb.m' for full list of input options
 
 ## Installation and Use
 Download the files in the 'src' repository and put them together in a directory
  that is accessible by MATLAB. 
 To perform CO2-system calculations, use QUODcarb.m as directed in this 
 documentation and in the comments at the top of the file. Download the
- compare.m file only if you would like to compare the QUODcarb output to
- CO2SYSv3’s output (see example_compare.m for example use of compare.m).
+ 'compare.m' file only if you would like to compare the QUODcarb output to
+ CO2SYSv3’s output (see 'example4.m' for example use of 'compare.m').
+
+## Syntax Example
+QUODcarb requires on input an `obs` structure and an `opt` structure with, respectively, the input conditions and measurements and the options for equilibrium constants etc. 
+- `obs` structure with temperature, pressure, etc. may be added to in a for loop at each `obs(i).TC` etc.
+	- `obs.sal` = salinity;
+	- `obs.usal` = sal_uncertainty; % (± sigma)
+	- `obs.TC` = total_c; % DIC (umol/kg)
+	- `obs.uTB` = TC_uncertainty; % (± sigma)
+	- `obs.TA` = total_alk;	% (umol/kg)
+	- `obs.uTA` = TA_uncertainty; % (± sigma)
+	- `obs.tp(1).T` = temp; % deg Celcius
+	- `obs.tp(1).uT` = temp_uncertainty; % (± sigma)
+	- `obs.tp(1).P` = pressure; % (dbar)
+	- `obs.tp(1).uP` = press_uncertainty; % (± sigma)
+	- `obs.tp(1).ph` = ph_meas; % any ph scale
+	- `obs.tp(1).uph` = ph_uncertainty; % (± sigma)
+
+- `opt` structure with the input options, the equilibrium constant options are the same as for CO2SYSv3
+	- `opt.K1K2 = 10;` % Lueker et al., 2000
+	- `opt.KSO4 = 1;` % Dickson et al., 1990a
+	- `opt.KF = 2;`	% Perez and Fraga, 1987
+	- `opt.TB = 1;`	% Lee et al., 2010
+	- `opt.phscale = 1;` % (1=tot, 2=free, 3=sws, 4=nbs)
+	- `opt.printcsv	= 1;` % (1=on, 2=off)
+	- `opt.fname =` 'output.csv' % CSV filename
+	- `opt.printmes = 1;` % (1=on, 2=off)
+	- `opt.co2press = 1;` % (1=on, 2=off)
+	- `opt.Revelle = 1;` % (1=on, 2 = off) Calculate Revelle factor?
+ - see the top of the 'QUODcarb.m' file for all possible input options
 
 ## Quick Start
-See example scripts (src/example1.m, src/example2.m, src/example3.m) showing possible
+See example scripts ('src/example1.m', 'src/example2.m', 'src/example3.m') showing possible
  inputs, including correct formulation and capitalization. The function
  QUODcarb requires an input observations structure (obs) and an input
  options structure (opt). All possible inputs and outputs can be found
- in the document ‘QUODcarb_inputs_outputs’.
+ in the document ‘QUODcarb_inputs_outputs’. To see how we parsed the data
+ for the paper, take a look at 'paper_scripts/driver.m' (can download the 
+ GOMECC-3 dataset via 'parse_gomecc3_data.m' to try it out for yourself).
 
-## Default Settings
-There are a multitude of options, here are all the default settings:
-### `opt` structure
-- `opt.K1K2 = 4`	K1K2 formulation
- 	- Mehrbach et al. (1973) refit by Dickson and Millero (1987)
-- `opt.KSO4 = 1`		KSO4 formulaation
- 	- Dickson et al. (1990a)
- - `opt.KF = 2`			KF formulation
-	- Perez and Fraga (1987)
- - `opt.TB = 2`			Total Borate formulation
-	- Lee et al. (2010)
- - `opt.printcsv = 0`		Print output to CSV file?
-	- Default setting is off/not printing to csv
- - `opt.printmes = 1`		Print messages to screen?
-	- Default setting is on/do print to screen
- - `opt.co2press = 0`		Pressure correction on P2F (FugFac) and K0
-	- Default setting is off/not correcting these for pressure
- - `opt.Revelle = 0`		Calculate the Revelle factor?
-	- Default setting is off/do not calculate Revelle factor
-###	`obs` structure
- - `obs.esal` = 0.002 (1 sigma, PSU)
- - `obs.eTC` = 5 (1 sigma, µmol/kg-SW)
- - `obs.eTA` = 5 (1 sigma, µmol/kg-SW)
- - `obs.tp(i).eph` = 0.02	(1 sigma, -log10 scale)
- - `obs.tp(i).epco2` = 5 (1 sigma, µatm)
- - `obs.tp(i).eco3` = 5 (1 sigma, µmol/kg-SW)
+## Recreate Fennell & Primeau 2024 Figures
+To recreate the figures from the first QUODcarb paper, see the directory 'paper_scripts'. Start by running 'parse_gomecc_data.m' to load the GOMECC-3 Dataset to your local computer. Then run 'driver.m' to run QUODcarb through all 1119 datapoints 26 times, one for each possible calculation. This requires making new directories on your device to store the output .mat files. The code takes ~8hrs to run on my (M. Fennell's) local device. Once the 26 .mat files are loaded you may choose any of the plotting scripts to plot the desired figures. 
 
 ## Tips for Success
-- Capitalization DOES matter, please be careful to capitalize or use
+- Capitalization DOES matter, please be careful to capitalize and/or use
      lower case exactly as in the examples. 
 	- Example: obs.m(1).ph ≠ obs.m(1).pH
 - As with CO2SYS, QUODcarb requires two separate CO2-system measurements. The possible inputs include: (input at least two)
-	- `obs.TC` (± `obs.eTC`)
-	- `obs.TA` (± `obs.eTA`)
-	- `obs.tp(1).ph` (± `obs.tp(1).eph`)
-	- `obs.tp(2).pco2` (± `obs.tp(2).epco2`)
-		- (or `obs.tp(2).fco2` ± `obs.tp(2).efco2`)
-	- `obs.tp(3).co3` (± `obs.tp(3).eco3`)
+	- `obs.TC` (± `obs.uTC`)
+	- `obs.TA` (± `obs.uTA`)
+	- `obs.tp(1).ph` (± `obs.tp(1).uph`)
+	- `obs.tp(2).pco2` (± `obs.tp(2).upco2`)
+		- (or `obs.tp(2).fco2` ± `obs.tp(2).ufco2`)
+	- `obs.tp(3).co3` (± `obs.tp(3).uco3`)
         - pCO2 and CO3 can also go into tp(1) if they are at the same
           temperature
         - This does not show the salinity, nor the tp(1) through tp(3)
@@ -75,16 +97,21 @@ There are a multitude of options, here are all the default settings:
         - This is the same as CO2SYS, just formatted differently.
 - The input to QUODcarb must always start at `obs(1)` or else it does not
  initialize properly, do not try to give it `obs(2)` with an empty `obs(1)`.
+- The input uncertainty must be a non-zero number as -log10(0) is undefined and breaks the code.
 
 ## Citation
 Not published yet, documentation will be updated when available.
 
 ## References
-Lewis and Wallace (1998)
-Sharp et al (2023)
-Pierrot (2006)
-Van Heuven (2011)
-Orr et al (2018)
+Lewis, E., & Wallace, D. W. R. (1998). Program developed for CO2 system calculations. ORNL/CDIAC-105. Carbon Dioxide Information Analysis Center, Oak Ridge National Laboratory, Oak Ridge, TN.
+
+Sharp, J. D., Pierrot, D., Humphreys, M. P., Epitalon, J. M., Orr, J. C., Lewis, E. R., & Wallace, D. W. R. (2023). CO2SYSv3 for MATLAB (Version v3.2.1). http://doi.org/10.5281/zenodo.3950562
+
+Pierrot, D., Lewis, E., & Wallace, D. W. R. (2006). CO2SYS DOS Program developed for CO2 system calculations. ORNL/CDIAC-105. Carbon Dioxide Information Analysis Center, Oak Ridge National Laboratory, US Department of Energy, Oak Ridge, TN.
+
+Van Heuven, S., Pierrot, D., Rae, J. W. N., Lewis, E., & Wallace, D. W. R. (2011). MATLAB Program developed for CO2 system calculations. ORNL/CDIAC-105b. Carbon Dioxide Information Analysis Center, Oak Ridge National Laboratory, Oak Ridge, TN.
+
+Orr. J. C., Epitalon, J. M., Dickson, A. G., & Gattuso, J. P. (2018). Routine uncertainty propagation for the marine carbon dioxide system. Marine Chemistry 207, 84-107.
 
 
 
