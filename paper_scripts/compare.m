@@ -2241,7 +2241,7 @@ vl          = sum(F);  % VectorLength
 % Find initital pH guess using method of Munhoven (2013)
 pHGuess         = CalculatepHfromTATCMunhoven(TAi, TCi);
 ln10            = log(10);
-pH              = pHGuess;
+pH              = pHGuess; 
 pHTol           = 0.0001;  % tolerance for iterations end
 deltapH(1:vl,1) = pHTol+1;
 loopc=0;
@@ -2942,7 +2942,7 @@ fCO2c= CalculatefCO2fromTCpH(TCi, pHc);
 fCO2minus = fCO2c;
 % CalculateRevelleFactor:
 Revelle = (fCO2plus - fCO2minus)./dTC./((fCO2plus + fCO2minus)./TC0); % Corrected error pointed out by MP Humphreys (https://pyco2sys.readthedocs.io/en/latest/validate/)
-varargout{1}=Revelle; % keyboard
+varargout{1}=Revelle; 
 end % end nested function
 
 
@@ -3118,7 +3118,7 @@ global pHScale K T TS KS TF KF fH F ntps;
 TSx=TS(F); KSx=KS(F); TFx=TF(F); KFx=KF(F);fHx=fH(F);
 FREEtoTOT = (1 + TSx./KSx); % ' pH scale conversion factor
 SWStoTOT  = (1 + TSx./KSx)./(1 + TSx./KSx + TFx./KFx);% ' pH scale conversion factor
-% keyboard
+
 factor=nan(sum(F),1);
 nF=pHScale(F)==1;  %'"pHtot"
 factor(nF) = 0;
