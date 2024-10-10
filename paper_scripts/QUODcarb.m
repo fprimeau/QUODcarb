@@ -139,9 +139,10 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 % Changes? -> the only things you may want to change are: 
 %               1. tolerance level of Newton solver -> line 160
 %               2. Max Iteration number -> MAXIT in newtn.m
+%               3. Print iteration number and F0 value to screen 
+%                       -> iprint in newtn.m
 %
 %--------------------------------------------------------------------------
-
 
     opt = check_opt(opt);                   % check opt structure
 
@@ -5342,7 +5343,7 @@ function [x,J,iflag] = newtn(x0,F,tol)
 % iflag: 0 ==> Newton's method converged to the desired
 %                      tolerance
 %        1 ==> Newton's method did not converge 
-    iprint = 0;
+    iprint = 0; % 0 = off, 1 = on
     MAXIT = 50;
     x = x0;
     if (nargin==4)
