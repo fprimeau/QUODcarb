@@ -1,5 +1,7 @@
 
-% plot Q5 plot in paper_scripts
+% script used to plot figure 5 in Fennell & Primeau, 2024
+% user needs to have run 'driver.m' and have output est26.mat file
+% accessible in 'output_mat_files/all_combos'
 
 % load and parse data
 load data.mat
@@ -77,41 +79,8 @@ set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'Q5_zscores_plot_sept24.pdf','-dpdf','-r0');
+print(h,'figure_5.pdf','-dpdf','-r0');
 
-
-
-%%
-
-% number of points outside ±2
-
-nTC = 0; nTA = 0; npH = 0; npCO2 = 0; nCO3 = 0;
-for i = 1:nD
-    zTC = sqrt(zscore(i,1)^2);
-    if zTC > 3
-        nTC = nTC + 1;
-    end
-
-    zTA = sqrt(zscore(i,2)^2);
-    if zTA > 3
-        nTA = nTA + 1;
-    end
-
-    zpH = sqrt(zscore(i,3)^2);
-    if zpH > 3
-        npH = npH + 1;
-    end
-
-    zpCO2 = sqrt(zscore(i,4)^2);
-    if zpCO2 > 3
-        npCO2 = npCO2 + 1;
-    end
-
-    zCO3 = sqrt(zscore(i,5)^2);
-    if zCO3 > 3
-        nCO3 = nCO3 + 1;
-    end
-end
 
 
 
