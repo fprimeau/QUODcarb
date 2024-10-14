@@ -1,6 +1,7 @@
-% 14 is acting like pH is input
 
-% posterior sigmas plot
+% scripts used to plot figure 4 of Fennell & Primeau, 2024
+% user needs to have run 'driver.m' and have all 26 output est.mat files
+% accessible in 'output_mat_files/all_combos'
 
 % load all 26 outputs
 load output_mat_files/all_combos/est01.mat;
@@ -67,57 +68,16 @@ end
 for k = 1:26
     est = input(k).est;
     for i = 1:nD
-        inpt(1).sig(k,i) = est(i).eTC;
-        inpt(2).sig(k,i) = est(i).eTA;
-        inpt(3).sig(k,i) = est(i).tp(1).eph;
-        inpt(4).sig(k,i) = est(i).tp(2).epco2;
-        inpt(5).sig(k,i) = est(i).tp(3).eco3;
-
-        % inpt(1).perc(k,i) = (10^(est(i).epTC-1))*100;
-        % inpt(2).perc(k,i) = (10^(est(i).epTA-1))*100;
-        % inpt(3).perc(k,i) = est(i).tp(1).eph;
-        % inpt(4).perc(k,i) = (10^(est(i).tp(2).eppco2-1))*100;
-        % inpt(5).perc(k,i) = (10^(est(i).tp(3).epco3-1))*100;
-
-        inpt(1).perc(k,i) = (est(i).eTC/est(i).TC) * 100;
-        inpt(2).perc(k,i) = (est(i).eTA/est(i).TA) * 100;
-        inpt(3).perc(k,i) = est(i).tp(1).eph;
-        inpt(4).perc(k,i) = (est(i).tp(2).epco2/est(i).tp(2).pco2) * 100;
-        inpt(5).perc(k,i) = (est(i).tp(3).eco3/est(i).tp(3).co3) * 100;
+        inpt(1).perc(k,i) = (est(i).uTC/est(i).TC) * 100;
+        inpt(2).perc(k,i) = (est(i).uTA/est(i).TA) * 100;
+        inpt(3).perc(k,i) = est(i).tp(1).uph;
+        inpt(4).perc(k,i) = (est(i).tp(2).upco2/est(i).tp(2).pco2) * 100;
+        inpt(5).perc(k,i) = (est(i).tp(3).uco3/est(i).tp(3).co3) * 100;
     end
 end
 %%
 % reorder to same order as f_hat plot
 for i = 1:5
-    sig = inpt(i).sig;
-    sig_ord(1,:)  = sig(9,:);
-    sig_ord(2,:)  = sig(8,:);
-    sig_ord(3,:)  = sig(20,:);
-    sig_ord(4,:)  = sig(10,:);
-    sig_ord(5,:)  = sig(7,:);
-    sig_ord(6,:)  = sig(4,:);
-    sig_ord(7,:)  = sig(2,:);
-    sig_ord(8,:)  = sig(15,:);
-    sig_ord(9,:)  = sig(5,:);
-    sig_ord(10,:) = sig(3,:);
-    sig_ord(11,:) = sig(18,:);
-    sig_ord(12,:) = sig(16,:);
-    sig_ord(13,:) = sig(1,:);
-    sig_ord(14,:) = sig(19,:);
-    sig_ord(15,:) = sig(11,:);
-    sig_ord(16,:) = sig(6,:);
-    sig_ord(17,:) = sig(24,:);
-    sig_ord(18,:) = sig(14,:);
-    sig_ord(19,:) = sig(13,:);
-    sig_ord(20,:) = sig(25,:);
-    sig_ord(21,:) = sig(22,:);
-    sig_ord(22,:) = sig(17,:);
-    sig_ord(23,:) = sig(12,:);
-    sig_ord(24,:) = sig(21,:);
-    sig_ord(25,:) = sig(23,:);
-    sig_ord(26,:) = sig(26,:);
-    outpt(i).sig_ord = sig_ord;
-
     perc = inpt(i).perc;
     perc_ord(1,:)  = perc(9,:);
     perc_ord(2,:)  = perc(8,:);
@@ -166,26 +126,19 @@ load data.mat
 [phobs]     = in(9,:)';             % ph
 
 % calculate p(sig)
-TCm     = TCobs .* 1e-6;    eTC     = 2.00 * 1e-6; 
-TAm     = TAobs .* 1e-6;    eTA     = 2.00 * 1e-6; 
-                            epH     = 0.010;
-pCO2m   = pco2obs .* 1e-6;  epCO2   = pCO2m .* 0.01; % 1%
-CO3m    = co3obs .* 1e-6;   eCO3    = CO3m .* 0.02; % 2%
+TCm     = TCobs .* 1e-6;    uTC     = 2.00 * 1e-6; 
+TAm     = TAobs .* 1e-6;    uTA     = 2.00 * 1e-6; 
+                            upH     = 0.010;
+pCO2m   = pco2obs .* 1e-6;  upCO2   = pCO2m .* 0.01; % 1%
+CO3m    = co3obs .* 1e-6;   uCO3    = CO3m .* 0.02; % 2%
 
 for i = 1:nD
-    % epTC(i)     = sqrt( ( p(TCm(i)   + eTC )     - pTCobs(i)   )^2 );
-    % epTA(i)     = sqrt( ( p(TAm(i)   + eTA )     - pTAobs(i)   )^2 );
-    % eppCO2(i)   = sqrt( ( p(pCO2m(i) + epCO2(i)) - ppco2obs(i) )^2 );
-    % epCO3(i)    = sqrt( ( p(CO3m(i)  + eCO3(i))  - pco3obs(i)  )^2 );
-
-    eTC_perc(i) = (2.00/TCobs(i)) * 100;
-    eTA_perc(i) = (2.00/TAobs(i)) * 100;
+    uTC_perc(i) = (2.00/TCobs(i)) * 100;
+    uTA_perc(i) = (2.00/TAobs(i)) * 100;
 end
 
-% med_epTC = median(epTC_perc);
-% med_epTA = median(epTA_perc);
-med_eTC = median(eTC_perc);
-med_eTA = median(eTA_perc);
+med_uTC = median(uTC_perc);
+med_uTA = median(uTA_perc);
 
 x = 0.5:26.5;
 %%
@@ -242,7 +195,7 @@ t.TileSpacing = 'compact';
 t.Padding = 'compact';
 
 nexttile
-% b = boxchart((outpt(1).sig_ord)');
+
 b = boxchart((outpt(1).perc_ord)');
 b.JitterOutliers = 'off';
 b.MarkerStyle = '.';
@@ -253,18 +206,18 @@ b.WhiskerLineColor = clr;
 b.BoxFaceColor = clr;
 b.BoxEdgeColor = clr;
 b.MarkerColor = clr;
-ylabel('$\mathbf{u_{post}}$ (\%) for C$_T$') % normal
+ylabel('$\mathbf{u_{post}}$ for C$_T$ (\%)') % normal
 ax = gca;
 ax.FontSize = 7;
 grid on;
 
 hold on
-plot(x,(0.*x+med_eTC),'Color',clr2,'LineWidth',lw) 
+plot(x,(0.*x+med_uTC),'Color',clr2,'LineWidth',lw) 
 
 lgd = legend('','uC$_T$ = 2.00 $\mu$mol/kg = 0.09\%','Interpreter','latex','FontSize',8);
 
 nexttile
-% b = boxchart((outpt(2).sig_ord)');
+
 b = boxchart((outpt(2).perc_ord)');
 b.JitterOutliers = 'off';
 b.MarkerStyle = '.';
@@ -275,17 +228,17 @@ b.WhiskerLineColor = clr;
 b.BoxFaceColor = clr;
 b.BoxEdgeColor = clr;
 b.MarkerColor = clr;
-ylabel('$\mathbf{u_{post}}$ (\%) for A$_T$') % normal
+ylabel('$\mathbf{u_{post}}$ for A$_T$ (\%)')
 ax = gca;
 ax.FontSize = 7;
 grid on;
 
 hold on
-plot(x,(0.*x+med_eTA),'Color',clr2,'LineWidth',lw) 
+plot(x,(0.*x+med_uTA),'Color',clr2,'LineWidth',lw) 
 lgd = legend('','uA$_T$ = 2.00 $\mu$mol/kg = 0.08\%','Interpreter','latex','FontSize',8);
 
 nexttile
-% b = boxchart((outpt(3).sig_ord)');
+
 b = boxchart((outpt(3).perc_ord)');
 b.JitterOutliers = 'off';
 b.MarkerStyle = '.';
@@ -296,17 +249,17 @@ b.WhiskerLineColor = clr;
 b.BoxFaceColor = clr;
 b.BoxEdgeColor = clr;
 b.MarkerColor = clr;
-ylabel('$\mathbf{u_{post}}$ for $p$H')
+ylabel('$\mathbf{u_{post}}$ for pH')
 ax = gca;
 ax.FontSize = 7;
 grid on;
 
 hold on
-plot(x,(0*x+epH),'Color',clr2,'LineWidth',lw)
-lgd = legend('','upH = 0.001','Interpreter','latex','FontSize',8);
+plot(x,(0*x+upH),'Color',clr2,'LineWidth',lw)
+lgd = legend('','upH = 0.010','Interpreter','latex','FontSize',8);
 
 nexttile
-% b = boxchart((outpt(4).sig_ord)');
+
 b = boxchart((outpt(4).perc_ord)');
 b.JitterOutliers = 'off';
 b.MarkerStyle = '.';
@@ -317,7 +270,7 @@ b.WhiskerLineColor = clr;
 b.BoxFaceColor = clr;
 b.BoxEdgeColor = clr;
 b.MarkerColor = clr;
-ylabel('$\mathbf{u_{post}}$ (\%) for $p$CO$_2$') % normal
+ylabel('$\mathbf{u_{post}}$ for $p$CO$_2$ (\%)') 
 ax = gca;
 ax.FontSize = 7;
 grid on;
@@ -327,7 +280,7 @@ plot(x,(0.*x+1),'Color',clr2,'LineWidth',lw)
 lgd = legend('','u$p$CO$_2$ = 1\%','Interpreter','latex','FontSize',8);
 
 nexttile
-% b = boxchart((outpt(5).sig_ord)');
+
 b = boxchart((outpt(5).perc_ord)');
 b.JitterOutliers = 'off';
 b.MarkerStyle = '.';
@@ -338,7 +291,7 @@ b.WhiskerLineColor = clr;
 b.BoxFaceColor = clr;
 b.BoxEdgeColor = clr;
 b.MarkerColor = clr;
-ylabel('$\mathbf{u_{post}}$ (\%) for CO$_3^{2-}$','FontSize',7) % normal
+ylabel('$\mathbf{u_{post}}$ for CO$_3^{2-}$ (\%)','FontSize',7) % normal
 ax = gca;
 ax.FontSize = 6.5;
 grid on;
@@ -356,7 +309,7 @@ set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'posterior_sigmas_plot_sept24.pdf','-dpdf');
+print(h,'figure_4.pdf','-dpdf');
 
 
 
