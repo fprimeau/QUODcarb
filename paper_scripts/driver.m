@@ -1,13 +1,13 @@
 
-% driver to go with QUODcarb
+% driver to go with 'paper_scripts/QUODcarb'
 
 % user must create an 'output_mat_files' folder to hold mat files
-% plus subfolders 'all_combos', 'all_pKs', and 'parsed_f'
+% plus subfolder 'all_combos'
 % or change the 'save' lines to path of user's preference
 
 load data.mat; % from 'parse_gomecc3_data.m' script
 [in] = data;
-nD = 5; %length(in);
+nD = length(in);
 
 % choose options for opt structure
 opt.K1K2 = 10; % option for K1K2 formulation
@@ -71,8 +71,7 @@ end
 
 obs_backup = obs;
 
-% run through all nD datapoints 35 times -> 
-% 26 combinations plus 9 pK formulations
+% run through all nD datapoints 26 times -> 26 combinations
 
 %% Q5: All five input
 % CT AT pH pCO2 CO3 (Q5) (fid26)
@@ -343,37 +342,6 @@ end
 est20   = est;
 save output_mat_files/all_combos/est20.mat est20; clear est; clear obs;
 
-
-for i = 1:nD
-    f_all26(1,i) = est01(i).f;
-    f_all26(2,i) = est02(i).f;
-    f_all26(3,i) = est03(i).f;
-    f_all26(4,i) = est04(i).f;
-    f_all26(5,i) = est05(i).f;
-    f_all26(6,i) = est06(i).f;
-    f_all26(7,i) = est07(i).f;
-    f_all26(8,i) = est08(i).f;
-    f_all26(9,i) = est09(i).f;
-    f_all26(10,i) = est10(i).f;
-    f_all26(11,i) = est11(i).f;
-    f_all26(12,i) = est12(i).f;
-    f_all26(13,i) = est13(i).f;
-    f_all26(14,i) = est14(i).f;
-    f_all26(15,i) = est15(i).f;
-    f_all26(16,i) = est16(i).f;
-    f_all26(17,i) = est17(i).f;
-    f_all26(18,i) = est18(i).f;
-    f_all26(19,i) = est19(i).f;
-    f_all26(20,i) = est20(i).f;
-    f_all26(21,i) = est21(i).f;
-    f_all26(22,i) = est22(i).f;
-    f_all26(23,i) = est23(i).f;
-    f_all26(24,i) = est24(i).f;
-    f_all26(25,i) = est25(i).f;
-    f_all26(26,i) = est26(i).f;
-end
-
-save output_mat_files/parsed_f/f_all26.mat f_all26;
 
 
 
