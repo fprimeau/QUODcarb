@@ -1,5 +1,7 @@
 
-% pCO2 pairs plot
+% script used to plot figure 2 in Fennell & Primeau, 2024
+% user needs to have run 'driver.m' and have all 26 output est.mat files
+% accessible in 'output_mat_files/all_combos'
 
 % load and parse data
 load data.mat
@@ -47,7 +49,7 @@ for k = 1:10
 
     for i = 1:nD
         pco2(i,k)   = est(i).tp(2).pco2; % posterior pco2
-        sig(i,k)    = est(i).tp(2).epco2; % posterior uncertainty
+        sig(i,k)    = est(i).tp(2).upco2; % posterior uncertainty
         dpco2(i,k)  = pco2obs(i) - pco2(i,k); % meas - calc
         sig_in(i,k) = 0.01*pco2obs(i);
         % Z-score = ( meas - calc ) / sigma_meas
@@ -124,7 +126,7 @@ ylim([0 65])
 ax = gca;
 ax.FontSize = 9;
 xlabel('QUODcarb Input') % quodcarb
-ylabel('$p$CO$_2$ $u_{posterior}$ ($\mu$atm)') % epco2
+ylabel('$p$CO$_2$ $u_{posterior}$ ($\mu$atm)') % upco2
 ax.XTickMode = 'auto';
 xticklabels(lbl);
 grid on
@@ -173,12 +175,12 @@ ax.XTickMode = 'auto';
 xticklabels(lbl);
 grid on
 
-h = gcf; % For example, h = openfig('sub_fig.fig'); Or you just ploted one figure: plot(1:10);
+h = gcf; 
 set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'pco2_pairs_plot_sept24.pdf','-dpdf','-r0');
+print(h,'figure_2.pdf','-dpdf','-r0');
 
 
 
