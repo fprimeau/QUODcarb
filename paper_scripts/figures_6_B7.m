@@ -13,8 +13,6 @@ nD = length(in);
 [pco2obs]   = in(10,:)';    % pco2 (uatm)
 [co3obs]    = in(11,:)';    % co3 (umol/kg)
 [phobs]     = in(9,:)';     % ph
-[siobs]     = in(8,:)';     % TSi (umol/kg)
-[tpobs]     = in(7,:)';     % TP (umol/kg)
 
 load output_mat_files/all_combos/est26.mat;
 
@@ -198,6 +196,19 @@ print(h,'figure_6.pdf','-dpdf','-r0');
 
 %% next, plot the pTOT Z-scores
 
+[siobs]     = in(8,:)';     % TSi (umol/kg)
+[tpobs]     = in(7,:)';     % TP (umol/kg)
+
+% reset zero to 1e-3 umol/kg, this is necessary for QUODcarb
+for i = 1:nD
+    if tpobs(i) == 0
+        tpobs(i) = 1e-3;
+    end
+    if siobs(i) == 0
+        siobs(i) = 1e-3;
+    end
+end
+
 % AXES PROPERTIES
 set(groot,'defaultAxesFontName','Perpetua',...
     'defaultAxesFontSize',18,...
@@ -230,8 +241,8 @@ for i = 1:nD
     zTCa(i) = (TCa(i) - est26(i).TCa)/uTCa(i);
 
     % measured TP and TSi
-    zTP(i)= (tpobs(i) - est26(i).TP)/(0.0019);
-    zTSi(i) = (siobs(i) - est26(i).TSi)/(0.0238); % 2%
+    zTP(i)= (tpobs(i) - est26(i).TP)/(0.0040); %  median 2% 
+    zTSi(i) = (siobs(i) - est26(i).TSi)/(0.0620); % median 2%
 end
 
 % measured totals: TP, TSi
