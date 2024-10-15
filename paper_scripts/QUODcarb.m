@@ -3085,7 +3085,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.ipTC) = nan;
             if (isgood(obs(i).TC))
                 if opt.printmes ~= 0
-                fprintf('Warning: Assuming TC uncertainty is 2.00 umol/kg\n');
+                fprintf('Warning: Assuming TC uncertainty is 2.00 umol/kg \n');
                 end
                 wobs(i,sys.ipTC) = w(obs(i).TC,2.00);
             end
@@ -3103,7 +3103,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.ipTA) = nan;
             if (isgood(obs(i).TA))
                 if opt.printmes ~= 0
-                fprintf('Warning: Assuming TA uncertainty is 2.00 umol/kg\n');
+                fprintf('Warning: Assuming TA uncertainty is 2.00 umol/kg \n');
                 end
                 wobs(i,sys.ipTA) = w(obs(i).TA,2.00);
             end
@@ -3202,7 +3202,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             obs(i).uTSi         = nan;            
             wobs(i,sys.ipTSi)   = w(1e-3,1e-3); % mol/kg
             if (isgood(obs(i).TSi)) && opt.printmes ~= 0
-                fprintf('Warning, no obs.uTSi input with obs.uTSi. Assuming 1 nanomolar.\n' )
+                fprintf('Warning, no obs.uTSi input with obs.uTSi. Assuming 1 nanomolar. \n' )
             end
         else
             if ((obs(i).uTSi) == 0)
@@ -3226,7 +3226,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.ipTNH4)  = w(1e-3,uTNH4); % mol/kg
             obs(i).uTNH4        = nan;
             if (isgood(obs(i).TNH4)) && opt.printmes ~= 0
-                fprintf('Warning, no obs.uTNH4 input with obs.uTNH4. Assuming 5e-4 umol/kg.\n' )
+                fprintf('Warning, no obs.uTNH4 input with obs.uTNH4. Assuming 5e-4 umol/kg. \n' )
             end
         else
             wobs(i,sys.ipTNH4)  = w(obs(i).TNH4,obs(i).uTNH4);
@@ -3247,7 +3247,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             wobs(i,sys.ipTH2S)  = w(1e-3,uTH2S); % mol/kg
             obs(i).uTH2S        = nan;
             if (isgood(obs(i).TH2S)) && opt.printmes ~= 0
-                fprintf(' Warning, no obs.uTH2S input with obs.uTNH4. Assuming 5e-4 umol/kg.\n' )
+                fprintf(' Warning, no obs.uTH2S input with obs.uTNH4. Assuming 5e-4 umol/kg. \n' )
             end
         else
             wobs(i,sys.ipTH2S)  = w(obs(i).TH2S,obs(i).uTH2S);
@@ -3267,7 +3267,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             obs(i).uTCa       = nan;
             wobs(i,sys.ipTCa) = (upTCa)^(-2);
             if (isgood(obs(i).TCa)) && opt.printmes ~= 0
-                fprintf(' Warning, no obs.uTCa input with obs.uTCa. Assuming 6e-5 mol/kg.\n' )
+                fprintf(' Warning, no obs.uTCa input with obs.uTCa. Assuming 6e-5 mol/kg. \n' )
             end
         else
             wobs(i,sys.ipTCa)   = w(obs(i).TCa,obs(i).uTCa);
@@ -3327,7 +3327,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             if (~isfield(obs(i).tp(j),'uT')) || (~isgood(obs(i).tp(j).uT)) ...
                     || (iszero(obs(i).tp(j).uT))
                 if opt.printmes ~= 0
-                fprintf('Warning: Assuming obs.tp(%d).uT 0.1 deg Celsius\n',j);
+                fprintf('Warning: Assuming obs.tp(%d).uT 0.1 deg Celsius \n',j);
                 end
                 obs(i).tp(j).uT = 0.1;
             end
@@ -3340,7 +3340,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
             if (~isfield(obs(i).tp(j),'uP')) || (~isgood(obs(i).tp(j).uP)) ...
                     || (iszero(obs(i).tp(j).uP))
                 if opt.printmes ~= 0
-                fprintf('Warning: Assuming obs.tp(%d).uP is 0.1 dbar\n',j);
+                fprintf('Warning: Assuming obs.tp(%d).uP is 0.1 dbar \n',j);
                 end
                 obs(i).tp(j).uP = 0.1;
             end
@@ -3403,7 +3403,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(j).ipfco2)    = nan;
                 if (isgood(obs(i).tp(j).fco2))
                     if opt.printmes ~= 0
-                        fprintf('Warning: Assuming obs.tp(%d).ufco2 is 1%\n',j);
+                        fprintf('Warning: Assuming obs.tp(%d).ufco2 is 1%% \n',j);
                     end
                     wobs(i,sys.tp(j).ipfco2) = w(obs(i).tp(j).fco2,0.01*obs(i).tp(j).fco2);
                 end
@@ -3434,7 +3434,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(j).ippco2)   = nan;
                 if (isgood(obs(i).tp(j).pco2))
                     if opt.printmes ~= 0
-                        fprintf('Warning: Assuming obs.tp(%d).upco2 is 1%\n',j);
+                        fprintf('Warning: Assuming obs.tp(%d).upco2 is 1%% \n',j);
                     end
                     wobs(i,sys.tp(j).ippco2) = w(obs(i).tp(j).pco2,0.01*obs(i).tp(j).pco2);
                 end
@@ -3517,7 +3517,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(j).ipco3)    = nan;
                 if (isgood(obs(i).tp(j).co3))
                     if opt.printmes ~= 0
-                        fprintf('Warning: Assuming obs.tp(%d).uco3 is 2%\n',j);
+                        fprintf('Warning: Assuming obs.tp(%d).uco3 is 2%% \n',j);
                     end
                     wobs(i,sys.tp(j).ipco3) = w(obs(i).tp(j).co3,0.02*obs(i).tp(j).co3);
                 end
@@ -3536,7 +3536,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(j).iph)  = nan;
                 if (isgood(obs(i).tp(j).ph))
                     if opt.printmes ~= 0
-                        fprintf('Warning: Assuming obs.tp(%d).uph is 0.010\n',j);
+                        fprintf('Warning: Assuming obs.tp(%d).uph is 0.010 \n',j);
                     end
                     wobs(i,sys.tp(j).iph) = w(obs(i).tp(j).ph,0.010);
                 end

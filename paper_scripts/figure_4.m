@@ -1,5 +1,5 @@
 
-% scripts used to plot figure 4 of Fennell & Primeau, 2024
+% script used to plot figure 4 of Fennell & Primeau, 2024
 % user needs to have run 'driver.m' and have all 26 output est.mat files
 % accessible in 'output_mat_files/all_combos'
 
@@ -313,6 +313,17 @@ print(h,'figure_4.pdf','-dpdf');
 
 
 
+%%
+% outpt(i).perc_ord = perc_ord;
 
+for k = 1:26
+    n = 0;
+    for i = 1:nD
+        if outpt(5).perc_ord(k,i) >= 1
+            n = n + 1;
+        end
+    end
+    out(k) = n;
+end
 
 
