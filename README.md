@@ -4,22 +4,20 @@ This repository includes QUODcarb software compatible with MATLAB for
  over-determined cases. QUODcarb, as presented in Fennell & Primeau 
  (2024), stands for Quantifying Uncertainty in an Over-Determined marine
  CARBonate dataset. The calculation also estimates the output 
- uncertainties and requires input measurement uncertainties. See 
+ uncertainties and requires input standard measurement uncertainties. See 
  Fennell & Primeau (2024) for methods and introduction to the solver. 
  
  We intend for QUODcarb to have the
  same capabilities as CO2SYSv3, in addition to the following improvements:
  - Allows over-determined input
- 	- i.e. two, three, four, or five (and beyond) measurements of a single water parcel may be input into a single QUODcarb calculation
- - Allows multiple input temperatures and pressures
+ 	- i.e. two, three, four, or five (and beyond) measurements for the same water parcel may be input into a single QUODcarb calculation
+ - Allows multiple input and output temperatures and pressures
  	-  i.e. pH at 25 Celsius and pCO2 at 20 Celsius input in tp(1) and tp(2) for a single QUODcarb calculation
  - Uncertainty calculation inherent to the solver
- 	- allows for self-consistent uncertainty estimates in the over-determined cases
-  - Possibility for the output values to change based on the measured system for the equilibrium constants and mass balance totals
+ 	- allows for uncertainty estimates in the over-determined cases that are consistent with the uncertainties in the measurements and thermodynamic model (i.e., the parameterized pKs and mass balance totals)
+  - Makes use of the redundancy in over-determined datasets to re-estimate the parameterized dissociation constants and mass balance totals
   	-  pK1, pK2, TB etc., in the over-determined cases only
-  - Possibility to turn 'off' the pK1, pK2, or TB formulations
-  	- when three or more measurements are available AT A SINGLE TEMPERTURE AND PRESSURE (tp(1) only, no tp(2))
-   	- see top of `src/QUODcarb.m` for full list of input options
+ - Provides a summary of the joint posterior probability distribution for all the parameters used in the calculation in terms of the location of the maximum and the full covariance matrix.
 
 ## History
 CO2SYS was initially developed by Lewis and Wallace (1998) for MS DOS, 
