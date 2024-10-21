@@ -17,17 +17,17 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %
 % SYNTAX example:
 %   obs.sal         = salinity;     (PSU)           
-%   obs.usal        = sal_error;    (±sigma) (default 0.001)     
+%   obs.usal        = sal_uncert;    (±sigma) (default 0.002)     
 %   obs.TC          = total_c;      (umol/kg-SW)    
-%   obs.uTC         = TC_error;     (±sigma) (default 2 umol/kg)
+%   obs.uTC         = TC_uncert;     (±sigma) (default 2 umol/kg)
 %   obs.TA          = total_alk;    (umol/kg-SW)    
-%   obs.uTA         = alk_error;    (±sigma) (default 2 umol/kg)
+%   obs.uTA         = alk_uncert;    (±sigma) (default 2 umol/kg)
 %   obs.tp(1).T     = temp;         (deg C)         
-%   obs.tp(1).uT    = temp_error;   (±sigma) (default 0.1 degC)
+%   obs.tp(1).uT    = temp_uncert;   (±sigma) (default 0.1 degC)
 %   obs.tp(1).P     = pressure;     (dbar, 0 = surface)          
-%   obs.tp(1).uP    = pres_error;   (±sigma) (default 0.1 dbar)
+%   obs.tp(1).uP    = pres_uncert;   (±sigma) (default 0.1 dbar)
 %   obs.tp(1).ph    = ph_meas;      
-%   obs.tp(1).uph   = ph_error;     (±sigma) (default 0.010)
+%   obs.tp(1).uph   = ph_uncert;     (±sigma) (default 0.010)
 %
 %   opt.K1K2        = 10;           % (Lueker et al 2000)
 %   opt.KSO4        = 1;            % (Dickson et al 1990a) 
