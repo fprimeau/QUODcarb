@@ -55,7 +55,7 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %                                                   (T:2-35)    (S:20-40)
 %           x = x(GEOSECS)            ~NOT AVAILABLE IN QUODcarb~
 %           x = x(Peng)               ~NOT AVAILABLE IN QUODcarb~
-%           x = x(Millero, 1979)      ~NOT AVAILABLE IN QUODcarb~
+%           8 = Millero, 1979 PURE WATER ONLY       (T:0-50)    (S: 0.)
 %           9 = Cai and Wang, 1998                  (T:2-35)    (S:0-49)
 %          10 = Lueker et al., 2000    (DEFAULT)    (T:2-35)    (S:19-43)
 %          11 = Mojica Prieto and Millero, 2002     (T:0-45)    (S:5-42)
@@ -84,42 +84,6 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %           1 = on                      (DEFAULT)
 %           2 = off
 %
-%   opt.pKalpha -> turn on the organic alkalinity pKalpha system, 
-%                   requires TAlpha and pKalpha input, where: 
-%                   Kalpha = [alpha][H]/[Halpha]
-%                   TAlpha = [Halpha^+] + [alpha^-].
-%                   Contributes to alkalinity via:
-%                   OrgAlk = +[Halpha] if pKalpha =< 4.5
-%                          = -[alpha] if pKalpha > 4.5
-%           0 = off  (DEFAULT)
-%           1 = on
-%
-%   opt.pKbeta -> turn on the organic alk pKbeta system, requires TBeta
-%                   and pKbeta input, see description for pKalpha above, 
-%                   replacing alpha w/ beta (or TAlpha with TBeta)
-%           0 = off  (DEFAULT)
-%           1 = on
-%
-%   opt.turnoff.TB -> turn off the formulation of TB wrt salinity
-%           must still choose opt.TB to fill in prior, TB is treated as
-%           unknown so need at least two other measurements
-%           0 = formulation  (DEFAULT)
-%           1 = no formulation, treat as unknown
-%
-%   opt.turnoff.pK1 -> turn off the formulation of pK1 wrt T,S,P
-%           must still choose opt.K1K2 to fill in prior, pK1 is treated
-%           as unknown so need at least two other measurements all within
-%           a single tp(1) (tp(2) not possible)
-%           0 = formulation  (DEFAULT)
-%           1 = no formulation, treat as unknown
-%
-%   opt.turnoff.pK2 -> turn off the formulation of pK2 wrt T,S,P
-%           must still choose opt.K1K2 to fill in prior, pK2 is treated
-%           as unknown so need at least two other measurements all within
-%           a single tp(1) (tp(2) not possible, not possible to combine 
-%           with opt.turnoff.pK1)
-%           0 = formulation  (DEFAULT)
-%           1 = no formulation, treat as unknown
 %
 %--------------------------------------------------------------------------
 %
