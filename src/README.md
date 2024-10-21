@@ -1,17 +1,20 @@
 ## QUODcarb.m
 `function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)`
 
-- OUTPUT:
-  - `est :=` posterior estimates of co2-system variables, equilibrium constants, and precisions
-  - `obs :=` same as input except that the pK's have been added
-  - `iflag := 0` if solver converged to specified accuracy 
-    - `1` after reaching maximum number of iterations without converging
-    - `2` if it was one order of magnitude away from converging at maximum iteration
-  - `CSV :=` optional CSV output, if turned on in options
-- INPUT:
-  - `obs  :=` co2-system measured quantities with precisions 
-  - `opt  :=` solver options input by user 
-- SYNTAX example:
+OUTPUT:
+- `est :=` posterior estimates of co2-system variables, equilibrium constants, and precisions
+- `obs :=` same as input except that the pK's have been added
+- `iflag := 0` if solver converged to specified accuracy 
+  - `1` after reaching maximum number of iterations without converging
+  - `2` if it was one order of magnitude away from converging at maximum iteration
+- `CSV :=` optional CSV output, if turned on in options
+
+INPUT:
+- `obs  :=` co2-system measured quantities with precisions 
+- `opt  :=` solver options input by user 
+
+SYNTAX example:
+- `obs` structure
   - `obs.sal         =` salinity;     (PSU)           
   - `obs.usal        =` sal_uncert;    (±sigma) (default 0.002)     
   - `obs.TC          =` total_c;      (umol/kg-SW)    
@@ -24,6 +27,7 @@
   - `obs.tp(1).uP    =` pres_uncert;   (±sigma) (default 0.1 dbar)
   - `obs.tp(1).ph    =` ph_meas;      
   - `obs.tp(1).uph   =` ph_uncert;     (±sigma) (default 0.010)
+- `opt` structure
   - `opt.K1K2        = 10;`           % (Lueker et al 2000)
   - `opt.KSO4        = 1;`            % (Dickson et al 1990a) 
   - `opt.KF          = 2;`            % (Perez and Fraga 1987
@@ -34,7 +38,8 @@
   - `opt.printmes    = 1;`            % (1=on, 0=off)
   - `opt.co2press    = 1;`            % (1=on, 0=off)
   - `opt.Revelle     = 1;`            % (1=on, 0=off)
- - INPUT OPTIONS:
+
+INPUT OPTIONS:
   - `opt.K1K2`  -> choice of K1 and K2 formulation
       - (T-range)(S-range)
     - `1 =` Roy et al, 1993
@@ -82,13 +87,13 @@
   - `opt.co2press` -> turn on or off the pressure dependencies for K0 and pCO2 to fCO2 fugacity factor (p2f)
     - `1 =` on (DEFAULT)
     - `2 =` off
-- OUTPUT:
+
+OUTPUT:
   - `est` -> 'est' structure with best estimate contains:
     1. p(value) and p(error) where p(x) = -log10(x)
     2. value and average error about the value in 'q', where q(x) = x^(-10)
     3. upper and lower bounds in 'q' space, not symmetric about the value in 'q' space
-  - `csv` ->  csv file with most of est populated in a spreadsheet, contains column headers with labels and units
-      - does not include upper and lower errors
+  - `csv` ->  csv file with most of `est` populated in a spreadsheet, contains column headers with labels and units
 
 
 
