@@ -2,32 +2,34 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %
 % OUTPUT:
 %   est := posterior estimates of co2-system variables, equilibrium constants, and precisions
-%   obs := same as input except that the pK's have been added
+%   obs := same as input except that the variable names are all there
+%   sys := indexing scheme as created in mksys, useful for debugging
 % iflag := 0 if solver converged to specified accuracy 
 %          1 after reaching maximum number of iterations without converging
 %          2 if it was one order of magnitude away from converging at
 %               maximum iteration
-%   CSV := optional CSV output, if turned on in options
+%   opt := same as input exvept that all fields are now filled in
+%   CSV := optional CSV output, if turned on in opt.printcsv
 %
 % INPUT:
-%   obs  := co2-system measured quantities with precisions 
+%   obs  := co2-system measured quantities with overall uncertainties
 %   opt  := solver options input by user 
 %
 % -------------------------------------------------------------------------
 %
 % SYNTAX example:
 %   obs.sal         = salinity;     (PSU)           
-%   obs.usal        = sal_uncert;    (±sigma) (default 0.002)     
+%   obs.usal        = sal_uncert;   (±sigma) (default 0.002)     
 %   obs.TC          = total_c;      (umol/kg-SW)    
-%   obs.uTC         = TC_uncert;     (±sigma) (default 2 umol/kg)
+%   obs.uTC         = TC_uncert;    (±sigma) (default 2 umol/kg)
 %   obs.TA          = total_alk;    (umol/kg-SW)    
-%   obs.uTA         = alk_uncert;    (±sigma) (default 2 umol/kg)
+%   obs.uTA         = alk_uncert;   (±sigma) (default 2 umol/kg)
 %   obs.tp(1).T     = temp;         (deg C)         
-%   obs.tp(1).uT    = temp_uncert;   (±sigma) (default 0.1 degC)
+%   obs.tp(1).uT    = temp_uncert;  (±sigma) (default 0.1 degC)
 %   obs.tp(1).P     = pressure;     (dbar, 0 = surface)          
-%   obs.tp(1).uP    = pres_uncert;   (±sigma) (default 0.1 dbar)
+%   obs.tp(1).uP    = pres_uncert;  (±sigma) (default 0.1 dbar)
 %   obs.tp(1).ph    = ph_meas;      
-%   obs.tp(1).uph   = ph_uncert;     (±sigma) (default 0.010)
+%   obs.tp(1).uph   = ph_uncert;    (±sigma) (default 0.010)
 %
 %   opt.K1K2        = 10;           % (Lueker et al 2000)
 %   opt.KSO4        = 1;            % (Dickson et al 1990a) 
@@ -43,6 +45,7 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %--------------------------------------------------------------------------
 % 
 % INPUT OPTIONS:
+%
 %   opt.K1K2  -> choice of K1 and K2 formulation    (T-range)   (S-range)
 %           1 = Roy et al, 1993                     (T:0-45)    (S:5-45)
 %           2 = Goyet & Poisson, 1989               (T:-1-40)   (S:10-50)
@@ -79,11 +82,38 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %           1 = Uppstrom, 1979
 %           2 = Lee et al., 2010        (DEFAULT)
 %
+%   opt.phscale -> pH scale of choice for calculations, the equilibrium
+%                   constants are returned on this scale, REQUIRED
+%           1 = total scale
+%           2 = free scale
+%           3 = seawater scale (SWS)
+%           4 = National Bureau of Standards scale (NBS)
+%
+%   opt.printcsv -> option to print the output est structure to a csv file
+%           1 = on
+%           0 = off     (DEFAULT)
+%
+%   opt.fname -> chosen filename for CSV, if opt.printcsv = 1
+%                   must be a .csv file with no spaces
+%           opt.fname = 'QUODcarb_output.csv' (DEFAULT)
+%
+%   opt.printmes -> can QUODcarb print messages to your command line?
+%                   recommended 'on' for new users
+%           1 = on      (DEFAULT)
+%           0 = off
+%
 %   opt.co2press -> turn on or off the pressure dependencies for K0 and
 %           pCO2 to fCO2 fugacity factor (p2f)
-%           1 = on                      (DEFAULT)
-%           2 = off
+%           1 = on      (DEFAULT)
+%           0 = off
 %
+%   opt.Revelle -> calculate the Revelle factor? 
+%           1 = on
+%           0 = off     (DEFAULT)
+%
+%   opt.tol -> change default tolerance to some other value, recommended to
+%               stay within 1e-5 and 1e-8
+%           opt.tol = 1e-6; (DEFAULT)
 %
 %--------------------------------------------------------------------------
 %
@@ -94,16 +124,33 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %                   where q(x) = x^(-10)
 %               3. upper and lower bounds in 'q' space, not symmetric
 %                   about the value in 'q' space
-%   csv ->  csv file with most of est populated in a spreadsheet, 
-%                 contains column headers with labels and units                 
+%                   - as given in 'parse_output'
+%   obs -> 'obs' structure with updated values as given in 'parse_input'
+%               so all variable names have a value, nan or otherwise
+%                   - restates what user input and adds omitted fields or
+%                   default values
+%   sys -> 'sys' structure with the system's variable names and associated
+%               indexing scheme, as created in 'mksys' 
+%                   -very useful when debugging and/or checking est.C 
+%                       output values
+%   iflag -> 0 if solver converged to specified tolerance (opt.tol) 
+%            1 after reaching maximum number of iterations without converging
+%                   - MAXIT in newtn.m
+%            2 if it was one order of magnitude away from converging at
+%               maximum iteration, consider keeping or rerunning with
+%               larger tolerance
+%   opt -> 'opt' structure with all variable names as given in 'check_opt'
+%                   -restates what user input and adds omitted fields
+%
+%   csv ->  if opt.printcsv = 1, csv file with most of est populated in a 
+%               spreadsheet, contains column headers with labels and units                 
 %                    -does not include upper and lower errors
 %
 %--------------------------------------------------------------------------
 %
 % Changes? -> the only things you may want to change are: 
-%               1. tolerance level of Newton solver -> line 160
-%               2. Max Iteration number -> MAXIT in newtn.m
-%               3. Print iteration number and F0 value to screen 
+%               1. Max Iteration number -> MAXIT in newtn.m
+%               2. Print iteration number and F0 value to screen 
 %                       -> iprint in newtn.m
 %
 %--------------------------------------------------------------------------
@@ -121,11 +168,7 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
     for i = 1:nD % loop over the full data set
 
         z0 = init(opt,yobs(i,:),sys);       % initialize
-        if ~isfield(opt,'tol')
-            tol = 1e-6;                     % tolerance
-        else
-            tol = opt.tol;
-        end
+        tol = opt.tol;                      % tolerance, 1e-6 default
         % negative of the log of the posterior 
         % aka the log improbability (limp for short)
         fun = @(z) limp(z,yobs(i,:),wobs(i,:),obs(i),sys,opt);
@@ -2934,6 +2977,10 @@ function [opt] = check_opt(opt)
             fprintf('No opt.Revelle chosen. Assuming opt.Revelle = 0 (off). \n');
         end
     end
+    % opt.tol
+    if ~isfield(opt,'tol') || isbad(opt.tol)
+        opt.tol = 1e-6; % default tolerance
+    end
     % organic alkalinity
     if ~isfield(opt,'pKalpha') || isbad(opt.pKalpha)
         opt.pKalpha = 0; % off
@@ -3500,7 +3547,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                 wobs(i,sys.tp(j).iph)  = nan;
                 if (isgood(obs(i).tp(j).ph))
                     if opt.printmes ~= 0
-                        fprintf('Warning: Assuming obs.tp(%d).uph is 0.010 \n',j);
+                        fprintf('Warning: Assuming obs.tp(%d).uph is 0.010\n',j);
                     end
                     wobs(i,sys.tp(j).iph) = w(obs(i).tp(j).ph,0.010);
                 end
