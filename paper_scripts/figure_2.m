@@ -1,7 +1,7 @@
 
 % script used to plot figure 2 in Fennell & Primeau, 2024
 % user needs to have run 'driver.m' and have all 26 output est.mat files
-% accessible in 'output_mat_files/all_combos'
+% accessible in 'output_mat_files'
 
 % load and parse data
 load data.mat
@@ -17,16 +17,16 @@ nD = length(in);
 [tpobs]     = in(7,:)';     % TP (umol/kg)
 
 % load 10 pairs to workspace
-load output_mat_files/all_combos/est01.mat;
-load output_mat_files/all_combos/est02.mat;
-load output_mat_files/all_combos/est03.mat;
-load output_mat_files/all_combos/est04.mat;
-load output_mat_files/all_combos/est05.mat;
-load output_mat_files/all_combos/est06.mat;
-load output_mat_files/all_combos/est07.mat;
-load output_mat_files/all_combos/est08.mat;
-load output_mat_files/all_combos/est09.mat;
-load output_mat_files/all_combos/est10.mat;
+load output_mat_files/est01.mat;
+load output_mat_files/est02.mat;
+load output_mat_files/est03.mat;
+load output_mat_files/est04.mat;
+load output_mat_files/est05.mat;
+load output_mat_files/est06.mat;
+load output_mat_files/est07.mat;
+load output_mat_files/est08.mat;
+load output_mat_files/est09.mat;
+load output_mat_files/est10.mat;
 
 nD = length(est01);
 
@@ -43,10 +43,8 @@ for i = 1:nD
     input(10).est(i) = est10(i);
 end
  
-
 for k = 1:10
     est = input(k).est;
-
     for i = 1:nD
         pco2(i,k)   = est(i).tp(2).pco2; % posterior pco2
         sig(i,k)    = est(i).tp(2).upco2; % posterior uncertainty
@@ -54,7 +52,6 @@ for k = 1:10
         sig_in(i,k) = 0.01*pco2obs(i);
         % Z-score = ( meas - calc ) / sigma_meas
         zpco2(i,k)  = dpco2(i,k)/(sig_in(i,k)); % sigma_meas, 1% uncert
-
         zsig2(i,k)  = dpco2(i,k)/(sqrt(sig(i,k)^2 + sig_in(i,k)^2));
     end
 end
