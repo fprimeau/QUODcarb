@@ -1,7 +1,7 @@
 
-% script used to plot figure 5 in Fennell & Primeau, 2024
+% script used to plot figure 4 in Fennell & Primeau, 2024
 % user needs to have run 'driver.m' and have output est26.mat file
-% accessible in 'output_mat_files/all_combos'
+% accessible in 'output_mat_files'
 
 % load and parse data
 load data.mat
@@ -14,7 +14,7 @@ nD = length(in);
 [co3obs]    = in(11,:)';    % co3
 [phobs]     = in(9,:)';     % ph
 
-load output_mat_files/all_combos/est26.mat;
+load output_mat_files/est26.mat;
 % calculate Z-scores = (meas - calc)/sigma_meas
 for i = 1:nD
     TC(i)       = est26(i).TC;  
@@ -79,7 +79,7 @@ set(h,'Units','Inches');
 pos = get(h,'Position');
 set(h,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3),pos(4)]);
 
-print(h,'figure_5.pdf','-dpdf','-r0');
+print(h,'figure_4.pdf','-dpdf','-r0');
 
 
 
