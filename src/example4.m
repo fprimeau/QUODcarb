@@ -1,4 +1,5 @@
  
+% QUODcarb example 4
 % example script to use compare.m
 
 % a direct comparison for input pair TC, pH
@@ -9,14 +10,9 @@ load fakedata.mat;
 % variable name is 'fakedata'
 % sal  in fakedata(1,:);
 % TC   in fakedata(2,:);
-% TA   in fakedata(3,:);
 % ph   in fakedata(4,:); at 25 degC
-% pco2 in fakedata(5,:); at 20 degC
-% co3  in fakedata(6,:); at 25 degC
 % TP   in fakedata(7,:);
 % TSi  in fakedata(8,i);
-% T insitu in fakedata(9,:);
-% P insitu in fakedata(10,:);
 
 % populate opt structure
 opt.K1K2 = 10; % option for K1K2 formulation
@@ -25,7 +21,7 @@ opt.KF   = 2;   % option for KF formulation
 opt.TB   = 2;   % option for TB formulation
 opt.phscale     = 1; % 1 = tot, 2 = sws, 3 = free, 4 = nbs
 opt.printcsv    = 1; % print output to CSV? (1=on, 0=off)
-opt.fname       = 'QUODcarb.csv'; % not used if opt.printcsv = 0
+opt.fname       = 'QUODcarb_ex4.csv'; % not used if opt.printcsv = 0
 opt.printmes    = 0; % print screen messages? (1=on, 0=off)
 opt.co2press    = 1; % pressure correction for p2f and K0 (1=on, 0=off)
 opt.Revelle     = 1; % calculate Revelle factor? (1=on, 0=off)
@@ -33,7 +29,6 @@ opt.Revelle     = 1; % calculate Revelle factor? (1=on, 0=off)
 nD = length(fakedata); % number of datapoints
 
 for i = 1:nD
-    % temperature and pressure INdependent
     % temperature and pressure INdependent
     obs(i).sal  = fakedata(1,i); % salinity
     obs(i).usal = 0.001; % salinity uncertainty, 1 sigma
@@ -65,5 +60,6 @@ out = compare(obs,est,opt,tp,2,3,fid);
                 % see compare.m file for more options
 
 % the excel file will have values of parameters of interest
-% for an exactly-determined calculation, they should be the same values
+% for an exactly-determined calculation, they should be the same 
+% parameter values with expected small differences between uncertainties
 

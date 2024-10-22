@@ -1,5 +1,6 @@
 
 % QUODcarb example 2
+% to show multiple datapoints and tp(1) and tp(2)
 
 load fakedata.mat;
 % variable name is 'fakedata'
@@ -8,11 +9,8 @@ load fakedata.mat;
 % TA   in fakedata(3,:);
 % ph   in fakedata(4,:); at 25 degC
 % pco2 in fakedata(5,:); at 20 degC
-% co3  in fakedata(6,:); at 25 degC
 % TP   in fakedata(7,:);
 % TSi  in fakedata(8,i);
-% T insitu in fakedata(9,:);
-% P insitu in fakedata(10,:);
 
 nD = length(fakedata);
 
@@ -21,11 +19,11 @@ opt.K1K2 = 4;       % option for K1K2 formulation
 opt.KSO4 = 1;       % option for KSO4 formulation
 opt.KF   = 2;       % option for KF formulation
 opt.TB   = 2;       % option for TB formulation
-opt.phscale = 1;    % 1 = tot, 2 = sws, 3 = free, 4 = nbs
-opt.printcsv = 1;   % print output to CSV? 1 = on, 0 = off
-opt.fname = 'example2.csv'; % file name of desired CSV file
-opt.printmes = 1;   % print screen messages? 1 = on, 0 = off
-opt.co2press = 0;   % pressure correction for P2F (aka FugFac) and K0
+opt.phscale     = 1;   % 1 = tot, 2 = sws, 3 = free, 4 = nbs
+opt.printcsv    = 1;   % print output to CSV? 1 = on, 0 = off
+opt.fname       = 'QUODcarb_ex2.csv'; % file name of desired CSV file
+opt.printmes    = 1;   % print screen messages? 1 = on, 0 = off
+opt.co2press    = 0;   % pressure correction for P2F (aka FugFac) and K0
 
 for i = 1:nD
     % temperature and pressure INdependent
