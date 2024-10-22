@@ -1,7 +1,7 @@
 
 % script used to plot figure 3 in Fennell & Primeau, 2024
 % user needs to have run 'driver.m' and have all 26 output est.mat files
-% accessible in 'output_mat_files/all_combos'
+% accessible in 'output_mat_files'
 
 p  = @(x) -log10(x);
 q  = @(x) 10^(-x);
@@ -57,34 +57,34 @@ for i = 1:nD
 end
 
 % then, load all 26 combos
-load output_mat_files/all_combos/est01.mat;
-load output_mat_files/all_combos/est02.mat;
-load output_mat_files/all_combos/est03.mat;
-load output_mat_files/all_combos/est04.mat;
-load output_mat_files/all_combos/est05.mat;
-load output_mat_files/all_combos/est06.mat;
-load output_mat_files/all_combos/est07.mat;
-load output_mat_files/all_combos/est08.mat;
-load output_mat_files/all_combos/est09.mat;
-load output_mat_files/all_combos/est10.mat;
+load output_mat_files/est01.mat;
+load output_mat_files/est02.mat;
+load output_mat_files/est03.mat;
+load output_mat_files/est04.mat;
+load output_mat_files/est05.mat;
+load output_mat_files/est06.mat;
+load output_mat_files/est07.mat;
+load output_mat_files/est08.mat;
+load output_mat_files/est09.mat;
+load output_mat_files/est10.mat;
 
-load output_mat_files/all_combos/est11.mat;
-load output_mat_files/all_combos/est12.mat;
-load output_mat_files/all_combos/est13.mat;
-load output_mat_files/all_combos/est14.mat;
-load output_mat_files/all_combos/est15.mat;
-load output_mat_files/all_combos/est16.mat;
-load output_mat_files/all_combos/est17.mat;
-load output_mat_files/all_combos/est18.mat;
-load output_mat_files/all_combos/est19.mat;
-load output_mat_files/all_combos/est20.mat;
+load output_mat_files/est11.mat;
+load output_mat_files/est12.mat;
+load output_mat_files/est13.mat;
+load output_mat_files/est14.mat;
+load output_mat_files/est15.mat;
+load output_mat_files/est16.mat;
+load output_mat_files/est17.mat;
+load output_mat_files/est18.mat;
+load output_mat_files/est19.mat;
+load output_mat_files/est20.mat;
 
-load output_mat_files/all_combos/est21.mat;
-load output_mat_files/all_combos/est22.mat;
-load output_mat_files/all_combos/est23.mat;
-load output_mat_files/all_combos/est24.mat;
-load output_mat_files/all_combos/est25.mat;
-load output_mat_files/all_combos/est26.mat;
+load output_mat_files/est21.mat;
+load output_mat_files/est22.mat;
+load output_mat_files/est23.mat;
+load output_mat_files/est24.mat;
+load output_mat_files/est25.mat;
+load output_mat_files/est26.mat;
 
 for i = 1:nD
     input(1).est(i) = est01(i);
@@ -282,7 +282,7 @@ for j = 1:26
 
         zall = [ zpTC(j,i), zpTA(j,i), zpTB(j,i), zpTS, ...
             zpTF, zpTCa, zpTP, zpTSi, ...
-            zpK0_1, zpK1_1, zpK2_1, zpKb_1, zpKw_1, zpKs_1, ...
+        zpK0_1, zpK1_1, zpK2_1, zpKb_1, zpKw_1, zpKs_1, ...
             zpKf_1, zpKp1_1, zpKp2_1, zpKp3_1, zpKsi_1, ...
             zpKnh4_1, zpKh2s_1, zpKar_1, zpKca_1, ...
         zpK0_2, zpK1_2, zpK2_2, zpKb_2, zpKw_2, zpKs_2, ...
@@ -291,12 +291,13 @@ for j = 1:26
         zpK0_3, zpK1_3, zpK2_3, zpKb_3, zpKw_3, zpKs_3, ...
             zpKf_3, zpKp1_3, zpKp2_3, zpKp3_3, zpKsi_3, ...
             zpKnh4_3, zpKh2s_3, zpKar_3, zpKca_3, ...
-            zpH(j,i), zppCO2(j,i), zpCO3(j,i), ...
+        zpH(j,i), zppCO2(j,i), zpCO3(j,i), ...
             zsal, ztemp_1, ztemp_2, ztemp_3, ...
             zpress_1, zpress_2, zpress_3];
 
         f_calc(j,i) = sum(zall)/2; % b/c f = 0.5 * sum (zscores^2);
     end
+    
 end
 
 f_26 = f_calc;
