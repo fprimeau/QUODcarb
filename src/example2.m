@@ -61,7 +61,7 @@ end
 % save example2.mat est; % save output est as mat file
 
 % output est(1) values should be:
-% est(1).TC         = 2196.0;       est(1).uTC          = 1.6556;
+% est(1).TC         = 2196.0;       est(1).uTC          = 1.6555;
 % est(1).TA         = 2306.8;       est(1).uTA          = 1.7115;
 % est(1).tp(1).ph   = 7.6373;       est(1).tp(1).uph    = 0.0061;
 % est(1).tp(1).pco2 = 1184.2;       est(1).tp(1).upco2  = 21.491;
