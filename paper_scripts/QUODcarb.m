@@ -3,12 +3,12 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 % OUTPUT:
 %   est := posterior estimates of co2-system variables, equilibrium constants, and precisions
 %   obs := same as input except that the variable names are all there
-%   sys := indexing scheme as created in mksys, useful for debugging
+%   sys := indexing scheme as created in 'mksys', useful for debugging
 % iflag := 0 if solver converged to specified accuracy 
 %          1 after reaching maximum number of iterations without converging
 %          2 if it was one order of magnitude away from converging at
 %               maximum iteration
-%   opt := same as input exvept that all fields are now filled in
+%   opt := same as input except that all fields are now filled in
 %   CSV := optional CSV output, if turned on in opt.printcsv
 %
 % INPUT:
@@ -97,7 +97,7 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %                   must be a .csv file with no spaces
 %           opt.fname = 'QUODcarb_output.csv' (DEFAULT)
 %
-%   opt.printmes -> can QUODcarb print messages to your command line?
+%   opt.printmes -> should QUODcarb print messages to your command line?
 %                   recommended 'on' for new users
 %           1 = on      (DEFAULT)
 %           0 = off
@@ -107,7 +107,8 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 %           1 = on      (DEFAULT)
 %           0 = off
 %
-%   opt.Revelle -> calculate the Revelle factor? 
+%   opt.Revelle -> calculate the Revelle factor? reminder: QUODcarb cannot
+%           calculate uRevelle
 %           1 = on
 %           0 = off     (DEFAULT)
 %
@@ -4446,8 +4447,8 @@ function [est] = parse_output(z,sigx,sys,f,C)
     q       = sys.q;
 
     ebar    = @(j) (0.5 * ( q( z(j) - sigx(j) ) - q( z(j) + sigx(j) ) ) );
-    ebar_l  = @(j) ( q( -sigx(j) ) ); % lower sigma
-    ebar_u  = @(j) ( q( sigx(j) ) ); % upper sigma
+    ebar_l  = @(j) ( q( z(j)) - ( q( z(j) + sigx(j) ) )  ); % lower sigma
+    ebar_u  = @(j) ( q( z(j) - sigx(j) ) - q(z(j)) ); % upper sigma
         
     % populate 'est' structure with best estimate:
     %   1. p(value) and p(error) where p(x) = -log10(x)
@@ -4468,7 +4469,7 @@ function [est] = parse_output(z,sigx,sys,f,C)
     est.uTC     = ebar(sys.ipTC)*1e6;      
     est.uTC_l   = ebar_l(sys.ipTC)*1e6;    
     est.uTC_u   = ebar_u(sys.ipTC)*1e6;
-    
+
     % TA Alkalinity
     est.pTA     = z(sys.ipTA);               
     est.upTA    = sigx(sys.ipTA);
