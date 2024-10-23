@@ -21,7 +21,7 @@ This repository includes QUODcarb software compatible with MATLAB for
 
 ## History
 CO2SYS was initially developed by Lewis and Wallace (1998) for MS DOS, 
- later adapted for MS Excel and MATLAB by Pierrot (2006). The code was 
+ later adapted for MS Excel and MATLAB by Pierrot et al. (2006). The code was 
  vectorized, refined, and optimized for computational speed by van Heuven 
  et al. (2011). Options for error propagation were added by Orr et al. 
  (2018). The CO2SYSv3 update by Sharp (2022, 2023) added numerous options 

@@ -3,10 +3,13 @@
 
 OUTPUT:
 - `est :=` posterior estimates of co2-system variables, equilibrium constants, and precisions
-- `obs :=` same as input except that the pK's have been added
-- `iflag := 0` if solver converged to specified accuracy 
+- `obs :=` same as input except that the variable names are all there
+- `sys :=` indexing scheme as created in mksys, useful for debugging
+- `iflag := `
+  - `0` if solver converged to specified accuracy 
   - `1` after reaching maximum number of iterations without converging
   - `2` if it was one order of magnitude away from converging at maximum iteration
+- `opt :=` same as input except that all fields are now filled in 
 - `CSV :=` optional CSV output, if turned on in options
 
 INPUT:
@@ -84,16 +87,49 @@ INPUT OPTIONS:
   - `opt.TB` -> choice of total borate formulation
     - `1 =` Uppstrom, 1979
     - `2 =` Lee et al., 2010 (DEFAULT)
+  - `opt.phscale` -> pH scale of choice for calculations, the equilibrium constants are returned on this scale, REQUIRED
+    - `1 =` total scale
+    - `2 =` free scale
+    - `3 =` seawater scale (SWS)
+    - `4 =` National Bureau of Standards scale (NBS) 
+  - `opt.printcsv` -> option to print the output est structure to a csv file
+    - `1 =` on
+    - `0 =` off 
+  - `opt.fname` -> chosen filename for CSV, if opt.printcsv = 1, must be a .csv file with no spaces
+    - `opt.fname = 'QUODcarb_output.csv'` (DEFAULT)
+  - `opt.printmes` -> should QUODcarb print messages to your command line? recommended 'on' for new users
+    - `1 =` on (DEFAULT)
+    - `0 =` off 
   - `opt.co2press` -> turn on or off the pressure dependencies for K0 and pCO2 to fCO2 fugacity factor (p2f)
     - `1 =` on (DEFAULT)
-    - `2 =` off
+    - `0 =` off
+  - `opt.Revelle` -> calculate the Revelle factor? reminder: QUODcarb cannot calculate uRevelle
+    - `1 =` on
+    - `0 =` off (DEFAULT)
+  - `opt.tol` -> change default tolerance to some other value, recommended to stay within 1e-5 and 1e-8
+    - `opt.tol = 1e-6;` (DEFAULT) 
 
 OUTPUT:
-  - `est` -> 'est' structure with best estimate contains:
+  - `est` -> 'est' structure with best estimate, as given in 'parse_input', contains:
     1. p(value) and p(error) where p(x) = -log10(x)
     2. value and average error about the value in 'q', where q(x) = x^(-10)
     3. upper and lower bounds in 'q' space, not symmetric about the value in 'q' space
-  - `csv` ->  csv file with most of `est` populated in a spreadsheet, contains column headers with labels and units
+  - `obs` -> 'obs' structure with updated values as given in 'parse_input' so all variable names have a value, nan or otherwise
+    - restates what user input and adds omitted fields or default values
+  - `sys` -> 'sys' structure with the system's variable names and associated indexing scheme, as created in 'mksys'
+  - `iflag` ->
+    - 0 if solver converged to specified tolerance (opt.tol)
+    - 1 after reaching maximum number of iterations without converging, see MAXIT in newtn.m
+    - 2 if it was one order of magnitude away from converging at maximum iteration, consider keeping or rerunning with a larger tolerance
+  - `opt` -> 'opt' structure with all variable names as given in 'check_opt'
+    - restates what user input and adds omitted fields  
+  - `csv` ->  if opt.printcsv = 1, csv file with most of `est` populated in a spreadsheet, contains column headers with labels and units
+    - does not contain upper and lower errors
+
+
+Changes? -> the only things you may want to change are:
+- Max Iteration number -> `MAXIT` in newtn.m
+- Print Iteration number and F0 value to screen -> `iprint` in newtn.m
 
 
 
