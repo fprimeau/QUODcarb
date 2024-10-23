@@ -4447,10 +4447,8 @@ function [est] = parse_output(z,sigx,sys,f,C)
     q       = sys.q;
 
     ebar    = @(j) (0.5 * ( q( z(j) - sigx(j) ) - q( z(j) + sigx(j) ) ) );
-    ebar_l  = @(j) ( q( -sigx(j) ) ); % lower sigma
-    ebar_u  = @(j) ( q( sigx(j) ) ); % upper sigma
-    % ebar_l  = @(j) ( q( z(j) + sigx(j) ) ); % lower sigma
-    % ebar_u  = @(j) ( q( z(j) - sigx(j) ) ); % upper sigma
+    ebar_l  = @(j) ( q( z(j)) - ( q( z(j) + sigx(j) ) )  ); % lower bound
+    ebar_u  = @(j) ( q( z(j) - sigx(j) ) - q(z(j)) ); % lower bound
         
     % populate 'est' structure with best estimate:
     %   1. p(value) and p(error) where p(x) = -log10(x)
@@ -4471,7 +4469,7 @@ function [est] = parse_output(z,sigx,sys,f,C)
     est.uTC     = ebar(sys.ipTC)*1e6;      
     est.uTC_l   = ebar_l(sys.ipTC)*1e6;    
     est.uTC_u   = ebar_u(sys.ipTC)*1e6;
-    
+
     % TA Alkalinity
     est.pTA     = z(sys.ipTA);               
     est.upTA    = sigx(sys.ipTA);
