@@ -4449,6 +4449,8 @@ function [est] = parse_output(z,sigx,sys,f,C)
     ebar    = @(j) (0.5 * ( q( z(j) - sigx(j) ) - q( z(j) + sigx(j) ) ) );
     ebar_l  = @(j) ( q( -sigx(j) ) ); % lower sigma
     ebar_u  = @(j) ( q( sigx(j) ) ); % upper sigma
+    % ebar_l  = @(j) ( q( z(j) + sigx(j) ) ); % lower sigma
+    % ebar_u  = @(j) ( q( z(j) - sigx(j) ) ); % upper sigma
         
     % populate 'est' structure with best estimate:
     %   1. p(value) and p(error) where p(x) = -log10(x)

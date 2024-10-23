@@ -22,7 +22,7 @@ opt.KF   = 2;   % option for KF formulation
 opt.TB   = 2;   % option for TB formulation
 opt.phscale     = 1; % 1 = tot, 2 = sws, 3 = free, 4 = nbs
 opt.printcsv    = 1; % print output to CSV? (1=on, 0=off)
-opt.fname       = 'QUODcarb_ex3.csv'; % not used if opt.printcsv = 0
+opt.fname       = 'example3.csv'; % not used if opt.printcsv = 0
 opt.printmes    = 0; % print screen messages? (1=on, 0=off)
 opt.co2press    = 1; % pressure correction for p2f and K0 (1=on, 0=off)
 opt.Revelle     = 1; % calculate Revelle factor? (1=on, 0=off)

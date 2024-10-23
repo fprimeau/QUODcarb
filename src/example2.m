@@ -21,7 +21,7 @@ opt.KF   = 2;       % option for KF formulation
 opt.TB   = 2;       % option for TB formulation
 opt.phscale     = 1;   % 1 = tot, 2 = sws, 3 = free, 4 = nbs
 opt.printcsv    = 1;   % print output to CSV? 1 = on, 0 = off
-opt.fname       = 'QUODcarb_ex2.csv'; % file name of desired CSV file
+opt.fname       = 'example2.csv'; % file name of desired CSV file
 opt.printmes    = 1;   % print screen messages? 1 = on, 0 = off
 opt.co2press    = 0;   % pressure correction for P2F (aka FugFac) and K0
 
@@ -58,7 +58,7 @@ end
 
 [est,obs,sys,iflag,opt] = QUODcarb(obs,opt); 
 
-save example2.mat est; % save output est as mat file
+% save example2.mat est; % save output est as mat file
 
 % output est(1) values should be:
 % est(1).TC         = 2196.0;       est(1).uTC          = 1.6556;
