@@ -108,8 +108,6 @@ To recreate the figures from the first QUODcarb paper, see the directory `paper_
 ## Citation
 Fennell, M., & Primeau, F. (2024). QUODcarb: A Bayesian solver for over-determined datasets of seawater carbon dioxide system chemistry. Marine Chemistry, 104470. https://doi.org/10.1016/j.marchem.2024.104470
 
-Click here to view: https://authors.elsevier.com/a/1kKkb_6w-MXmRv
-
 ## References
 Lewis, E., & Wallace, D. W. R. (1998). Program developed for CO2 system calculations. ORNL/CDIAC-105. Carbon Dioxide Information Analysis Center, Oak Ridge National Laboratory, Oak Ridge, TN.
 
