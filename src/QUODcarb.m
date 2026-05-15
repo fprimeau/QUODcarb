@@ -3420,7 +3420,7 @@ function [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD)
                     wobs(i,sys.tp(j).ipfco2) = w(obs(i).tp(j).fco2,0.01*obs(i).tp(j).fco2);
                 end
             else
-                wobs(i,sys.tp(j).ifco2) = w(obs(i).tp(j).fco2, obs(i).tp(j).ufco2);
+                wobs(i,sys.tp(j).ipfco2) = w(obs(i).tp(j).fco2, obs(i).tp(j).ufco2);
             end
             if (~isfield(obs(i).tp(j),'pp2f')) || (~isgood(obs(i).tp(j).pp2f))
                 obs(i).tp(j).pp2f           = nan;
