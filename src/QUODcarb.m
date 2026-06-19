@@ -165,6 +165,18 @@ function [est,obs,sys,iflag,opt] = QUODcarb(obs,opt)
 
     % populate obs, yobs, wobs at each datapoint
     [obs,yobs,wobs,sys] = parse_input(obs,sys,opt,nD);
+    % copy the prior mean and uncertainty for pK1 and pK2 to obs struct
+    for i = 1:nD
+        obs(i).tp(1).pK1  = yobs(i, sys.tp(1).ipK1);
+        obs(i).tp(1).upK1 = 1./sqrt(wobs(i, sys.tp(1).ipK1));
+        obs(i).tp(2).pK1  = yobs(i, sys.tp(2).ipK1);
+        obs(i).tp(2).upK1 = 1./sqrt(wobs(i, sys.tp(2).ipK1));
+
+        obs(i).tp(1).pK2  = yobs(i, sys.tp(1).ipK2);
+        obs(i).tp(1).upK2 = 1./sqrt(wobs(i, sys.tp(1).ipK2));
+        obs(i).tp(2).pK2  = yobs(i, sys.tp(2).ipK2);
+        obs(i).tp(2).upK2 = 1./sqrt(wobs(i, sys.tp(2).ipK2));
+    end
 
     for i = 1:nD % loop over the full data set
 
